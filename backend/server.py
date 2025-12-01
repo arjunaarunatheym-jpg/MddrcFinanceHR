@@ -3014,40 +3014,6 @@ async def super_admin_clock_out(data: SuperAdminClockOut, current_user: User = D
     else:
         raise HTTPException(status_code=404, detail="No clock-in record found")
 
-class SuperAdminVehicleDetails(BaseModel):
-    session_id: str
-    participant_id: str
-    vehicle_model: str
-    registration_number: str
-    roadtax_expiry: str
-
-class SuperAdminChecklistSubmit(BaseModel):
-    session_id: str
-    participant_id: str
-    interval: str
-    checklist_items: List[dict]
-
-class SuperAdminFeedbackSubmit(BaseModel):
-    session_id: str
-    participant_id: str
-    responses: List[dict]
-
-class SuperAdminTestSubmit(BaseModel):
-    test_id: str
-    session_id: str
-    participant_id: str
-    answers: List[int]
-
-@api_router.post("/super-admin/vehicle-details")
-async def super_admin_vehicle_details(data: SuperAdminVehicleDetails, current_user: User = Depends(get_current_user)):
-    """Super admin submit vehicle details for participant"""
-    if current_user.email != "arjuna@mddrc.com.my":
-        raise HTTPException(status_code=403, detail="Only super admin can manage vehicle details")
-    
-    vehicle_obj = VehicleDetails(
-        participant_id=data.participant_id,
-        session_id=data.session_id,
-        vehicle_model=data.vehicle_model,
         registration_number=data.registration_number,
         roadtax_expiry=data.roadtax_expiry
     )
