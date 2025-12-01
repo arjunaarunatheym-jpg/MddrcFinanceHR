@@ -262,8 +262,7 @@ const SuperAdminPanel = () => {
     if (template) {
       setChecklistTemplate(template);
       setChecklistForm({
-        interval: "pre",
-        items: template.items.map(item => ({ item, status: "good", image: null }))
+        items: template.items.map(item => ({ item, status: "good", comments: "", image: null }))
       });
       setChecklistDialog({ open: true, participant, sessionId });
     }
@@ -275,6 +274,16 @@ const SuperAdminPanel = () => {
       ...prev,
       items: prev.items.map((item, i) => 
         i === index ? { ...item, status } : item
+      )
+    }));
+  };
+  
+  // Handle Checklist Comments Change
+  const updateChecklistItemComments = (index, comments) => {
+    setChecklistForm(prev => ({
+      ...prev,
+      items: prev.items.map((item, i) => 
+        i === index ? { ...item, comments } : item
       )
     }));
   };
