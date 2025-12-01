@@ -3026,25 +3026,15 @@ async def super_admin_clock_out(data: SuperAdminClockOut, current_user: User = D
 
 @api_router.post("/super-admin/checklist/submit")
 async def super_admin_checklist_submit(data: SuperAdminChecklistSubmit, current_user: User = Depends(get_current_user)):
-    """Super admin submit checklist for participant with actual items and images"""
+    """Super admin submit checklist for participant - same as trainer portal"""
     if current_user.email != "arjuna@mddrc.com.my":
         raise HTTPException(status_code=403, detail="Only super admin can submit checklists")
     
-    # Convert status to checked (for compatibility)
-    checklist_items_formatted = []
-    for item in data.checklist_items:
-        checklist_items_formatted.append({
-            "item": item.get("item"),
-            "status": item.get("status", "good"),
-            "checked": item.get("status") != "need_repair",  # Not checked if needs repair
-            "image_url": item.get("image_url", "")
-        })
-    
+    # Submit checklist exactly as trainer would
     checklist_obj = VehicleChecklist(
         participant_id=data.participant_id,
         session_id=data.session_id,
-        interval=data.interval,
-        checklist_items=checklist_items_formatted
+        checklist_items=data.checklist_items
     )
     
     doc = checklist_obj.model_dump()
