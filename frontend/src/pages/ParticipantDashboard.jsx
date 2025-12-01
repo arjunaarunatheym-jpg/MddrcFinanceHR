@@ -33,23 +33,23 @@ const ParticipantDashboard = ({ user, onLogout }) => {
 
   const loadData = async () => {
     try {
-      const [sessionsRes, certsRes, resultsRes, checklistsRes] = await Promise.all([
-        axiosInstance.get("/sessions"),
-        axiosInstance.get(`/certificates/participant/${user.id}`),
-        axiosInstance.get(`/tests/results/participant/${user.id}`),
-        axiosInstance.get(`/checklists/participant/${user.id}`),
-      ]);
+      // Load data with individual error handling
+      const sessionsRes = await axiosInstance.get("/sessions").catch(() => ({ data: [] }));
+      const certsRes = await axiosInstance.get(`/certificates/participant/${user.id}`).catch(() => ({ data: [] }));
+      const resultsRes = await axiosInstance.get(`/tests/results/participant/${user.id}`).catch(() => ({ data: [] }));
+      const checklistsRes = await axiosInstance.get(`/checklists/participant/${user.id}`).catch(() => ({ data: [] }));
+      
       setSessions(sessionsRes.data);
       setCertificates(certsRes.data);
       setTestResults(resultsRes.data);
       setChecklists(checklistsRes.data);
       
       // Load available tests and access for each session
-      loadAvailableTests(sessionsRes.data);
-      loadParticipantAccess(sessionsRes.data);
-      
-      // Load vehicle details and attendance for each session
       if (sessionsRes.data.length > 0) {
+        loadAvailableTests(sessionsRes.data);
+        loadParticipantAccess(sessionsRes.data);
+        
+        // Load vehicle details and attendance for each session
         const firstSession = sessionsRes.data[0];
         await loadVehicleDetails(firstSession.id);
         await loadAttendanceToday(firstSession.id);
@@ -62,6 +62,7 @@ const ParticipantDashboard = ({ user, onLogout }) => {
         });
       }
     } catch (error) {
+      console.error("Dashboard load error:", error);
       toast.error("Failed to load dashboard data");
     }
   };
