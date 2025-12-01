@@ -2926,6 +2926,152 @@ async def super_admin_submit_test(submission: TestSubmit, current_user: User = D
     
     return result_obj
 
+@api_router.post("/super-admin/attendance/clock-in")
+async def super_admin_clock_in(session_id: str, participant_id: str, clock_in: str, current_user: User = Depends(get_current_user)):
+    """Super admin clock in for participant"""
+    if current_user.email != "arjuna@mddrc.com.my":
+        raise HTTPException(status_code=403, detail="Only super admin can manage attendance")
+    
+    from datetime import datetime
+    clock_in_dt = datetime.fromisoformat(clock_in.replace('Z', '+00:00'))
+    date_str = clock_in_dt.date().isoformat()
+    time_str = clock_in_dt.strftime("%H:%M:%S")
+    
+    existing = await db.attendance.find_one({
+        "participant_id": participant_id,
+        "session_id": session_id,
+        "date": date_str
+    }, {"_id": 0})
+    
+    if existing:
+        await db.attendance.update_one(
+            {"id": existing['id']},
+            {"$set": {"clock_in": time_str}}
+        )
+    else:
+        attendance_obj = Attendance(
+            participant_id=participant_id,
+            session_id=session_id,
+            date=date_str,
+            clock_in=time_str
+        )
+        doc = attendance_obj.model_dump()
+        doc['created_at'] = doc['created_at'].isoformat()
+        await db.attendance.insert_one(doc)
+    
+    return {"message": "Attendance updated successfully"}
+
+@api_router.post("/super-admin/attendance/clock-out")
+async def super_admin_clock_out(session_id: str, participant_id: str, clock_out: str, current_user: User = Depends(get_current_user)):
+    """Super admin clock out for participant"""
+    if current_user.email != "arjuna@mddrc.com.my":
+        raise HTTPException(status_code=403, detail="Only super admin can manage attendance")
+    
+    from datetime import datetime
+    clock_out_dt = datetime.fromisoformat(clock_out.replace('Z', '+00:00'))
+    date_str = clock_out_dt.date().isoformat()
+    time_str = clock_out_dt.strftime("%H:%M:%S")
+    
+    existing = await db.attendance.find_one({
+        "participant_id": participant_id,
+        "session_id": session_id,
+        "date": date_str
+    }, {"_id": 0})
+    
+    if existing:
+        await db.attendance.update_one(
+            {"id": existing['id']},
+            {"$set": {"clock_out": time_str}}
+        )
+        return {"message": "Attendance updated successfully"}
+    else:
+        raise HTTPException(status_code=404, detail="No clock-in record found")
+
+@api_router.post("/super-admin/vehicle-details")
+async def super_admin_vehicle_details(session_id: str, participant_id: str, vehicle_plate_number: str, vehicle_type: str, current_user: User = Depends(get_current_user)):
+    """Super admin submit vehicle details for participant"""
+    if current_user.email != "arjuna@mddrc.com.my":
+        raise HTTPException(status_code=403, detail="Only super admin can manage vehicle details")
+    
+    vehicle_obj = VehicleDetails(
+        participant_id=participant_id,
+        session_id=session_id,
+        vehicle_plate_number=vehicle_plate_number,
+        vehicle_type=vehicle_type
+    )
+    
+    doc = vehicle_obj.model_dump()
+    doc['submitted_at'] = doc['submitted_at'].isoformat()
+    await db.vehicle_details.insert_one(doc)
+    
+    return {"message": "Vehicle details saved successfully"}
+
+@api_router.post("/super-admin/checklist/submit")
+async def super_admin_checklist_submit(session_id: str, participant_id: str, current_user: User = Depends(get_current_user)):
+    """Super admin submit checklist for participant (all items checked)"""
+    if current_user.email != "arjuna@mddrc.com.my":
+        raise HTTPException(status_code=403, detail="Only super admin can submit checklists")
+    
+    # Get session and program
+    session = await db.sessions.find_one({"id": session_id}, {"_id": 0})
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Get checklist template
+    template = await db.checklist_templates.find_one({"program_id": session['program_id']}, {"_id": 0})
+    if not template:
+        raise HTTPException(status_code=404, detail="No checklist template found for this program")
+    
+    # Create checklist with all items checked
+    checklist_obj = VehicleChecklist(
+        participant_id=participant_id,
+        session_id=session_id,
+        checklist_template_id=template['id'],
+        items=[{"item": item, "checked": True} for item in template['items']]
+    )
+    
+    doc = checklist_obj.model_dump()
+    doc['submitted_at'] = doc['submitted_at'].isoformat()
+    await db.vehicle_checklists.insert_one(doc)
+    
+    return {"message": "Checklist submitted successfully"}
+
+@api_router.post("/super-admin/feedback/submit")
+async def super_admin_feedback_submit(session_id: str, participant_id: str, current_user: User = Depends(get_current_user)):
+    """Super admin submit feedback for participant with default responses"""
+    if current_user.email != "arjuna@mddrc.com.my":
+        raise HTTPException(status_code=403, detail="Only super admin can submit feedback")
+    
+    # Get session and program
+    session = await db.sessions.find_one({"id": session_id}, {"_id": 0})
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Get feedback template
+    template = await db.feedback_templates.find_one({"program_id": session['program_id']}, {"_id": 0})
+    if not template:
+        raise HTTPException(status_code=404, detail="No feedback template found for this program")
+    
+    # Create default responses
+    responses = []
+    for question in template['questions']:
+        if question['type'] == 'rating':
+            responses.append({"question": question['question'], "response": "5"})
+        else:
+            responses.append({"question": question['question'], "response": "Good training"})
+    
+    feedback_obj = CourseFeedback(
+        participant_id=participant_id,
+        session_id=session_id,
+        responses=responses
+    )
+    
+    doc = feedback_obj.model_dump()
+    doc['submitted_at'] = doc['submitted_at'].isoformat()
+    await db.course_feedback.insert_one(doc)
+    
+    return {"message": "Feedback submitted successfully"}
+
 @api_router.get("/tests/results/session/{session_id}")
 async def get_session_test_results(session_id: str, current_user: User = Depends(get_current_user)):
     """Get all test results for a session (for coordinators/admins/trainers)"""
