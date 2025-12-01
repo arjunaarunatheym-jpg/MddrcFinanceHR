@@ -697,27 +697,14 @@ const SuperAdminPanel = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Checklist Dialog - With Interval and 3 Options */}
+      {/* Checklist Dialog - Same as Trainer Portal */}
       <Dialog open={checklistDialog.open} onOpenChange={(open) => !open && setChecklistDialog({ open: false, participant: null, sessionId: null })} className="max-w-2xl">
         <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Checklist - {checklistDialog.participant?.full_name}</DialogTitle>
-            <DialogDescription>Select interval and status for each item. Upload pictures if needed.</DialogDescription>
+            <DialogDescription>Select status for each item. Upload pictures if needed. Same as trainer portal.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label>Interval</Label>
-              <Select value={checklistForm.interval} onValueChange={(val) => setChecklistForm({ ...checklistForm, interval: val })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pre">Pre-Training</SelectItem>
-                  <SelectItem value="post">Post-Training</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
             <div className="space-y-3">
               {checklistForm.items.map((item, index) => (
                 <Card key={index} className="p-3">
@@ -736,11 +723,24 @@ const SuperAdminPanel = () => {
                           <Label htmlFor={`sat-${index}`} className="text-sm cursor-pointer">~ Satisfactory</Label>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="need_repair" id={`repair-${index}`} />
-                          <Label htmlFor={`repair-${index}`} className="text-sm cursor-pointer">✗ Need Repair</Label>
+                          <RadioGroupItem value="needs_repair" id={`repair-${index}`} />
+                          <Label htmlFor={`repair-${index}`} className="text-sm cursor-pointer">✗ Needs Repair</Label>
                         </div>
                       </RadioGroup>
                     </div>
+                    
+                    {item.status === "needs_repair" && (
+                      <div>
+                        <Label className="text-xs text-gray-600">Repair Details (Required):</Label>
+                        <Textarea
+                          value={item.comments}
+                          onChange={(e) => updateChecklistItemComments(index, e.target.value)}
+                          placeholder="Describe what needs to be repaired..."
+                          rows={2}
+                          className="mt-1"
+                        />
+                      </div>
+                    )}
                     
                     <div>
                       {item.image ? (
