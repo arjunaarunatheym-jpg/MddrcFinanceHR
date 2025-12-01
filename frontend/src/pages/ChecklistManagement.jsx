@@ -23,7 +23,7 @@ const ChecklistManagement = ({ program }) => {
 
   const loadChecklistTemplates = async () => {
     try {
-      const response = await axiosInstance.get("/checklists/templates");
+      const response = await axiosInstance.get("/checklist-templates");
       setChecklistTemplates(response.data);
     } catch (error) {
       console.error("Failed to load checklist templates:", error);
