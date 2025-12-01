@@ -374,7 +374,6 @@ class SuperAdminVehicleDetails(BaseModel):
 class SuperAdminChecklistSubmit(BaseModel):
     session_id: str
     participant_id: str
-    interval: str
     checklist_items: List[dict]
 
 class SuperAdminFeedbackSubmit(BaseModel):
