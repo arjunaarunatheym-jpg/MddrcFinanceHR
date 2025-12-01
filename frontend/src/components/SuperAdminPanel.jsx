@@ -540,7 +540,7 @@ const SuperAdminPanel = () => {
       )}
 
       {/* Clock In/Out Dialog */}
-      <Dialog open={clockInOutDialog.open} onOpenChange={(open) => setClockInOutDialog({ ...clockInOutDialog, open }))}>
+      <Dialog open={clockInOutDialog.open} onOpenChange={(open) => setClockInOutDialog({ ...clockInOutDialog, open })}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Clock In/Out - {clockInOutDialog.participant?.full_name}</DialogTitle>
