@@ -126,12 +126,10 @@ const SuperAdminPanel = () => {
       }
       
       if (clockForm.clockOut) {
-        await axiosInstance.post("/super-admin/attendance/clock-out", null, {
-          params: {
-            session_id: sessionId,
-            participant_id: participant.id,
-            clock_out: new Date(clockForm.clockOut).toISOString()
-          }
+        await axiosInstance.post("/super-admin/attendance/clock-out", {
+          session_id: sessionId,
+          participant_id: participant.id,
+          clock_out: new Date(clockForm.clockOut).toISOString()
         });
       }
       
