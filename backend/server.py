@@ -2919,20 +2919,30 @@ async def super_admin_submit_test(data: SuperAdminTestSubmit, current_user: User
     
     return result_obj
 
+class SuperAdminClockIn(BaseModel):
+    session_id: str
+    participant_id: str
+    clock_in: str
+
+class SuperAdminClockOut(BaseModel):
+    session_id: str
+    participant_id: str
+    clock_out: str
+
 @api_router.post("/super-admin/attendance/clock-in")
-async def super_admin_clock_in(session_id: str, participant_id: str, clock_in: str, current_user: User = Depends(get_current_user)):
+async def super_admin_clock_in(data: SuperAdminClockIn, current_user: User = Depends(get_current_user)):
     """Super admin clock in for participant"""
     if current_user.email != "arjuna@mddrc.com.my":
         raise HTTPException(status_code=403, detail="Only super admin can manage attendance")
     
     from datetime import datetime
-    clock_in_dt = datetime.fromisoformat(clock_in.replace('Z', '+00:00'))
+    clock_in_dt = datetime.fromisoformat(data.clock_in.replace('Z', '+00:00'))
     date_str = clock_in_dt.date().isoformat()
     time_str = clock_in_dt.strftime("%H:%M:%S")
     
     existing = await db.attendance.find_one({
-        "participant_id": participant_id,
-        "session_id": session_id,
+        "participant_id": data.participant_id,
+        "session_id": data.session_id,
         "date": date_str
     }, {"_id": 0})
     
@@ -2943,8 +2953,8 @@ async def super_admin_clock_in(session_id: str, participant_id: str, clock_in: s
         )
     else:
         attendance_obj = Attendance(
-            participant_id=participant_id,
-            session_id=session_id,
+            participant_id=data.participant_id,
+            session_id=data.session_id,
             date=date_str,
             clock_in=time_str
         )
