@@ -3031,11 +3031,21 @@ async def super_admin_checklist_submit(data: SuperAdminChecklistSubmit, current_
     if current_user.email != "arjuna@mddrc.com.my":
         raise HTTPException(status_code=403, detail="Only super admin can submit checklists")
     
+    # Convert status to checked (for compatibility)
+    checklist_items_formatted = []
+    for item in data.checklist_items:
+        checklist_items_formatted.append({
+            "item": item.get("item"),
+            "status": item.get("status", "good"),
+            "checked": item.get("status") != "need_repair",  # Not checked if needs repair
+            "image_url": item.get("image_url", "")
+        })
+    
     checklist_obj = VehicleChecklist(
         participant_id=data.participant_id,
         session_id=data.session_id,
         interval=data.interval,
-        checklist_items=data.checklist_items
+        checklist_items=checklist_items_formatted
     )
     
     doc = checklist_obj.model_dump()
