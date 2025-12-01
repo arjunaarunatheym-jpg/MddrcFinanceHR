@@ -152,11 +152,13 @@ const SuperAdminPanel = () => {
     try {
       const { participant, sessionId } = vehicleDialog;
       
-      await axiosInstance.post("/vehicle-details", {
-        session_id: sessionId,
-        participant_id: participant.id,
-        vehicle_plate_number: vehicleForm.plateNumber,
-        vehicle_type: vehicleForm.type
+      await axiosInstance.post("/super-admin/vehicle-details", null, {
+        params: {
+          session_id: sessionId,
+          participant_id: participant.id,
+          vehicle_plate_number: vehicleForm.plateNumber,
+          vehicle_type: vehicleForm.type
+        }
       });
       
       toast.success("Vehicle details saved");
