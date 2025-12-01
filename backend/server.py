@@ -353,6 +353,41 @@ class AttendanceClockIn(BaseModel):
 class AttendanceClockOut(BaseModel):
     session_id: str
 
+# Super Admin models for data submission
+class SuperAdminClockIn(BaseModel):
+    session_id: str
+    participant_id: str
+    clock_in: str
+
+class SuperAdminClockOut(BaseModel):
+    session_id: str
+    participant_id: str
+    clock_out: str
+
+class SuperAdminVehicleDetails(BaseModel):
+    session_id: str
+    participant_id: str
+    vehicle_model: str
+    registration_number: str
+    roadtax_expiry: str
+
+class SuperAdminChecklistSubmit(BaseModel):
+    session_id: str
+    participant_id: str
+    interval: str
+    checklist_items: List[dict]
+
+class SuperAdminFeedbackSubmit(BaseModel):
+    session_id: str
+    participant_id: str
+    responses: List[dict]
+
+class SuperAdminTestSubmit(BaseModel):
+    test_id: str
+    session_id: str
+    participant_id: str
+    answers: List[int]
+
 # Helper function to convert DOCX to PDF
 def convert_docx_to_pdf(docx_path: Path, pdf_path: Path) -> bool:
     """Convert DOCX to PDF using LibreOffice"""
