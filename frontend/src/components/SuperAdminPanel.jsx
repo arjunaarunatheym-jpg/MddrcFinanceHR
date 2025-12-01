@@ -610,7 +610,7 @@ const SuperAdminPanel = () => {
       </Dialog>
 
       {/* Test Dialog */}
-      <Dialog open={testDialog.open} onOpenChange={(open) => setTestDialog({ ...testDialog, open }))}>
+      <Dialog open={testDialog.open} onOpenChange={(open) => setTestDialog({ ...testDialog, open })}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
