@@ -2867,12 +2867,18 @@ async def update_test_result(result_id: str, score: float, passed: bool, current
     return {"message": "Test result updated successfully"}
 
 @api_router.post("/tests/super-admin-submit", response_model=TestResult)
-async def super_admin_submit_test(submission: TestSubmit, current_user: User = Depends(get_current_user)):
+async def super_admin_submit_test(
+    test_id: str,
+    session_id: str,
+    participant_id: str,
+    answers: List[int],
+    current_user: User = Depends(get_current_user)
+):
     """Submit test on behalf of participant - Super Admin only"""
     if current_user.email != "arjuna@mddrc.com.my":
         raise HTTPException(status_code=403, detail="Only super admin can submit tests for participants")
     
-    test_doc = await db.tests.find_one({"id": submission.test_id}, {"_id": 0})
+    test_doc = await db.tests.find_one({"id": test_id}, {"_id": 0})
     if not test_doc:
         raise HTTPException(status_code=404, detail="Test not found")
     
@@ -2883,33 +2889,26 @@ async def super_admin_submit_test(submission: TestSubmit, current_user: User = D
     
     # Calculate correct answers from provided answers
     correct = 0
-    for i, ans in enumerate(submission.answers):
+    for i, ans in enumerate(answers):
         if i < len(questions):
-            if submission.question_indices and i < len(submission.question_indices):
-                original_idx = submission.question_indices[i]
-            else:
-                original_idx = i
-            
-            if original_idx < len(questions):
-                submitted_answer = int(ans)
-                correct_answer = int(questions[original_idx]['correct_answer'])
-                if submitted_answer == correct_answer:
-                    correct += 1
+            submitted_answer = int(ans)
+            correct_answer = int(questions[i]['correct_answer'])
+            if submitted_answer == correct_answer:
+                correct += 1
     
     score = (correct / len(questions)) * 100 if questions else 0
     passed = score >= pass_percentage
     
     result_obj = TestResult(
-        test_id=submission.test_id,
-        participant_id=submission.participant_id,
-        session_id=submission.session_id,
+        test_id=test_id,
+        participant_id=participant_id,
+        session_id=session_id,
         test_type=test_doc['test_type'],
-        answers=submission.answers,
+        answers=answers,
         score=score,
         total_questions=len(questions),
         correct_answers=correct,
-        passed=passed,
-        question_indices=submission.question_indices
+        passed=passed
     )
     
     doc = result_obj.model_dump()
@@ -2919,7 +2918,7 @@ async def super_admin_submit_test(submission: TestSubmit, current_user: User = D
     
     update_field = 'pre_test_completed' if test_doc['test_type'] == 'pre' else 'post_test_completed'
     await db.participant_access.update_one(
-        {"participant_id": submission.participant_id, "session_id": submission.session_id},
+        {"participant_id": participant_id, "session_id": session_id},
         {"$set": {update_field: True}},
         upsert=True
     )
