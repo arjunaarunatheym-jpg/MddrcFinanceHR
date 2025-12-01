@@ -2965,19 +2965,19 @@ async def super_admin_clock_in(data: SuperAdminClockIn, current_user: User = Dep
     return {"message": "Attendance updated successfully"}
 
 @api_router.post("/super-admin/attendance/clock-out")
-async def super_admin_clock_out(session_id: str, participant_id: str, clock_out: str, current_user: User = Depends(get_current_user)):
+async def super_admin_clock_out(data: SuperAdminClockOut, current_user: User = Depends(get_current_user)):
     """Super admin clock out for participant"""
     if current_user.email != "arjuna@mddrc.com.my":
         raise HTTPException(status_code=403, detail="Only super admin can manage attendance")
     
     from datetime import datetime
-    clock_out_dt = datetime.fromisoformat(clock_out.replace('Z', '+00:00'))
+    clock_out_dt = datetime.fromisoformat(data.clock_out.replace('Z', '+00:00'))
     date_str = clock_out_dt.date().isoformat()
     time_str = clock_out_dt.strftime("%H:%M:%S")
     
     existing = await db.attendance.find_one({
-        "participant_id": participant_id,
-        "session_id": session_id,
+        "participant_id": data.participant_id,
+        "session_id": data.session_id,
         "date": date_str
     }, {"_id": 0})
     
