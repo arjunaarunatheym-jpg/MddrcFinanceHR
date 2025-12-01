@@ -3044,20 +3044,15 @@ async def super_admin_checklist_submit(data: SuperAdminChecklistSubmit, current_
     return {"message": "Checklist submitted successfully"}
 
 @api_router.post("/super-admin/feedback/submit")
-async def super_admin_feedback_submit(
-    session_id: str,
-    participant_id: str,
-    responses: List[dict],
-    current_user: User = Depends(get_current_user)
-):
+async def super_admin_feedback_submit(data: SuperAdminFeedbackSubmit, current_user: User = Depends(get_current_user)):
     """Super admin submit feedback for participant with actual responses"""
     if current_user.email != "arjuna@mddrc.com.my":
         raise HTTPException(status_code=403, detail="Only super admin can submit feedback")
     
     feedback_obj = CourseFeedback(
-        participant_id=participant_id,
-        session_id=session_id,
-        responses=responses
+        participant_id=data.participant_id,
+        session_id=data.session_id,
+        responses=data.responses
     )
     
     doc = feedback_obj.model_dump()
