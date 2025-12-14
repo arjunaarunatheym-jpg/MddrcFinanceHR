@@ -404,11 +404,14 @@ const SuperAdminPanel = () => {
       
       await refreshParticipant(sessionId, participant.id);
       
+      // Reset form and close dialog after successful submission
       if (feedbackTemplate) {
         setFeedbackForm({
           responses: feedbackTemplate.questions.map(q => ({ question: q.question, response: "" }))
         });
       }
+      
+      setFeedbackDialog({ open: false, participant: null, sessionId: null });
     } catch (error) {
       toast.error("Failed to submit feedback");
       console.error(error);
