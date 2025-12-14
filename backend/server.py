@@ -3042,10 +3042,11 @@ async def super_admin_clock_out(data: SuperAdminClockOut, current_user: User = D
     date_str = clock_out_dt.date().isoformat()
     time_str = clock_out_dt.strftime("%H:%M:%S")
     
+    # Find existing attendance by participant and session ONLY (not date)
+    # This ensures we update the same single attendance record
     existing = await db.attendance.find_one({
         "participant_id": data.participant_id,
-        "session_id": data.session_id,
-        "date": date_str
+        "session_id": data.session_id
     }, {"_id": 0})
     
     if existing:
@@ -3055,7 +3056,7 @@ async def super_admin_clock_out(data: SuperAdminClockOut, current_user: User = D
         )
         return {"message": "Attendance updated successfully"}
     else:
-        raise HTTPException(status_code=404, detail="No clock-in record found")
+        raise HTTPException(status_code=404, detail="No clock-in record found. Please clock in first.")
 
 @api_router.post("/super-admin/checklist/submit")
 async def super_admin_checklist_submit(data: SuperAdminChecklistSubmit, current_user: User = Depends(get_current_user)):
