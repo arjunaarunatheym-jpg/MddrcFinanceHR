@@ -3078,6 +3078,45 @@ async def super_admin_feedback_submit(data: SuperAdminFeedbackSubmit, current_us
     
     return {"message": "Feedback submitted successfully"}
 
+@api_router.post("/super-admin/vehicle-details")
+async def super_admin_vehicle_details(data: SuperAdminVehicleDetails, current_user: User = Depends(get_current_user)):
+    """Super admin submit vehicle details for participant"""
+    if current_user.email != "arjuna@mddrc.com.my":
+        raise HTTPException(status_code=403, detail="Only super admin can submit vehicle details")
+    
+    # Check if vehicle details already exist
+    existing = await db.vehicle_details.find_one({
+        "participant_id": data.participant_id,
+        "session_id": data.session_id
+    })
+    
+    if existing:
+        # Update existing record
+        await db.vehicle_details.update_one(
+            {"participant_id": data.participant_id, "session_id": data.session_id},
+            {"$set": {
+                "vehicle_model": data.vehicle_model,
+                "registration_number": data.registration_number,
+                "roadtax_expiry": data.roadtax_expiry
+            }}
+        )
+        return {"message": "Vehicle details updated successfully"}
+    else:
+        # Create new record
+        vehicle_obj = VehicleDetails(
+            participant_id=data.participant_id,
+            session_id=data.session_id,
+            vehicle_model=data.vehicle_model,
+            registration_number=data.registration_number,
+            roadtax_expiry=data.roadtax_expiry
+        )
+        
+        doc = vehicle_obj.model_dump()
+        doc['created_at'] = doc['created_at'].isoformat()
+        await db.vehicle_details.insert_one(doc)
+        
+        return {"message": "Vehicle details saved successfully"}
+
 @api_router.get("/tests/results/session/{session_id}")
 async def get_session_test_results(session_id: str, current_user: User = Depends(get_current_user)):
     """Get all test results for a session (for coordinators/admins/trainers)"""
