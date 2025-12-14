@@ -530,7 +530,9 @@ const SuperAdminPanel = () => {
                                 setClockInOutDialog({ open: true, participant, sessionId: session.id });
                                 setClockForm({ clockIn: "", clockOut: "" });
                               }}
-                              className="flex items-center gap-2"
+                              className={`flex items-center gap-2 ${
+                                participant.clockedIn ? 'bg-green-100 hover:bg-green-200 border-green-400' : 'bg-red-100 hover:bg-red-200 border-red-400'
+                              }`}
                             >
                               <Clock className="w-4 h-4" />
                               Clock In/Out
@@ -558,7 +560,9 @@ const SuperAdminPanel = () => {
                                   setVehicleForm({ vehicle_model: "", registration_number: "", roadtax_expiry: "" });
                                 }
                               }}
-                              className="flex items-center gap-2"
+                              className={`flex items-center gap-2 ${
+                                participant.vehicleDetails ? 'bg-green-100 hover:bg-green-200 border-green-400' : 'bg-red-100 hover:bg-red-200 border-red-400'
+                              }`}
                             >
                               <Car className="w-4 h-4" />
                               Vehicle
@@ -571,7 +575,9 @@ const SuperAdminPanel = () => {
                                 setTestDialog({ open: true, participant, sessionId: session.id, testType: "pre" });
                                 setTestForm({ score: "" });
                               }}
-                              className="flex items-center gap-2"
+                              className={`flex items-center gap-2 ${
+                                participant.preTest ? 'bg-green-100 hover:bg-green-200 border-green-400' : 'bg-red-100 hover:bg-red-200 border-red-400'
+                              }`}
                             >
                               <FileText className="w-4 h-4" />
                               Pre-Test
@@ -584,7 +590,9 @@ const SuperAdminPanel = () => {
                                 setTestDialog({ open: true, participant, sessionId: session.id, testType: "post" });
                                 setTestForm({ score: "" });
                               }}
-                              className="flex items-center gap-2"
+                              className={`flex items-center gap-2 ${
+                                participant.postTest ? 'bg-green-100 hover:bg-green-200 border-green-400' : 'bg-red-100 hover:bg-red-200 border-red-400'
+                              }`}
                             >
                               <FileText className="w-4 h-4" />
                               Post-Test
@@ -594,7 +602,9 @@ const SuperAdminPanel = () => {
                               variant="outline"
                               size="sm"
                               onClick={() => openChecklistDialog(participant, session.id)}
-                              className="flex items-center gap-2"
+                              className={`flex items-center gap-2 ${
+                                participant.checklist ? 'bg-green-100 hover:bg-green-200 border-green-400' : 'bg-red-100 hover:bg-red-200 border-red-400'
+                              }`}
                             >
                               <ClipboardList className="w-4 h-4" />
                               Checklist
@@ -604,7 +614,9 @@ const SuperAdminPanel = () => {
                               variant="outline"
                               size="sm"
                               onClick={() => openFeedbackDialog(participant, session.id)}
-                              className="flex items-center gap-2"
+                              className={`flex items-center gap-2 ${
+                                participant.feedback ? 'bg-green-100 hover:bg-green-200 border-green-400' : 'bg-red-100 hover:bg-red-200 border-red-400'
+                              }`}
                             >
                               <MessageSquare className="w-4 h-4" />
                               Feedback
