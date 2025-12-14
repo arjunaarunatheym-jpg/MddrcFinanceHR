@@ -457,7 +457,7 @@ class CourseFeedback(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     participant_id: str
     session_id: str
-    program_id: str
+    program_id: Optional[str] = None
     responses: List[dict]  # [{"question": str, "answer": str/int}]
     submitted_at: datetime = Field(default_factory=get_malaysia_time)
 
