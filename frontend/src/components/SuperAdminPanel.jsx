@@ -527,9 +527,24 @@ const SuperAdminPanel = () => {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => {
+                              onClick={async () => {
                                 setVehicleDialog({ open: true, participant, sessionId: session.id });
-                                setVehicleForm({ vehicle_model: "", registration_number: "", roadtax_expiry: "" });
+                                // Load existing vehicle data
+                                try {
+                                  const response = await axiosInstance.get(`/vehicle-details/${session.id}/${participant.id}`);
+                                  if (response.data) {
+                                    setVehicleForm({
+                                      vehicle_model: response.data.vehicle_model || "",
+                                      registration_number: response.data.registration_number || "",
+                                      roadtax_expiry: response.data.roadtax_expiry || ""
+                                    });
+                                  } else {
+                                    setVehicleForm({ vehicle_model: "", registration_number: "", roadtax_expiry: "" });
+                                  }
+                                } catch (error) {
+                                  console.error("Failed to load vehicle data:", error);
+                                  setVehicleForm({ vehicle_model: "", registration_number: "", roadtax_expiry: "" });
+                                }
                               }}
                               className="flex items-center gap-2"
                             >
