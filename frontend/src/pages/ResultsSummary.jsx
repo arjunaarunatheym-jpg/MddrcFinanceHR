@@ -11,6 +11,7 @@ const ResultsSummary = () => {
   const navigate = useNavigate();
   const [summary, setSummary] = useState(null);
   const [expandedParticipant, setExpandedParticipant] = useState(null);
+  const [expandedSection, setExpandedSection] = useState(null); // 'pre-test', 'post-test', or 'feedback'
   const [detailedResult, setDetailedResult] = useState(null);
   const [loading, setLoading] = useState(true);
 
