@@ -47,6 +47,7 @@ db_name = os.environ.get('DB_NAME')
 if not db_name:
     raise ValueError("DB_NAME environment variable is required")
 db = client[db_name]
+print(f"🔥🔥🔥 CONNECTED TO DATABASE: {db_name} 🔥🔥🔥")
 logging.info(f"🔥🔥🔥 CONNECTED TO DATABASE: {db_name} 🔥🔥🔥")
 
 # Security
