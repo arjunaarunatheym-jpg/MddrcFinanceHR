@@ -336,12 +336,14 @@ const SuperAdminPanel = () => {
       
       await refreshParticipant(sessionId, participant.id);
       
-      // Reset form but keep dialog open
+      // Reset form and close dialog after successful submission
       if (checklistTemplate) {
         setChecklistForm({
           items: checklistTemplate.items.map(item => ({ item, status: "good", comments: "", image: null }))
         });
       }
+      
+      setChecklistDialog({ open: false, participant: null, sessionId: null });
     } catch (error) {
       toast.error("Failed to submit checklist");
       console.error(error);
