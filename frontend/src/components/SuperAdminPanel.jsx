@@ -438,7 +438,7 @@ const SuperAdminPanel = () => {
   };
 
   const getStatusBadge = (status) => {
-    if (status.completed) {
+    if (status && status.completed) {
       return status.passed !== undefined ? (
         status.passed ? (
           <Badge className="bg-green-500"><CheckCircle className="w-3 h-3 mr-1" /> Passed ({status.score}%)</Badge>
