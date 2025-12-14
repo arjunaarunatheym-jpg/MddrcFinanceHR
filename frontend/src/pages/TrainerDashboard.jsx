@@ -483,13 +483,6 @@ const TrainerDashboard = ({ user, onLogout }) => {
                                 </div>
                               </div>
                               <div className="flex flex-row sm:flex-col gap-2 sm:items-end items-start">
-                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                  isChief 
-                                    ? 'bg-purple-100 text-purple-800' 
-                                    : 'bg-orange-100 text-orange-800'
-                                }`}>
-                                  {getMyRole(session)}
-                                </span>
                                 <div className="flex items-center gap-2 text-sm text-gray-600">
                                   <Users className="w-4 h-4" />
                                   <span>{participants.length} Participants</span>
@@ -499,6 +492,7 @@ const TrainerDashboard = ({ user, onLogout }) => {
                                   size="sm"
                                   variant="outline"
                                   data-testid={`view-results-${session.id}`}
+                                  className="whitespace-nowrap"
                                 >
                                   <FileText className="w-4 h-4 mr-2" />
                                   View Results
