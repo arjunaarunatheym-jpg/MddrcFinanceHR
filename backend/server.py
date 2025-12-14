@@ -3002,16 +3002,21 @@ async def super_admin_clock_in(data: SuperAdminClockIn, current_user: User = Dep
     date_str = clock_in_dt.date().isoformat()
     time_str = clock_in_dt.strftime("%H:%M:%S")
     
+    # Find existing attendance by participant and session ONLY (not date)
+    # This ensures only ONE attendance record per participant per session
     existing = await db.attendance.find_one({
         "participant_id": data.participant_id,
-        "session_id": data.session_id,
-        "date": date_str
+        "session_id": data.session_id
     }, {"_id": 0})
     
     if existing:
+        # Update existing record with new date and time
         await db.attendance.update_one(
             {"id": existing['id']},
-            {"$set": {"clock_in": time_str}}
+            {"$set": {
+                "clock_in": time_str,
+                "date": date_str
+            }}
         )
     else:
         attendance_obj = Attendance(
