@@ -3031,10 +3031,16 @@ async def super_admin_checklist_submit(data: SuperAdminChecklistSubmit, current_
     if current_user.email != "arjuna@mddrc.com.my":
         raise HTTPException(status_code=403, detail="Only super admin can submit checklists")
     
-    # Submit checklist exactly as trainer would
+    # Get session to determine interval (default to "pre" if not specified)
+    session = await db.sessions.find_one({"id": data.session_id}, {"_id": 0})
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    # For Super Admin, use "final" as interval (post-training checklist)
     checklist_obj = VehicleChecklist(
         participant_id=data.participant_id,
         session_id=data.session_id,
+        interval="final",
         checklist_items=data.checklist_items
     )
     
@@ -3050,9 +3056,19 @@ async def super_admin_feedback_submit(data: SuperAdminFeedbackSubmit, current_us
     if current_user.email != "arjuna@mddrc.com.my":
         raise HTTPException(status_code=403, detail="Only super admin can submit feedback")
     
+    # Get session to fetch program_id
+    session = await db.sessions.find_one({"id": data.session_id}, {"_id": 0})
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    program_id = session.get('program_id')
+    if not program_id:
+        raise HTTPException(status_code=400, detail="Session has no program_id")
+    
     feedback_obj = CourseFeedback(
         participant_id=data.participant_id,
         session_id=data.session_id,
+        program_id=program_id,
         responses=data.responses
     )
     
