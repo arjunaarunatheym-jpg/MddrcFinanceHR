@@ -231,6 +231,9 @@ const SuperAdminPanel = () => {
       await refreshParticipant(sessionId, participant.id);
       
       setTestForm({ score: "" });
+      
+      // Close dialog after successful submission
+      setTestDialog({ open: false, participant: null, sessionId: null, testType: null });
     } catch (error) {
       toast.error("Failed to submit test");
       console.error(error);
