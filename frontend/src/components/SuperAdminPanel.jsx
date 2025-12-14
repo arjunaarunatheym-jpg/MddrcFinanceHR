@@ -67,7 +67,7 @@ const SuperAdminPanel = () => {
           const [testsRes, checklistRes, attendanceRes, feedbackRes, vehicleRes] = await Promise.all([
             axiosInstance.get(`/tests/results/participant/${participantUser.id}`).catch(() => ({ data: [] })),
             axiosInstance.get(`/vehicle-checklists/${sessionId}/${participantUser.id}`).catch(() => ({ data: null })),
-            axiosInstance.get(`/attendance/session/${sessionId}/participant/${participantUser.id}`).catch(() => ({ data: [] })),
+            axiosInstance.get(`/attendance/${sessionId}/${participantUser.id}`).catch(() => ({ data: [] })),
             axiosInstance.get(`/feedback/session/${sessionId}`).catch(() => ({ data: [] })),
             axiosInstance.get(`/vehicle-details/${sessionId}/${participantUser.id}`).catch(() => ({ data: null }))
           ]);
