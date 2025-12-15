@@ -304,15 +304,26 @@ const ParticipantDashboard = ({ user, onLogout }) => {
             <h1 className="text-2xl font-bold text-gray-900">Participant Portal</h1>
             <p className="text-sm text-gray-600">Welcome, {user.full_name}</p>
           </div>
-          <Button
-            data-testid="participant-logout-button"
-            onClick={onLogout}
-            variant="outline"
-            className="flex items-center gap-2"
-          >
-            <LogOut className="w-4 h-4" />
-            Logout
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleRefreshStatus}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <Clock className="w-4 h-4" />
+              <span className="hidden sm:inline">Refresh</span>
+            </Button>
+            <Button
+              data-testid="participant-logout-button"
+              onClick={onLogout}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <LogOut className="w-4 h-4" />
+              Logout
+            </Button>
+          </div>
         </div>
       </header>
 
