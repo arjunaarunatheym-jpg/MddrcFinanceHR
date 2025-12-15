@@ -124,7 +124,7 @@ const ParticipantDashboard = ({ user, onLogout }) => {
   const handleRefreshStatus = async () => {
     toast.info("Refreshing status...");
     await loadData();
-    toast.success("Status updated!");
+    toast.success("Status updated! All badges should now reflect your current progress.");
   };
 
   const handleDownloadCertificate = async (sessionId) => {
