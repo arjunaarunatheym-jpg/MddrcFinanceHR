@@ -5146,6 +5146,16 @@ async def submit_trainer_checklist(checklist_data: TrainerChecklistSubmit, curre
         upsert=True
     )
     
+    # Update participant_access to mark checklist as completed
+    await db.participant_access.update_one(
+        {
+            "participant_id": checklist_data.participant_id,
+            "session_id": checklist_data.session_id
+        },
+        {"$set": {"checklist_completed": True}},
+        upsert=True
+    )
+    
     # If chief trainer submitted comments, save to session
     if checklist_data.chief_trainer_comments:
         session = await db.sessions.find_one({"id": checklist_data.session_id}, {"_id": 0})
