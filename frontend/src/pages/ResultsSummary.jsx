@@ -220,12 +220,48 @@ const ResultsSummary = () => {
                     </div>
                   </div>
 
-                  {/* Expanded Details */}
-                  {expandedParticipant === participant.participant.id && detailedResult && (
-                    <div className="ml-8 mt-2 p-4 bg-white border-l-4 border-blue-500 rounded-r-lg">
-                      <h4 className="font-semibold text-gray-900 mb-3">Detailed Answers - Pre-Test</h4>
-                      <div className="space-y-3">
-                        {detailedResult.test_questions?.map((question, qIndex) => {
+                  {/* Expanded Section Buttons */}
+                  {expandedParticipant === participant.participant.id && (
+                    <div className="ml-4 sm:ml-8 mt-3 space-y-2">
+                      <div className="flex flex-wrap gap-2">
+                        {participant.pre_test && participant.pre_test.completed && (
+                          <Button
+                            size="sm"
+                            variant={expandedSection === 'pre-test' ? 'default' : 'outline'}
+                            onClick={() => handleToggleSection(participant, 'pre-test')}
+                          >
+                            {expandedSection === 'pre-test' ? <ChevronDown className="w-4 h-4 mr-1" /> : <ChevronRight className="w-4 h-4 mr-1" />}
+                            Pre-Test Details
+                          </Button>
+                        )}
+                        {participant.post_test && participant.post_test.completed && (
+                          <Button
+                            size="sm"
+                            variant={expandedSection === 'post-test' ? 'default' : 'outline'}
+                            onClick={() => handleToggleSection(participant, 'post-test')}
+                          >
+                            {expandedSection === 'post-test' ? <ChevronDown className="w-4 h-4 mr-1" /> : <ChevronRight className="w-4 h-4 mr-1" />}
+                            Post-Test Details
+                          </Button>
+                        )}
+                        {participant.feedback_submitted && (
+                          <Button
+                            size="sm"
+                            variant={expandedSection === 'feedback' ? 'default' : 'outline'}
+                            onClick={() => handleToggleSection(participant, 'feedback')}
+                          >
+                            {expandedSection === 'feedback' ? <ChevronDown className="w-4 h-4 mr-1" /> : <ChevronRight className="w-4 h-4 mr-1" />}
+                            Feedback Details
+                          </Button>
+                        )}
+                      </div>
+
+                      {/* Pre-Test Details */}
+                      {expandedSection === 'pre-test' && detailedResult && detailedResult.test_questions && (
+                        <div className="p-4 bg-white border-l-4 border-blue-500 rounded-r-lg">
+                          <h4 className="font-semibold text-gray-900 mb-3">Pre-Test Answers</h4>
+                          <div className="space-y-3">
+                            {detailedResult.test_questions?.map((question, qIndex) => {
                           const userAnswer = detailedResult.answers[qIndex];
                           const correctAnswer = question.correct_answer;
                           const isCorrect = userAnswer === correctAnswer;
