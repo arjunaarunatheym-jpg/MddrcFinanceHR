@@ -407,7 +407,14 @@ const TrainerChecklist = ({ user }) => {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            ))
+          ) : (
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-center text-gray-500">No checklist items available. Please contact administrator.</p>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Submit Button or Completed Message */}
