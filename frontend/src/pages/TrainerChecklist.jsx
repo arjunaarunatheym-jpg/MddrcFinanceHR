@@ -110,7 +110,10 @@ const TrainerChecklist = ({ user }) => {
     } catch (error) {
       console.error('Load error:', error);
       console.error('Error response:', error.response?.data);
-      toast.error(error.response?.data?.detail || "Failed to load checklist data");
+      const errorMessage = typeof error.response?.data?.detail === 'string' 
+        ? error.response.data.detail 
+        : error.response?.data?.message || error.message || "Failed to load checklist data";
+      toast.error(errorMessage);
       setLoading(false);
     }
   };
