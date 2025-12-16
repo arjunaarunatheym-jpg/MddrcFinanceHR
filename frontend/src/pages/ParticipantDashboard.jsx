@@ -549,17 +549,42 @@ const ParticipantDashboard = ({ user, onLogout }) => {
                                         `/certificates/download/${session.id}/${user.id}`,
                                         { responseType: 'blob' }
                                       );
-                                      const url = window.URL.createObjectURL(new Blob([response.data]));
+                                      
+                                      // Check if the response is actually a PDF (not an error)
+                                      const contentType = response.headers['content-type'];
+                                      if (contentType && contentType.includes('application/json')) {
+                                        // Server returned JSON error, not a PDF
+                                        const text = await response.data.text();
+                                        const errorData = JSON.parse(text);
+                                        toast.error(errorData.detail || "Failed to download certificate");
+                                        return;
+                                      }
+                                      
+                                      // Create blob and download
+                                      const blob = new Blob([response.data], { type: 'application/pdf' });
+                                      const url = window.URL.createObjectURL(blob);
                                       const link = document.createElement('a');
                                       link.href = url;
-                                      link.download = `${user.full_name.replace(' ', '_')}_certificate.pdf`;
+                                      link.download = `${user.full_name.replace(/ /g, '_')}_certificate.pdf`;
                                       document.body.appendChild(link);
                                       link.click();
                                       link.remove();
                                       window.URL.revokeObjectURL(url);
                                       toast.success("Certificate downloaded!");
                                     } catch (error) {
-                                      toast.error(error.response?.data?.detail || "Failed to download certificate");
+                                      console.error('Certificate download error:', error);
+                                      // Handle blob error responses
+                                      if (error.response?.data instanceof Blob) {
+                                        try {
+                                          const text = await error.response.data.text();
+                                          const errorData = JSON.parse(text);
+                                          toast.error(errorData.detail || "Failed to download certificate");
+                                        } catch {
+                                          toast.error("Failed to download certificate");
+                                        }
+                                      } else {
+                                        toast.error(error.response?.data?.detail || "Failed to download certificate");
+                                      }
                                     }
                                   }}
                                   className="bg-green-600 hover:bg-green-700 text-white"
