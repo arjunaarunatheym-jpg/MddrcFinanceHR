@@ -786,8 +786,9 @@ const AdminDashboard = ({ user, onLogout }) => {
         await axiosInstance.delete(`/companies/${item.id}`);
         toast.success("Company deleted successfully");
       } else if (type === "session") {
-        await axiosInstance.delete(`/sessions/${item.id}`);
-        toast.success("Session deleted successfully");
+        const response = await axiosInstance.delete(`/sessions/${item.id}`);
+        const recordsDeleted = response.data?.records_deleted || 0;
+        toast.success(`Session deleted successfully! ${recordsDeleted} related records removed.`, { duration: 4000 });
       } else if (type === "trainer" || type === "coordinator" || type === "assistant_admin" || type === "user") {
         await axiosInstance.delete(`/users/${item.id}`);
         toast.success(`${type.replace('_', ' ')} deleted successfully`);
