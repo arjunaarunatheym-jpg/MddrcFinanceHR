@@ -1798,9 +1798,12 @@ async def delete_session(session_id: str, current_user: User = Depends(get_curre
     # Delete ALL related data for this session
     total_deleted = 0
     
-    # Delete from all collections
-    collections_to_clean = [
-        "sessions",
+    # Delete the session itself first (uses "id" field)
+    result = await db.sessions.delete_one({"id": session_id})
+    total_deleted += result.deleted_count
+    
+    # Delete from related collections (use "session_id" field)
+    related_collections = [
         "test_results",
         "course_feedback",
         "attendance",
@@ -1815,7 +1818,7 @@ async def delete_session(session_id: str, current_user: User = Depends(get_curre
         "coordinator_feedback",
     ]
     
-    for collection_name in collections_to_clean:
+    for collection_name in related_collections:
         result = await db[collection_name].delete_many({"session_id": session_id})
         total_deleted += result.deleted_count
     
