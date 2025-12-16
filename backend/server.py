@@ -1825,6 +1825,55 @@ async def delete_session(session_id: str, current_user: User = Depends(get_curre
         "records_deleted": total_deleted
     }
 
+
+@api_router.delete("/sessions/bulk/delete-all")
+async def delete_all_sessions(current_user: User = Depends(get_current_user)):
+    """Delete ALL sessions and related data - for testing/cleanup purposes"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can delete all sessions")
+    
+    # Get all session IDs first
+    all_sessions = await db.sessions.find({}, {"_id": 0, "id": 1}).to_list(1000)
+    session_ids = [s["id"] for s in all_sessions]
+    
+    if not session_ids:
+        return {
+            "message": "No sessions to delete",
+            "sessions_deleted": 0,
+            "total_records_deleted": 0
+        }
+    
+    total_deleted = 0
+    
+    # Collections to clean
+    collections_to_clean = [
+        "sessions",
+        "test_results",
+        "course_feedback",
+        "attendance",
+        "attendance_records",
+        "participant_attendance",
+        "vehicle_checklists",
+        "vehicle_details",
+        "certificates",
+        "participant_access",
+        "training_reports",
+        "chief_trainer_feedback",
+        "coordinator_feedback",
+    ]
+    
+    # Delete from all collections
+    for collection_name in collections_to_clean:
+        result = await db[collection_name].delete_many({})
+        total_deleted += result.deleted_count
+    
+    return {
+        "message": f"All sessions and related data deleted successfully",
+        "sessions_deleted": len(session_ids),
+        "total_records_deleted": total_deleted
+    }
+
+
 # Participant Access Routes
 @api_router.post("/participant-access/update")
 async def update_participant_access(access_data: UpdateParticipantAccess, current_user: User = Depends(get_current_user)):
