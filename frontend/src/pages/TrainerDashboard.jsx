@@ -404,6 +404,10 @@ const TrainerDashboard = ({ user, onLogout }) => {
               <FileText className="w-4 h-4 mr-2" />
               <span className="text-sm">Past Training</span>
             </TabsTrigger>
+            <TabsTrigger value="income" data-testid="income-tab" className="flex-1 min-w-[140px] md:min-w-0 bg-gradient-to-r from-green-500 to-emerald-500 text-white">
+              <DollarSign className="w-4 h-4 mr-2" />
+              <span className="text-sm">My Income</span>
+            </TabsTrigger>
             {isChiefTrainerForAnySessions() && (
               <TabsTrigger value="feedback" data-testid="feedback-tab" className="flex-1 min-w-[140px] md:min-w-0">
                 <MessageSquare className="w-4 h-4 mr-2" />
