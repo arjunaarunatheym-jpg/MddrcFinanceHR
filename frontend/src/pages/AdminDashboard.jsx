@@ -432,7 +432,7 @@ const AdminDashboard = ({ user, onLogout }) => {
         role: "coordinator",
       });
       toast.success("Coordinator created successfully");
-      setCoordinatorForm({ email: "", password: "", full_name: "", id_number: "" });
+      setCoordinatorForm({ email: "", password: "", full_name: "", id_number: "", additional_roles: [] });
       setCoordinatorDialogOpen(false);
       loadData();
     } catch (error) {
