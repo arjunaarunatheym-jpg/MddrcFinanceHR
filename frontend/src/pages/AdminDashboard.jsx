@@ -448,11 +448,27 @@ const AdminDashboard = ({ user, onLogout }) => {
         role: "assistant_admin",
       });
       toast.success("Assistant Admin created successfully");
-      setAssistantAdminForm({ email: "", password: "", full_name: "", id_number: "" });
+      setAssistantAdminForm({ email: "", password: "", full_name: "", id_number: "", additional_roles: [] });
       setAssistantAdminDialogOpen(false);
       loadData();
     } catch (error) {
       toast.error(error.response?.data?.detail || "Failed to create assistant admin");
+    }
+  };
+
+  const handleCreateFinance = async (e) => {
+    e.preventDefault();
+    try {
+      await axiosInstance.post("/auth/register", {
+        ...financeForm,
+        role: "finance",
+      });
+      toast.success("Finance user created successfully");
+      setFinanceForm({ email: "", password: "", full_name: "", id_number: "" });
+      setFinanceDialogOpen(false);
+      loadData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Failed to create finance user");
     }
   };
 
