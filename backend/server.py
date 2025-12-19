@@ -168,6 +168,15 @@ class Session(BaseModel):
     completed_by_coordinator: bool = False
     completed_date: Optional[datetime] = None
     created_at: datetime = Field(default_factory=get_malaysia_time)
+    # Marketing commission fields
+    marketing_user_id: Optional[str] = None
+    commission_type: Optional[str] = None  # percentage or fixed
+    commission_rate: Optional[float] = None
+    commission_fixed_amount: Optional[float] = None
+    # Invoice reference (read-only in training app)
+    invoice_id: Optional[str] = None
+    invoice_number: Optional[str] = None
+    invoice_status: Optional[str] = None
     # Enriched fields (populated at runtime)
     company_name: Optional[str] = None
     program_name: Optional[str] = None
