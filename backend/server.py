@@ -7482,6 +7482,338 @@ async def mark_commission_paid(record_id: str, current_user: User = Depends(get_
     
     return {"message": "Marked as paid"}
 
+# ============ SESSION COSTING & PROFIT ENDPOINTS ============
+
+@api_router.get("/finance/session/{session_id}/costing")
+async def get_session_costing(session_id: str, current_user: User = Depends(get_current_user)):
+    """Get complete costing breakdown for a session"""
+    if current_user.role not in ["admin", "super_admin", "finance", "coordinator"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    session = await db.sessions.find_one({"id": session_id}, {"_id": 0})
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Get invoice
+    invoice = await db.invoices.find_one({"session_id": session_id}, {"_id": 0})
+    invoice_total = invoice.get("total_amount", 0) if invoice else 0
+    tax_amount = invoice.get("tax_amount", 0) if invoice else 0
+    
+    # Get trainer fees
+    trainer_fees = await db.trainer_fees.find({"session_id": session_id}, {"_id": 0}).to_list(100)
+    trainer_fees_total = sum(f.get("fee_amount", 0) for f in trainer_fees)
+    
+    # Get coordinator fee
+    coord_fee = await db.coordinator_fees.find_one({"session_id": session_id}, {"_id": 0})
+    coordinator_fee_total = coord_fee.get("total_fee", 0) if coord_fee else 0
+    
+    # Get expenses
+    expenses = await db.session_expenses.find({"session_id": session_id}, {"_id": 0}).to_list(100)
+    cash_expenses_estimated = sum(e.get("estimated_amount", 0) for e in expenses)
+    cash_expenses_actual = sum(e.get("actual_amount", 0) for e in expenses)
+    
+    # Get marketing commission
+    marketing = await db.marketing_commissions.find_one({"session_id": session_id}, {"_id": 0})
+    
+    # Calculate profit (before marketing commission)
+    gross_revenue = invoice_total - tax_amount
+    total_expenses_before_marketing = trainer_fees_total + coordinator_fee_total + cash_expenses_actual
+    profit_before_marketing = gross_revenue - total_expenses_before_marketing
+    
+    # Calculate marketing commission from profit
+    marketing_amount = 0.0
+    if marketing:
+        if marketing.get("commission_type") == "percentage":
+            marketing_amount = profit_before_marketing * (marketing.get("commission_rate", 0) / 100)
+        else:
+            marketing_amount = marketing.get("fixed_amount", 0)
+    
+    # Final profit
+    total_expenses = total_expenses_before_marketing + marketing_amount
+    final_profit = gross_revenue - total_expenses
+    profit_percentage = (final_profit / gross_revenue * 100) if gross_revenue > 0 else 0
+    
+    # Get company name
+    company = await db.companies.find_one({"id": session.get("company_id")}, {"_id": 0, "name": 1})
+    
+    return {
+        "session_id": session_id,
+        "session_name": session.get("name"),
+        "company_name": company.get("name") if company else None,
+        "training_dates": f"{session.get('start_date')} to {session.get('end_date')}",
+        "pax": len(session.get("participant_ids", [])),
+        
+        # Revenue
+        "invoice_total": invoice_total,
+        "less_tax": tax_amount,
+        "gross_revenue": gross_revenue,
+        
+        # Expenses breakdown
+        "trainer_fees": trainer_fees,
+        "trainer_fees_total": trainer_fees_total,
+        "coordinator_fee": coord_fee,
+        "coordinator_fee_total": coordinator_fee_total,
+        "expenses": expenses,
+        "cash_expenses_estimated": cash_expenses_estimated,
+        "cash_expenses_actual": cash_expenses_actual,
+        "marketing": marketing,
+        "marketing_commission": marketing_amount,
+        "total_expenses": total_expenses,
+        
+        # Profit
+        "profit": final_profit,
+        "profit_percentage": round(profit_percentage, 2)
+    }
+
+@api_router.post("/finance/session/{session_id}/trainer-fees")
+async def save_trainer_fees(session_id: str, fees: List[dict], current_user: User = Depends(get_current_user)):
+    """Save trainer fees for a session"""
+    if current_user.role not in ["admin", "super_admin", "finance", "coordinator"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Clear existing fees for this session
+    await db.trainer_fees.delete_many({"session_id": session_id})
+    
+    # Insert new fees
+    for fee in fees:
+        trainer = await db.users.find_one({"id": fee.get("trainer_id")}, {"_id": 0, "full_name": 1})
+        fee_record = {
+            "id": str(uuid.uuid4()),
+            "session_id": session_id,
+            "trainer_id": fee.get("trainer_id"),
+            "trainer_name": trainer.get("full_name") if trainer else fee.get("trainer_name"),
+            "role": fee.get("role", "trainer"),
+            "fee_amount": float(fee.get("fee_amount", 0)),
+            "remark": fee.get("remark"),
+            "status": "pending",
+            "created_at": get_malaysia_time().isoformat()
+        }
+        await db.trainer_fees.insert_one(fee_record)
+    
+    return {"message": f"Saved {len(fees)} trainer fees"}
+
+@api_router.post("/finance/session/{session_id}/coordinator-fee")
+async def save_coordinator_fee(session_id: str, fee_data: dict, current_user: User = Depends(get_current_user)):
+    """Save coordinator fee for a session (RM 50/day)"""
+    if current_user.role not in ["admin", "super_admin", "finance", "coordinator"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    session = await db.sessions.find_one({"id": session_id}, {"_id": 0})
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    coordinator_id = fee_data.get("coordinator_id") or session.get("coordinator_id")
+    if not coordinator_id:
+        raise HTTPException(status_code=400, detail="No coordinator assigned")
+    
+    coordinator = await db.users.find_one({"id": coordinator_id}, {"_id": 0, "full_name": 1})
+    
+    # Calculate days
+    num_days = fee_data.get("num_days", 1)
+    daily_rate = fee_data.get("daily_rate", 50.0)
+    total_fee = num_days * daily_rate
+    
+    # Upsert coordinator fee
+    await db.coordinator_fees.update_one(
+        {"session_id": session_id},
+        {"$set": {
+            "coordinator_id": coordinator_id,
+            "coordinator_name": coordinator.get("full_name") if coordinator else None,
+            "num_days": num_days,
+            "daily_rate": daily_rate,
+            "total_fee": total_fee,
+            "status": "pending",
+            "created_at": get_malaysia_time().isoformat()
+        }},
+        upsert=True
+    )
+    
+    return {"message": "Coordinator fee saved", "total_fee": total_fee}
+
+@api_router.post("/finance/session/{session_id}/expenses")
+async def save_session_expenses(session_id: str, expenses: List[dict], current_user: User = Depends(get_current_user)):
+    """Save expenses for a session (estimated or actual)"""
+    if current_user.role not in ["admin", "super_admin", "finance", "coordinator"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    for expense in expenses:
+        expense_id = expense.get("id")
+        
+        if expense_id:
+            # Update existing
+            await db.session_expenses.update_one(
+                {"id": expense_id},
+                {"$set": {
+                    "category": expense.get("category"),
+                    "description": expense.get("description"),
+                    "expense_type": expense.get("expense_type", "fixed"),
+                    "percentage_rate": float(expense.get("percentage_rate", 0)),
+                    "estimated_amount": float(expense.get("estimated_amount", 0)),
+                    "actual_amount": float(expense.get("actual_amount", 0)),
+                    "quantity": int(expense.get("quantity", 1)),
+                    "unit_price": float(expense.get("unit_price", 0)),
+                    "remark": expense.get("remark"),
+                    "status": expense.get("status", "estimated"),
+                    "updated_at": get_malaysia_time().isoformat()
+                }}
+            )
+        else:
+            # Insert new
+            expense_record = {
+                "id": str(uuid.uuid4()),
+                "session_id": session_id,
+                "category": expense.get("category"),
+                "description": expense.get("description"),
+                "expense_type": expense.get("expense_type", "fixed"),
+                "percentage_rate": float(expense.get("percentage_rate", 0)),
+                "estimated_amount": float(expense.get("estimated_amount", 0)),
+                "actual_amount": float(expense.get("actual_amount", 0)),
+                "quantity": int(expense.get("quantity", 1)),
+                "unit_price": float(expense.get("unit_price", 0)),
+                "remark": expense.get("remark"),
+                "status": expense.get("status", "estimated"),
+                "created_at": get_malaysia_time().isoformat(),
+                "updated_at": get_malaysia_time().isoformat()
+            }
+            await db.session_expenses.insert_one(expense_record)
+    
+    return {"message": f"Saved {len(expenses)} expenses"}
+
+@api_router.delete("/finance/session/{session_id}/expense/{expense_id}")
+async def delete_session_expense(session_id: str, expense_id: str, current_user: User = Depends(get_current_user)):
+    """Delete a session expense"""
+    if current_user.role not in ["admin", "super_admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    result = await db.session_expenses.delete_one({"id": expense_id, "session_id": session_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Expense not found")
+    
+    return {"message": "Expense deleted"}
+
+@api_router.post("/finance/session/{session_id}/marketing")
+async def save_marketing_commission(session_id: str, marketing_data: dict, current_user: User = Depends(get_current_user)):
+    """Save or create marketing person and commission for a session"""
+    if current_user.role not in ["admin", "super_admin", "finance", "coordinator"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    marketing_user_id = marketing_data.get("marketing_user_id")
+    
+    # If creating new marketing person (like participant auto-creation)
+    if marketing_data.get("create_new") and not marketing_user_id:
+        full_name = marketing_data.get("full_name")
+        id_number = marketing_data.get("id_number")
+        
+        if not full_name or not id_number:
+            raise HTTPException(status_code=400, detail="Name and ID number required for new marketing person")
+        
+        # Check if user exists
+        existing = await db.users.find_one({"id_number": id_number}, {"_id": 0})
+        if existing:
+            marketing_user_id = existing.get("id")
+            # Add marketing to additional_roles if not already
+            if "marketing" not in (existing.get("additional_roles") or []):
+                await db.users.update_one(
+                    {"id": marketing_user_id},
+                    {"$addToSet": {"additional_roles": "marketing"}}
+                )
+        else:
+            # Create new user with marketing role
+            email_safe = id_number.replace(" ", "").replace("-", "")
+            new_user = {
+                "id": str(uuid.uuid4()),
+                "email": f"{email_safe}@marketing.mddrc.local",
+                "full_name": full_name,
+                "id_number": id_number,
+                "role": "marketing",
+                "additional_roles": [],
+                "password": pwd_context.hash("mddrc1"),  # Default password
+                "created_at": get_malaysia_time().isoformat(),
+                "is_active": True
+            }
+            await db.users.insert_one(new_user)
+            marketing_user_id = new_user["id"]
+    
+    if not marketing_user_id:
+        raise HTTPException(status_code=400, detail="Marketing user ID required")
+    
+    # Get marketing user name
+    marketing_user = await db.users.find_one({"id": marketing_user_id}, {"_id": 0, "full_name": 1})
+    
+    # Upsert marketing commission
+    await db.marketing_commissions.update_one(
+        {"session_id": session_id},
+        {"$set": {
+            "marketing_user_id": marketing_user_id,
+            "marketing_user_name": marketing_user.get("full_name") if marketing_user else None,
+            "commission_type": marketing_data.get("commission_type", "percentage"),
+            "commission_rate": float(marketing_data.get("commission_rate", 0)),
+            "fixed_amount": float(marketing_data.get("fixed_amount", 0)),
+            "calculated_amount": 0.0,  # Will be calculated when profit is finalized
+            "status": "pending",
+            "updated_at": get_malaysia_time().isoformat()
+        }},
+        upsert=True
+    )
+    
+    # Update session with marketing user
+    await db.sessions.update_one(
+        {"id": session_id},
+        {"$set": {
+            "marketing_user_id": marketing_user_id,
+            "commission_type": marketing_data.get("commission_type", "percentage"),
+            "commission_rate": float(marketing_data.get("commission_rate", 0)),
+            "commission_fixed_amount": float(marketing_data.get("fixed_amount", 0))
+        }}
+    )
+    
+    return {"message": "Marketing commission saved", "marketing_user_id": marketing_user_id}
+
+@api_router.post("/finance/session/{session_id}/calculate-profit")
+async def calculate_and_save_profit(session_id: str, current_user: User = Depends(get_current_user)):
+    """Calculate and finalize profit for a session"""
+    if current_user.role not in ["admin", "super_admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Only Finance can finalize profit")
+    
+    # Get full costing
+    costing = await get_session_costing(session_id, current_user)
+    
+    # Update marketing commission with calculated amount
+    marketing = await db.marketing_commissions.find_one({"session_id": session_id}, {"_id": 0})
+    if marketing:
+        await db.marketing_commissions.update_one(
+            {"session_id": session_id},
+            {"$set": {
+                "calculated_amount": costing["marketing_commission"],
+                "status": "approved",
+                "updated_at": get_malaysia_time().isoformat()
+            }}
+        )
+    
+    return {
+        "message": "Profit calculated",
+        "profit": costing["profit"],
+        "profit_percentage": costing["profit_percentage"],
+        "marketing_commission": costing["marketing_commission"]
+    }
+
+# Get expense categories
+@api_router.get("/finance/expense-categories")
+async def get_expense_categories(current_user: User = Depends(get_current_user)):
+    """Get list of expense categories"""
+    return [
+        {"id": "accommodation", "name": "Accommodation", "type": "fixed"},
+        {"id": "allowance", "name": "Allowance", "type": "fixed"},
+        {"id": "petrol", "name": "Petrol", "type": "fixed"},
+        {"id": "toll", "name": "Toll / Touch N Go", "type": "fixed"},
+        {"id": "wear_tear", "name": "Wear and Tear", "type": "percentage"},
+        {"id": "printing", "name": "Printing", "type": "percentage"},
+        {"id": "hrdc_levy", "name": "HRDCorp Levy", "type": "percentage"},
+        {"id": "sst", "name": "SST", "type": "percentage"},
+        {"id": "muafakat", "name": "Muafakat", "type": "percentage"},
+        {"id": "other", "name": "Other Expenses", "type": "fixed"}
+    ]
+
 # Include router (after all routes are defined)
 app.include_router(api_router)
 
