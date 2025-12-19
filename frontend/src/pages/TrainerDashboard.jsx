@@ -269,6 +269,19 @@ const TrainerDashboard = ({ user, onLogout }) => {
     }
   };
 
+  const loadIncome = async () => {
+    setLoadingIncome(true);
+    try {
+      const response = await axiosInstance.get(`/finance/income/trainer/${user.id}`);
+      setIncomeData(response.data);
+    } catch (error) {
+      console.error('Failed to load income:', error);
+      // Don't show error toast - income might not be set up yet
+    } finally {
+      setLoadingIncome(false);
+    }
+  };
+
   const handlePastSessionClick = (session) => {
     setExpandedPastSession(expandedPastSession?.id === session.id ? null : session);
   };
