@@ -2761,6 +2761,115 @@ const AdminDashboard = ({ user, onLogout }) => {
                     </CardContent>
                   </Card>
 
+                  {/* Finance Users Section */}
+                  <Card className="border-2 border-green-200">
+                    <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <CardTitle className="text-lg">Finance Users</CardTitle>
+                          <CardDescription>Manage finance portal users ({users.filter(u => u.role === "finance").length} total)</CardDescription>
+                        </div>
+                        <Dialog open={financeDialogOpen} onOpenChange={setFinanceDialogOpen}>
+                          <DialogTrigger asChild>
+                            <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                              <DollarSign className="w-4 h-4 mr-2" />
+                              Add Finance User
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Create Finance User</DialogTitle>
+                              <DialogDescription>
+                                Add a user who can access the Finance Portal
+                              </DialogDescription>
+                            </DialogHeader>
+                            <form onSubmit={handleCreateFinance} className="space-y-4">
+                              <div>
+                                <Label htmlFor="finance-name">Full Name *</Label>
+                                <Input
+                                  id="finance-name"
+                                  value={financeForm.full_name}
+                                  onChange={(e) => setFinanceForm({ ...financeForm, full_name: e.target.value })}
+                                  required
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="finance-id">ID Number *</Label>
+                                <Input
+                                  id="finance-id"
+                                  value={financeForm.id_number}
+                                  onChange={(e) => setFinanceForm({ ...financeForm, id_number: e.target.value })}
+                                  required
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="finance-email">Email *</Label>
+                                <Input
+                                  id="finance-email"
+                                  type="email"
+                                  value={financeForm.email}
+                                  onChange={(e) => setFinanceForm({ ...financeForm, email: e.target.value })}
+                                  required
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="finance-password">Password *</Label>
+                                <Input
+                                  id="finance-password"
+                                  type="password"
+                                  value={financeForm.password}
+                                  onChange={(e) => setFinanceForm({ ...financeForm, password: e.target.value })}
+                                  required
+                                />
+                              </div>
+                              <Button type="submit" className="w-full bg-green-600 hover:bg-green-700">
+                                Create Finance User
+                              </Button>
+                            </form>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                      <div className="space-y-2">
+                        {users.filter(u => u.role === "finance").length === 0 ? (
+                          <p className="text-gray-500 text-center py-8">
+                            No finance users yet. Create one to access the Finance Portal.
+                          </p>
+                        ) : (
+                          users.filter(u => u.role === "finance").map((financeUser) => (
+                            <div
+                              key={financeUser.id}
+                              className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg hover:bg-green-100 transition-colors flex justify-between items-start"
+                            >
+                              <div>
+                                <h3 className="font-semibold text-gray-900">{financeUser.full_name}</h3>
+                                <p className="text-sm text-gray-600">{financeUser.email}</p>
+                                <div className="flex gap-2 mt-2">
+                                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                                    Finance
+                                  </span>
+                                  <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">
+                                    ID: {financeUser.id_number}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleEditStaff(financeUser)}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
                 </div>
               </CardContent>
             </Card>
