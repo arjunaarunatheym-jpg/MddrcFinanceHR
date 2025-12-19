@@ -7403,6 +7403,9 @@ async def mark_commission_paid(record_id: str, current_user: User = Depends(get_
     
     return {"message": "Marked as paid"}
 
+# Include router (after all routes are defined)
+app.include_router(api_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
