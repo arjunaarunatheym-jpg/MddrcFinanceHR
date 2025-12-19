@@ -6923,9 +6923,6 @@ async def get_supervisor_session_attendance(session_id: str, current_user: User 
     
     return attendance
 
-# Include router
-app.include_router(api_router)
-
 # ============ FINANCE PORTAL ROUTES ============
 
 # Invoice number generation
