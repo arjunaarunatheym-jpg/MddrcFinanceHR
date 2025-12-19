@@ -840,6 +840,7 @@ const AdminDashboard = ({ user, onLogout }) => {
       full_name: staff.full_name,
       email: staff.email,
       id_number: staff.id_number,
+      additional_roles: staff.additional_roles || [],
     });
     setEditStaffDialogOpen(true);
   };
