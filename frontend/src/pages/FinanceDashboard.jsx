@@ -338,9 +338,70 @@ const FinanceDashboard = ({ user, onLogout }) => {
                 <CardTitle>Payment Records</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-500 text-center py-8">
-                  Payment recording coming soon. Use invoice actions to manage payments.
-                </p>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-medium">Record Payment</h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Invoice Number
+                      </label>
+                      <Input placeholder="Enter invoice number" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Payment Amount
+                      </label>
+                      <Input type="number" placeholder="0.00" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Payment Date
+                      </label>
+                      <Input type="date" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Payment Method
+                      </label>
+                      <Select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select payment method" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                          <SelectItem value="cheque">Cheque</SelectItem>
+                          <SelectItem value="cash">Cash</SelectItem>
+                          <SelectItem value="online">Online Payment</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Reference Number
+                      </label>
+                      <Input placeholder="Transaction/Reference number" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Notes (Optional)
+                    </label>
+                    <Input placeholder="Additional notes about the payment" />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button className="bg-green-600 hover:bg-green-700">
+                      <CreditCard className="w-4 h-4 mr-2" />
+                      Record Payment
+                    </Button>
+                    <Button variant="outline">
+                      Clear Form
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
