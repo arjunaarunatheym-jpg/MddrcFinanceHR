@@ -91,6 +91,7 @@ class User(BaseModel):
     full_name: str
     id_number: str
     role: str
+    additional_roles: List[str] = []  # For dual roles (e.g., coordinator + marketing)
     company_id: Optional[str] = None
     location: Optional[str] = None
     phone_number: Optional[str] = None
@@ -103,6 +104,7 @@ class UserCreate(BaseModel):
     full_name: str
     id_number: str
     role: str
+    additional_roles: List[str] = []  # For dual roles (e.g., coordinator + marketing)
     company_id: Optional[str] = None
     location: Optional[str] = None
     phone_number: Optional[str] = None
