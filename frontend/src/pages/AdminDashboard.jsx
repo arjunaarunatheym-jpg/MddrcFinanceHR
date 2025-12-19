@@ -2599,10 +2599,15 @@ const AdminDashboard = ({ user, onLogout }) => {
                               <div>
                                 <h3 className="font-semibold text-gray-900">{assistantAdmin.full_name}</h3>
                                 <p className="text-sm text-gray-600">{assistantAdmin.email}</p>
-                                <div className="flex gap-2 mt-2">
+                                <div className="flex gap-2 mt-2 flex-wrap">
                                   <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
                                     Assistant Admin
                                   </span>
+                                  {assistantAdmin.additional_roles?.includes("marketing") && (
+                                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                                      + Marketing
+                                    </span>
+                                  )}
                                   <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">
                                     ID: {assistantAdmin.id_number}
                                   </span>
