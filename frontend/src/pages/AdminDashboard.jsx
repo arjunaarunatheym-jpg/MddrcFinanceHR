@@ -1793,14 +1793,14 @@ const AdminDashboard = ({ user, onLogout }) => {
                             <div>
                               <Label>Marketing Person</Label>
                               <Select
-                                value={sessionForm.marketing_user_id}
-                                onValueChange={(value) => setSessionForm({ ...sessionForm, marketing_user_id: value })}
+                                value={sessionForm.marketing_user_id || "none"}
+                                onValueChange={(value) => setSessionForm({ ...sessionForm, marketing_user_id: value === "none" ? "" : value })}
                               >
                                 <SelectTrigger>
                                   <SelectValue placeholder="Select marketing person" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="">None</SelectItem>
+                                  <SelectItem value="none">None</SelectItem>
                                   {marketingUsers.map((user) => (
                                     <SelectItem key={user.id} value={user.id}>
                                       {user.full_name} ({user.role}{user.additional_roles?.includes("marketing") ? " + Marketing" : ""})
