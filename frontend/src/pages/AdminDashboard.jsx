@@ -587,6 +587,11 @@ const AdminDashboard = ({ user, onLogout }) => {
         supervisors: sessionForm.supervisors,
         trainer_assignments: sessionForm.trainer_assignments,
         coordinator_id: sessionForm.coordinator_id || null,
+        // Marketing commission fields
+        marketing_user_id: sessionForm.marketing_user_id || null,
+        commission_type: sessionForm.commission_type || null,
+        commission_rate: sessionForm.commission_rate ? parseFloat(sessionForm.commission_rate) : null,
+        commission_fixed_amount: sessionForm.commission_fixed_amount ? parseFloat(sessionForm.commission_fixed_amount) : null,
       });
 
       // Show results of participant/supervisor matching
@@ -623,6 +628,10 @@ const AdminDashboard = ({ user, onLogout }) => {
         supervisors: [],
         trainer_assignments: [],
         coordinator_id: "",
+        marketing_user_id: "",
+        commission_type: "percentage",
+        commission_rate: "",
+        commission_fixed_amount: "",
       });
       setSessionDialogOpen(false);
       loadData();
