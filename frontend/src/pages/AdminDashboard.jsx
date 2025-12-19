@@ -265,6 +265,15 @@ const AdminDashboard = ({ user, onLogout }) => {
       setFilteredPrograms(programsRes.data);
       setFilteredSessions(sessionsRes.data);
       setFilteredUsers(usersRes.data);
+      
+      // Load marketing users for session creation
+      try {
+        const marketingRes = await axiosInstance.get(`/finance/marketing-users?_t=${timestamp}`);
+        setMarketingUsers(marketingRes.data);
+      } catch (e) {
+        // Marketing users endpoint might fail if no finance access, ignore
+        console.log('Marketing users not loaded:', e.message);
+      }
     } catch (error) {
       toast.error("Failed to load data");
     }
