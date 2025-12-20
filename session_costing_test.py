@@ -560,16 +560,14 @@ class SessionCostingTestRunner:
         
         # Test 2: Invalid session ID
         self.log("Testing invalid session ID...")
-        valid_data = {
-            "trainer_fees": [
-                {
-                    "trainer_id": "test-trainer",
-                    "trainer_name": "Test Trainer",
-                    "role": "trainer",
-                    "fee_amount": 500.0
-                }
-            ]
-        }
+        valid_data = [
+            {
+                "trainer_id": "test-trainer",
+                "trainer_name": "Test Trainer",
+                "role": "trainer",
+                "fee_amount": 500.0
+            }
+        ]
         
         try:
             response = self.session.post(f"{BASE_URL}/finance/session/invalid-session-id/trainer-fees", 
