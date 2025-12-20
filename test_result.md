@@ -792,3 +792,18 @@ frontend:
         comment: "✅ Calendar dots ALREADY IMPLEMENTED. Code at lines 264-271 shows dots for dates with trainings. Dots are colored using primaryColor from theme. Feature complete - no additional work needed."
   - agent: "main"
     message: "BUG FIX - COORDINATOR & TRAINER SESSION FILTERING: Fixed two critical issues. BUG 1: Coordinators couldn't see completed sessions in Analytics tab - FIXED by removing completion_status filter from /sessions endpoint, now coordinators can mark sessions as completed and still see them in active list until archived. BUG 2: Trainers seeing past training sessions - FIXED by adding role-specific filtering: trainers now only see future/current sessions (end_date >= today), past sessions only appear in Past Training tab. Backend changes in /sessions endpoint (lines 1166-1198): added conditional query based on role, trainers get strict future filter, coordinators/admin see all non-archived including completed ongoing sessions. Also fixed completed_date to store as ISO string instead of datetime object (line 1612). Backend restarted successfully."
+
+  - agent: "main"
+    message: "SESSION COSTING FEATURE IMPLEMENTED: Added complete Session Costing functionality to Admin Dashboard. 1) Imported SessionCosting component, 2) Added costingSession state for modal tracking, 3) Added green 'Costing' button with DollarSign icon to each session card in Sessions tab, 4) SessionCosting modal opens when button clicked. Fixed trainer name display issue - now properly shows trainer names from costing API response. Feature includes: Invoice/Revenue section (lump sum or per-pax pricing with SST), Trainer Fees (custom per trainer), Coordinator Fee (RM 50/day), Training Expenses (add multiple expense categories), Marketing Commission (percentage of profit or fixed), and Profit Summary showing complete breakdown (Invoice Total, Tax, Gross Revenue, all expenses, NET PROFIT with margin %). Modal has Cancel and Save All buttons. Backend APIs already existed and verified working via curl: GET /finance/session/{session_id}/costing returns full costing data, POST endpoints for trainer-fees, coordinator-fee, expenses, and marketing all functional. UI tested via screenshots - clean, practical layout as user requested. Ready for comprehensive testing."
+
+  - task: "Session Costing UI Integration"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/AdminDashboard.jsx, /app/frontend/src/components/SessionCosting.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented Session Costing integration in AdminDashboard. Added Costing button to session cards, modal opens correctly. Fixed trainer name display. Needs comprehensive testing of: 1) Form inputs and validation, 2) Save functionality for all sections (invoice, trainer fees, coordinator fee, expenses, marketing), 3) Profit calculation accuracy, 4) Data persistence after save and modal reopen."
