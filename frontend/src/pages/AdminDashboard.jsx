@@ -47,6 +47,7 @@ const AdminDashboard = ({ user, onLogout }) => {
   const [users, setUsers] = useState([]);
   const [activeTab, setActiveTab] = useState("programs");
   const [selectedProgram, setSelectedProgram] = useState(null);
+  const [costingSession, setCostingSession] = useState(null); // Session for costing modal
   
   // Search states
   const [companiesSearch, setCompaniesSearch] = useState("");
