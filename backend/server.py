@@ -7803,18 +7803,19 @@ async def calculate_and_save_profit(session_id: str, current_user: User = Depend
 # Get expense categories
 @api_router.get("/finance/expense-categories")
 async def get_expense_categories(current_user: User = Depends(get_current_user)):
-    """Get list of expense categories"""
+    """Get list of expense categories with their calculation types and rates"""
     return [
-        {"id": "accommodation", "name": "Accommodation", "type": "fixed"},
-        {"id": "allowance", "name": "Allowance", "type": "fixed"},
-        {"id": "petrol", "name": "Petrol", "type": "fixed"},
-        {"id": "toll", "name": "Toll / Touch N Go", "type": "fixed"},
-        {"id": "wear_tear", "name": "Wear and Tear", "type": "percentage"},
-        {"id": "printing", "name": "Printing", "type": "percentage"},
-        {"id": "hrdc_levy", "name": "HRDCorp Levy", "type": "percentage"},
-        {"id": "sst", "name": "SST", "type": "percentage"},
-        {"id": "muafakat", "name": "Muafakat", "type": "percentage"},
-        {"id": "other", "name": "Other Expenses", "type": "fixed"}
+        {"id": "fnb", "name": "F&B", "type": "per_pax", "rate": 25, "description": "RM 25 per pax (auto-calculated)"},
+        {"id": "hrdc_levy", "name": "HRDCorp Levy", "type": "percentage", "rate": 4, "description": "4% of invoice"},
+        {"id": "wear_tear", "name": "Wear and Tear", "type": "percentage", "rate": 2, "description": "2% of invoice"},
+        {"id": "printing", "name": "Printing", "type": "percentage", "rate": 1, "description": "1% of invoice"},
+        {"id": "accommodation", "name": "Accommodation", "type": "fixed", "rate": 0, "description": "Fixed amount"},
+        {"id": "allowance", "name": "Allowance", "type": "fixed", "rate": 0, "description": "Fixed amount"},
+        {"id": "petrol", "name": "Petrol", "type": "fixed", "rate": 0, "description": "Fixed amount"},
+        {"id": "toll", "name": "Toll / Touch N Go", "type": "fixed", "rate": 0, "description": "Fixed amount"},
+        {"id": "sst", "name": "SST", "type": "percentage", "rate": 0, "description": "Custom percentage"},
+        {"id": "muafakat", "name": "Muafakat", "type": "percentage", "rate": 0, "description": "Custom percentage"},
+        {"id": "other", "name": "Other Expenses", "type": "fixed", "rate": 0, "description": "Fixed amount"}
     ]
 
 # Include router (after all routes are defined)
