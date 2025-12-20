@@ -4067,6 +4067,18 @@ const AdminDashboard = ({ user, onLogout }) => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Session Costing Modal */}
+      {costingSession && (
+        <SessionCosting
+          session={costingSession}
+          onClose={() => setCostingSession(null)}
+          onUpdate={() => {
+            // Optionally reload sessions if needed
+            setCostingSession(null);
+          }}
+        />
+      )}
     </div>
   );
 };
