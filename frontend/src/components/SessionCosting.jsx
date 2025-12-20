@@ -41,11 +41,14 @@ const SessionCosting = ({ session, onClose, onUpdate }) => {
   });
   const [marketingUsers, setMarketingUsers] = useState([]);
 
-  // Calculate total headcount (participants + trainers + coordinator)
+  // Calculate total headcount (participants + trainers + coordinator) - use API data if available
   const getTotalHeadcount = useCallback(() => {
+    if (costing?.total_headcount) {
+      return costing.total_headcount;
+    }
     const participantCount = costing?.pax || session?.participant_ids?.length || 0;
-    const trainerCount = session?.trainer_assignments?.length || 0;
-    const coordinatorCount = session?.coordinator_id ? 1 : 0;
+    const trainerCount = costing?.trainer_count || session?.trainer_assignments?.length || 0;
+    const coordinatorCount = costing?.coordinator_count || (session?.coordinator_id ? 1 : 0);
     return participantCount + trainerCount + coordinatorCount;
   }, [costing, session]);
 
