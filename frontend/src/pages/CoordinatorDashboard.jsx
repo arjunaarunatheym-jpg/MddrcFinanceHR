@@ -2976,29 +2976,70 @@ const CoordinatorDashboard = ({ user, onLogout }) => {
 
                       {/* Fee Records */}
                       <div>
-                        <h3 className="font-semibold mb-3">Fee Records</h3>
-                        {incomeData.records.length === 0 ? (
-                          <p className="text-gray-500 text-center py-4">No fee records yet</p>
-                        ) : (
-                          <div className="space-y-2">
-                            {incomeData.records.map((record, idx) => (
-                              <div key={record.id || idx} className="p-4 bg-gray-50 rounded-lg flex justify-between items-center">
-                                <div>
-                                  <p className="font-medium">{record.company_name || record.session_name || 'Training Session'}</p>
-                                  <p className="text-sm text-gray-600">{record.session_name}</p>
-                                  <p className="text-sm text-gray-500">{record.training_dates}</p>
-                                  <p className="text-xs text-gray-400">{record.num_days} day(s) × RM {record.daily_rate}/day</p>
-                                </div>
-                                <div className="text-right">
-                                  <p className="font-bold text-lg">RM {(record.total_fee || record.amount)?.toLocaleString() || '0'}</p>
-                                  <Badge className={record.status === 'paid' ? 'bg-green-500' : 'bg-yellow-500'}>
-                                    {record.status === 'paid' ? 'Paid' : 'Pending'}
-                                  </Badge>
-                                </div>
+                        <h3 className="font-semibold mb-3">
+                          Fee Records
+                          {!incomeFilter.showAll && (
+                            <span className="text-sm font-normal text-gray-500 ml-2">
+                              ({new Date(2000, incomeFilter.month - 1, 1).toLocaleString('default', { month: 'long' })} {incomeFilter.year})
+                            </span>
+                          )}
+                          {incomeFilter.showAll && (
+                            <span className="text-sm font-normal text-gray-500 ml-2">(Year-to-Date {incomeFilter.year})</span>
+                          )}
+                        </h3>
+                        {(() => {
+                          // Filter records by month/year
+                          const filteredRecords = incomeData.records.filter(record => {
+                            if (incomeFilter.showAll) {
+                              const dateStr = record.training_dates?.split(' to ')[0] || record.created_at;
+                              if (dateStr) {
+                                const date = new Date(dateStr);
+                                return date.getFullYear() === incomeFilter.year;
+                              }
+                              return true;
+                            }
+                            const dateStr = record.training_dates?.split(' to ')[0] || record.created_at;
+                            if (dateStr) {
+                              const date = new Date(dateStr);
+                              return date.getFullYear() === incomeFilter.year && (date.getMonth() + 1) === incomeFilter.month;
+                            }
+                            return false;
+                          });
+                          
+                          const filteredTotal = filteredRecords.reduce((sum, r) => sum + (r.total_fee || r.amount || 0), 0);
+                          const filteredPaid = filteredRecords.filter(r => r.status === 'paid').reduce((sum, r) => sum + (r.total_fee || r.amount || 0), 0);
+                          
+                          return filteredRecords.length === 0 ? (
+                            <p className="text-gray-500 text-center py-4">
+                              No fee records for {!incomeFilter.showAll ? 
+                                `${new Date(2000, incomeFilter.month - 1, 1).toLocaleString('default', { month: 'long' })} ${incomeFilter.year}` : 
+                                incomeFilter.year
+                              }
+                            </p>
+                          ) : (
+                            <div className="space-y-2">
+                              <div className="text-sm text-gray-600 mb-2">
+                                Filtered Total: RM {filteredTotal.toLocaleString()} | Paid: RM {filteredPaid.toLocaleString()} | Pending: RM {(filteredTotal - filteredPaid).toLocaleString()}
                               </div>
-                            ))}
-                          </div>
-                        )}
+                              {filteredRecords.map((record, idx) => (
+                                <div key={record.id || idx} className="p-4 bg-gray-50 rounded-lg flex justify-between items-center">
+                                  <div>
+                                    <p className="font-medium">{record.company_name || record.session_name || 'Training Session'}</p>
+                                    <p className="text-sm text-gray-600">{record.session_name}</p>
+                                    <p className="text-sm text-gray-500">{record.training_dates}</p>
+                                    <p className="text-xs text-gray-400">{record.num_days} day(s) × RM {record.daily_rate}/day</p>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="font-bold text-lg">RM {(record.total_fee || record.amount)?.toLocaleString() || '0'}</p>
+                                    <Badge className={record.status === 'paid' ? 'bg-green-500' : 'bg-yellow-500'}>
+                                      {record.status === 'paid' ? 'Paid' : 'Pending'}
+                                    </Badge>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                   )}
