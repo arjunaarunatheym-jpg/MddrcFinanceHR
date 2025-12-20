@@ -8028,16 +8028,35 @@ async def save_marketing_commission(session_id: str, marketing_data: dict, curre
     # Get marketing user name
     marketing_user = await db.users.find_one({"id": marketing_user_id}, {"_id": 0, "full_name": 1})
     
+    # Calculate commission immediately from session costing
+    costing = await get_session_costing(session_id, current_user)
+    gross_revenue = costing.get("gross_revenue", 0)
+    total_expenses = costing.get("trainer_fees_total", 0) + costing.get("coordinator_fee_total", 0) + costing.get("cash_expenses_estimated", 0)
+    profit_before_marketing = gross_revenue - total_expenses
+    
+    commission_type = marketing_data.get("commission_type", "percentage")
+    commission_rate = float(marketing_data.get("commission_rate", 0))
+    fixed_amount = float(marketing_data.get("fixed_amount", 0))
+    
+    if commission_type == "percentage":
+        calculated_amount = profit_before_marketing * commission_rate / 100
+    else:
+        calculated_amount = fixed_amount
+    
     # Upsert marketing commission
     await db.marketing_commissions.update_one(
         {"session_id": session_id},
         {"$set": {
+            "id": str(uuid.uuid4()),  # Ensure ID exists
             "marketing_user_id": marketing_user_id,
             "marketing_user_name": marketing_user.get("full_name") if marketing_user else None,
-            "commission_type": marketing_data.get("commission_type", "percentage"),
-            "commission_rate": float(marketing_data.get("commission_rate", 0)),
-            "fixed_amount": float(marketing_data.get("fixed_amount", 0)),
-            "calculated_amount": 0.0,  # Will be calculated when profit is finalized
+            "commission_type": commission_type,
+            "commission_rate": commission_rate,
+            "fixed_amount": fixed_amount,
+            "calculated_amount": calculated_amount,
+            "session_name": costing.get("session_name"),
+            "company_name": costing.get("company_name"),
+            "training_dates": costing.get("training_dates"),
             "status": "pending",
             "updated_at": get_malaysia_time().isoformat()
         }},
