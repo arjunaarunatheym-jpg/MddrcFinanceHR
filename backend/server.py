@@ -7568,12 +7568,20 @@ async def get_session_costing(session_id: str, current_user: User = Depends(get_
     # Get company name
     company = await db.companies.find_one({"id": session.get("company_id")}, {"_id": 0, "name": 1})
     
+    # Calculate headcount for F&B (participants + trainers + coordinator)
+    trainer_count = len(session.get("trainer_assignments", []))
+    coordinator_count = 1 if session.get("coordinator_id") else 0
+    total_headcount = len(session.get("participant_ids", [])) + trainer_count + coordinator_count
+    
     return {
         "session_id": session_id,
         "session_name": session.get("name"),
         "company_name": company.get("name") if company else None,
         "training_dates": f"{session.get('start_date')} to {session.get('end_date')}",
         "pax": len(session.get("participant_ids", [])),
+        "trainer_count": trainer_count,
+        "coordinator_count": coordinator_count,
+        "total_headcount": total_headcount,
         
         # Revenue
         "invoice_total": invoice_total,
