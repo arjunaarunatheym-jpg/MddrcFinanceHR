@@ -540,14 +540,12 @@ class SessionCostingTestRunner:
         
         # Test 1: Invalid trainer fees data (missing required fields)
         self.log("Testing invalid trainer fees data...")
-        invalid_trainer_data = {
-            "trainer_fees": [
-                {
-                    "trainer_id": "",  # Empty trainer ID
-                    "fee_amount": -100.0,  # Negative amount
-                }
-            ]
-        }
+        invalid_trainer_data = [
+            {
+                "trainer_id": "",  # Empty trainer ID
+                "fee_amount": -100.0,  # Negative amount
+            }
+        ]
         
         try:
             response = self.session.post(f"{BASE_URL}/finance/session/{self.session_id}/trainer-fees", 
