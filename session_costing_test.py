@@ -189,25 +189,23 @@ class SessionCostingTestRunner:
             
         headers = {'Authorization': f'Bearer {self.admin_token}'}
         
-        # Sample trainer fees data
-        trainer_fees_data = {
-            "trainer_fees": [
-                {
-                    "trainer_id": "trainer-1",
-                    "trainer_name": "John Doe",
-                    "role": "chief_trainer",
-                    "fee_amount": 800.0,
-                    "remark": "Chief trainer fee"
-                },
-                {
-                    "trainer_id": "trainer-2", 
-                    "trainer_name": "Jane Smith",
-                    "role": "trainer",
-                    "fee_amount": 700.0,
-                    "remark": "Regular trainer fee"
-                }
-            ]
-        }
+        # Sample trainer fees data - API expects List[dict] directly
+        trainer_fees_data = [
+            {
+                "trainer_id": "trainer-1",
+                "trainer_name": "John Doe",
+                "role": "chief_trainer",
+                "fee_amount": 800.0,
+                "remark": "Chief trainer fee"
+            },
+            {
+                "trainer_id": "trainer-2", 
+                "trainer_name": "Jane Smith",
+                "role": "trainer",
+                "fee_amount": 700.0,
+                "remark": "Regular trainer fee"
+            }
+        ]
         
         try:
             response = self.session.post(f"{BASE_URL}/finance/session/{self.session_id}/trainer-fees", 
@@ -217,7 +215,7 @@ class SessionCostingTestRunner:
                 data = response.json()
                 self.log(f"✅ Trainer fees saved successfully")
                 self.log(f"   Message: {data.get('message', 'N/A')}")
-                self.log(f"   Total trainer fees: RM {sum(fee['fee_amount'] for fee in trainer_fees_data['trainer_fees'])}")
+                self.log(f"   Total trainer fees: RM {sum(fee['fee_amount'] for fee in trainer_fees_data)}")
                 return True
             else:
                 self.log(f"❌ Save trainer fees failed: {response.status_code} - {response.text}", "ERROR")
