@@ -255,6 +255,29 @@ const SessionCosting = ({ session, onClose, onUpdate }) => {
     }
   };
 
+  // Create Credit Note for HRDCorp deduction
+  const createCreditNote = async () => {
+    const invoiceAmount = getInvoiceAmount();
+    if (!invoiceAmount || invoiceAmount <= 0) {
+      toast.error('Please enter invoice amount first');
+      return;
+    }
+    
+    try {
+      const response = await axiosInstance.post(`/finance/session/${session.id}/credit-note`, {
+        reason: "HRDCorp Levy Deduction",
+        description: "4% HRDCorp levy deducted from payment",
+        percentage: 4,
+        base_amount: invoiceAmount
+      });
+      
+      toast.success(`Credit Note created: ${response.data.cn_number} (RM ${response.data.amount.toLocaleString()})`);
+      await loadData(); // Reload to show the new CN
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to create credit note');
+    }
+  };
+
   const saveAll = async () => {
     setSaving(true);
     try {
