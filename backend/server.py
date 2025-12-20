@@ -7381,13 +7381,14 @@ async def get_marketing_income(marketing_id: str, current_user: User = Depends(g
 
 @api_router.get("/finance/marketing-users")
 async def get_marketing_users(current_user: User = Depends(get_current_user)):
-    """Get list of users with marketing role"""
+    """Get list of users who can be assigned as marketing (all staff members)"""
     if current_user.role not in ["admin", "super_admin", "finance", "coordinator"]:
         raise HTTPException(status_code=403, detail="Access denied")
     
+    # Get all staff who can potentially be marketing (coordinators, trainers, assistant_admin, or anyone with marketing role)
     marketing_users = await db.users.find(
-        {"$or": [{"role": "marketing"}, {"additional_roles": "marketing"}]},
-        {"_id": 0, "id": 1, "full_name": 1, "email": 1, "role": 1, "additional_roles": 1}
+        {"role": {"$in": ["marketing", "coordinator", "trainer", "assistant_admin"]}},
+        {"_id": 0, "id": 1, "full_name": 1, "email": 1, "role": 1, "additional_roles": 1, "id_number": 1}
     ).to_list(100)
     
     return marketing_users
