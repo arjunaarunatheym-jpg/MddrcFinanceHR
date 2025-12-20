@@ -7006,17 +7006,20 @@ async def get_supervisor_session_attendance(session_id: str, current_user: User 
 
 # Invoice number generation
 async def generate_invoice_number():
-    """Generate unique invoice number: INV-YYYY-NNNN"""
-    year = get_malaysia_time().year
-    prefix = f"INV-{year}-"
+    """Generate unique invoice number: INV/MDDRC/YYYY/MM/0001"""
+    now = get_malaysia_time()
+    year = now.year
+    month = now.month
+    prefix = f"INV/MDDRC/{year}/{month:02d}/"
     
     last_invoice = await db.invoices.find_one(
-        {"invoice_number": {"$regex": f"^{prefix}"}},
+        {"invoice_number": {"$regex": f"^INV/MDDRC/{year}/{month:02d}/"}},
         sort=[("invoice_number", -1)]
     )
     
     if last_invoice:
-        last_num = int(last_invoice["invoice_number"].split("-")[-1])
+        # Extract last number from invoice number like INV/MDDRC/2025/12/0001
+        last_num = int(last_invoice["invoice_number"].split("/")[-1])
         new_num = last_num + 1
     else:
         new_num = 1
