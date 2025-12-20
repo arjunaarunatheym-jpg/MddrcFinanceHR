@@ -7517,8 +7517,22 @@ async def get_session_costing(session_id: str, current_user: User = Depends(get_
     invoice_total = invoice.get("total_amount", 0) if invoice else 0
     tax_amount = invoice.get("tax_amount", 0) if invoice else 0
     
-    # Get trainer fees
+    # Get trainer fees (from saved fees or from session assignments)
     trainer_fees = await db.trainer_fees.find({"session_id": session_id}, {"_id": 0}).to_list(100)
+    
+    # If no fees saved yet, populate from session trainer_assignments
+    if not trainer_fees and session.get("trainer_assignments"):
+        for ta in session.get("trainer_assignments", []):
+            trainer = await db.users.find_one({"id": ta.get("trainer_id")}, {"_id": 0, "full_name": 1})
+            trainer_fees.append({
+                "trainer_id": ta.get("trainer_id"),
+                "trainer_name": trainer.get("full_name") if trainer else "Unknown Trainer",
+                "role": ta.get("role", "trainer"),
+                "fee_amount": 0,
+                "remark": "",
+                "status": "pending"
+            })
+    
     trainer_fees_total = sum(f.get("fee_amount", 0) for f in trainer_fees)
     
     # Get coordinator fee
