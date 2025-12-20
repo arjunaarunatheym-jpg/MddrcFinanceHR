@@ -942,7 +942,7 @@ const TrainerDashboard = ({ user, onLogout }) => {
           <TabsContent value="income">
             <Card>
               <CardHeader>
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center flex-wrap gap-4">
                   <div>
                     <CardTitle className="flex items-center gap-2">
                       <DollarSign className="w-5 h-5 text-green-600" />
@@ -950,9 +950,41 @@ const TrainerDashboard = ({ user, onLogout }) => {
                     </CardTitle>
                     <CardDescription>View your training income and payment status</CardDescription>
                   </div>
-                  <Button variant="outline" onClick={loadIncome} disabled={loadingIncome}>
-                    {loadingIncome ? 'Loading...' : 'Refresh'}
-                  </Button>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <select 
+                      className="border rounded px-2 py-1 text-sm"
+                      value={incomeFilter.month}
+                      onChange={(e) => setIncomeFilter({...incomeFilter, month: parseInt(e.target.value), showAll: false})}
+                      disabled={incomeFilter.showAll}
+                    >
+                      {[...Array(12)].map((_, i) => (
+                        <option key={i+1} value={i+1}>
+                          {new Date(2000, i, 1).toLocaleString('default', { month: 'long' })}
+                        </option>
+                      ))}
+                    </select>
+                    <select 
+                      className="border rounded px-2 py-1 text-sm"
+                      value={incomeFilter.year}
+                      onChange={(e) => setIncomeFilter({...incomeFilter, year: parseInt(e.target.value), showAll: false})}
+                      disabled={incomeFilter.showAll}
+                    >
+                      {[2024, 2025, 2026].map(year => (
+                        <option key={year} value={year}>{year}</option>
+                      ))}
+                    </select>
+                    <label className="flex items-center gap-1 text-sm">
+                      <input 
+                        type="checkbox" 
+                        checked={incomeFilter.showAll}
+                        onChange={(e) => setIncomeFilter({...incomeFilter, showAll: e.target.checked})}
+                      />
+                      Show All (YTD)
+                    </label>
+                    <Button variant="outline" size="sm" onClick={loadIncome} disabled={loadingIncome}>
+                      {loadingIncome ? 'Loading...' : 'Refresh'}
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
