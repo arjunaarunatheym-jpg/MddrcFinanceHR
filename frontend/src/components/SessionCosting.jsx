@@ -256,7 +256,7 @@ const SessionCosting = ({ session, onClose, onUpdate }) => {
       const taxRate = parseFloat(invoiceData.tax_rate) || 0;
       const taxAmount = invoiceAmount * taxRate / 100;
       
-      // Save invoice
+      // Save invoice (creates or updates)
       const invoicePayload = {
         pricing_type: invoiceData.pricing_type,
         line_items: invoiceData.pricing_type === 'lumpsum' 
@@ -265,12 +265,11 @@ const SessionCosting = ({ session, onClose, onUpdate }) => {
         subtotal: invoiceAmount,
         tax_rate: taxRate,
         tax_amount: taxAmount,
-        total_amount: invoiceAmount // Store gross amount (tax will be deducted in calculations)
+        total_amount: invoiceAmount
       };
       
-      if (invoiceId) {
-        await axiosInstance.put(`/finance/invoices/${invoiceId}`, invoicePayload);
-      }
+      // Use the new session-specific invoice endpoint that handles create/update
+      await axiosInstance.post(`/finance/session/${session.id}/invoice`, invoicePayload);
       
       // Save trainer fees
       const validFees = trainerFees.filter(f => f.fee_amount && parseFloat(f.fee_amount) > 0);
