@@ -821,3 +821,55 @@ frontend:
       - working: true
         agent: "testing"
         comment: "✅ SESSION COSTING API ENDPOINTS - ALL WORKING! 10/11 tests passed (91% success rate). Verified: GET /api/finance/session/{session_id}/costing - returns complete costing breakdown, GET /api/finance/expense-categories - returns 10 categories, GET /api/finance/marketing-users - returns marketing users list, POST /api/finance/session/{session_id}/trainer-fees - saves trainer fees successfully, POST /api/finance/session/{session_id}/coordinator-fee - saves coordinator fee, POST /api/finance/session/{session_id}/expenses - saves expenses, POST /api/finance/session/{session_id}/marketing - saves marketing commission. Data persistence verified - all saved data correctly reflects in subsequent API calls. Authentication properly enforced."
+
+  - agent: "main"
+    message: "SESSION COSTING & FINANCE PORTAL FIXES IMPLEMENTED:
+
+    1. INVOICE PERSISTENCE FIX ✅
+       - Created new POST /api/finance/session/{session_id}/invoice endpoint
+       - Creates invoice if not exists, updates if exists
+       - Invoice values now persist correctly when reopening costing modal
+       
+    2. INVOICE NUMBER FORMAT UPDATED ✅
+       - Changed from INV-YYYY-NNNN to INV/MDDRC/YYYY/MM/0001
+       - Now includes month (MM) in the format
+       
+    3. EXPENSE CATEGORIES WITH AUTO-CALCULATION ✅
+       - HRDCorp: 4% of invoice (auto-calculated)
+       - Wear & Tear: 2% of invoice (auto-calculated)
+       - Printing: 1% of invoice (auto-calculated)
+       - F&B: RM 25 per pax (auto-calculated based on total headcount)
+       - Total headcount = participants + trainers + coordinator
+       
+    4. MARKETING DROPDOWN FIXED ✅
+       - Now shows all staff members (coordinators, trainers, assistant_admins)
+       - Can select from existing staff or create new marketing person
+       
+    5. TRAINER NAMES DISPLAY FIX ✅
+       - Backend now enriches trainer fees with names if missing
+       - Handles corrupt data (empty trainer_id) by falling back to session assignments
+       
+    6. FINANCE TAB LIVE DATA ✅
+       - Total Invoices now shows count and total amount
+       - Total Collected shows paid invoices
+       - Outstanding shows unpaid balance
+       - Pending Payables shows trainer/coordinator fees owed
+       
+    7. TRAINER/COORDINATOR INCOME PORTALS ✅
+       - Updated endpoints to read from trainer_fees and coordinator_fees collections
+       - Enriched with session and company names
+       - Proper display in respective dashboards
+       
+    Files modified: server.py, SessionCosting.jsx, AdminDashboard.jsx, TrainerDashboard.jsx, CoordinatorDashboard.jsx"
+
+  - task: "Session Costing Invoice Persistence"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py, /app/frontend/src/components/SessionCosting.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Verified: Invoice persists after save. New endpoint POST /finance/session/{session_id}/invoice handles create/update. Tested via screenshots - 8000 value persisted correctly."
