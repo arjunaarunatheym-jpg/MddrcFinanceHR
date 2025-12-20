@@ -56,17 +56,22 @@ const SessionCosting = ({ session, onClose, onUpdate }) => {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [costingRes, categoriesRes, marketingUsersRes, invoicesRes] = await Promise.all([
+      const [costingRes, categoriesRes, marketingUsersRes, invoicesRes, creditNotesRes] = await Promise.all([
         axiosInstance.get(`/finance/session/${session.id}/costing`),
         axiosInstance.get('/finance/expense-categories'),
         axiosInstance.get('/finance/marketing-users').catch(() => ({ data: [] })),
-        axiosInstance.get('/finance/invoices').catch(() => ({ data: [] }))
+        axiosInstance.get('/finance/invoices').catch(() => ({ data: [] })),
+        axiosInstance.get('/finance/credit-notes').catch(() => ({ data: [] }))
       ]);
       
       const costingData = costingRes.data;
       setCosting(costingData);
       setExpenseCategories(categoriesRes.data);
       setMarketingUsers(marketingUsersRes.data);
+      
+      // Filter credit notes for this session
+      const sessionCNs = creditNotesRes.data.filter(cn => cn.session_id === session.id);
+      setCreditNotes(sessionCNs);
       
       // Find invoice for this session
       const sessionInvoice = invoicesRes.data.find(inv => inv.session_id === session.id);
