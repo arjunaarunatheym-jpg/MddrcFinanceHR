@@ -490,38 +490,23 @@ const SessionCosting = ({ session, onClose, onUpdate }) => {
             </CardContent>
           </Card>
 
-          {/* Credit Notes (for HRDCorp deductions) */}
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <FileX className="w-5 h-5 text-red-600" />
-                    Credit Notes
-                  </CardTitle>
-                  <CardDescription>For HRDCorp levy deductions (4% of invoice)</CardDescription>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={createCreditNote}
-                  disabled={!profit.invoiceTotal || profit.invoiceTotal <= 0}
-                  className="border-red-200 text-red-600 hover:bg-red-50"
-                >
-                  <Plus className="w-4 h-4 mr-1" /> Create CN (4%)
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {creditNotes.length === 0 ? (
-                <p className="text-gray-500 text-center py-2 text-sm">No credit notes yet. Create one when HRDCorp deducts their levy.</p>
-              ) : (
+          {/* Credit Notes Display (read-only) */}
+          {creditNotes.length > 0 && (
+            <Card className="bg-red-50 border-red-200">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2 text-red-700">
+                  <FileX className="w-5 h-5" />
+                  Credit Notes
+                </CardTitle>
+                <CardDescription>Credit notes are managed in Finance Portal when recording payments</CardDescription>
+              </CardHeader>
+              <CardContent>
                 <div className="space-y-2">
                   {creditNotes.map((cn) => (
-                    <div key={cn.id} className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                    <div key={cn.id} className="flex justify-between items-center p-3 bg-white rounded-lg">
                       <div>
                         <p className="font-medium text-red-700">{cn.cn_number}</p>
-                        <p className="text-sm text-gray-600">{cn.reason} - {cn.description}</p>
+                        <p className="text-sm text-gray-600">{cn.reason}</p>
                       </div>
                       <div className="text-right">
                         <p className="font-bold text-red-600">- RM {cn.amount?.toLocaleString()}</p>
@@ -532,9 +517,9 @@ const SessionCosting = ({ session, onClose, onUpdate }) => {
                     </div>
                   ))}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Trainer Fees */}
           <Card>
