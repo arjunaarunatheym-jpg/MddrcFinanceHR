@@ -277,22 +277,23 @@ class FinancePortalTestRunner:
                 # Check each expected category
                 all_correct = True
                 for category in categories:
-                    cat_name = category.get('category')
-                    if cat_name in expected_categories:
-                        expected = expected_categories[cat_name]
+                    cat_id = category.get('id')  # Use 'id' instead of 'category'
+                    if cat_id in expected_categories:
+                        expected = expected_categories[cat_id]
                         actual_type = category.get('type')
                         actual_rate = category.get('rate')
                         
                         if actual_type == expected['type'] and actual_rate == expected['rate']:
-                            self.log(f"✅ {cat_name}: type={actual_type}, rate={actual_rate} ✓")
+                            self.log(f"✅ {cat_id}: type={actual_type}, rate={actual_rate} ✓")
                         else:
-                            self.log(f"❌ {cat_name}: Expected type={expected['type']}, rate={expected['rate']} but got type={actual_type}, rate={actual_rate}", "ERROR")
+                            self.log(f"❌ {cat_id}: Expected type={expected['type']}, rate={expected['rate']} but got type={actual_type}, rate={actual_rate}", "ERROR")
                             all_correct = False
                     else:
-                        self.log(f"ℹ️ Additional category found: {cat_name}")
+                        cat_name = category.get('name', 'Unknown')
+                        self.log(f"ℹ️ Additional category found: {cat_id} ({cat_name})")
                 
                 # Check if all expected categories are present
-                found_categories = [cat.get('category') for cat in categories]
+                found_categories = [cat.get('id') for cat in categories]
                 for expected_cat in expected_categories:
                     if expected_cat not in found_categories:
                         self.log(f"❌ Missing expected category: {expected_cat}", "ERROR")
