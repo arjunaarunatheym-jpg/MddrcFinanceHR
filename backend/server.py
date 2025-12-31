@@ -7496,24 +7496,28 @@ async def get_trainer_income(trainer_id: str, current_user: User = Depends(get_c
     # Get records from trainer_fees collection (set in session costing)
     records = await db.trainer_fees.find({"trainer_id": trainer_id}, {"_id": 0}).to_list(1000)
     
-    # Enrich with session details
+    # Filter out records for deleted sessions and enrich with session details
+    valid_records = []
     for record in records:
-        session = await db.sessions.find_one({"id": record.get("session_id")}, {"_id": 0, "name": 1, "start_date": 1, "end_date": 1})
-        company = None
-        if session:
+        session = await db.sessions.find_one({"id": record.get("session_id")}, {"_id": 0, "name": 1, "start_date": 1, "end_date": 1, "company_id": 1})
+        if session:  # Only include if session still exists
             record["session_name"] = session.get("name")
             record["training_dates"] = f"{session.get('start_date')} to {session.get('end_date')}"
+            record["start_date"] = session.get("start_date")  # For filtering
             # Get company name
-            session_full = await db.sessions.find_one({"id": record.get("session_id")}, {"_id": 0, "company_id": 1})
-            if session_full:
-                company = await db.companies.find_one({"id": session_full.get("company_id")}, {"_id": 0, "name": 1})
+            if session.get("company_id"):
+                company = await db.companies.find_one({"id": session.get("company_id")}, {"_id": 0, "name": 1})
                 record["company_name"] = company.get("name") if company else None
-        record["amount"] = record.get("fee_amount", 0)  # Map fee_amount to amount for consistency
+            record["amount"] = record.get("fee_amount", 0)  # Map fee_amount to amount for consistency
+            valid_records.append(record)
+        else:
+            # Session was deleted - clean up orphaned fee record
+            await db.trainer_fees.delete_one({"id": record.get("id")})
     
-    total = sum(r.get("fee_amount", 0) for r in records)
-    paid = sum(r.get("fee_amount", 0) for r in records if r.get("status") == "paid")
+    total = sum(r.get("fee_amount", 0) for r in valid_records)
+    paid = sum(r.get("fee_amount", 0) for r in valid_records if r.get("status") == "paid")
     
-    return {"records": records, "summary": {"total_income": total, "paid_income": paid, "pending_income": total - paid}}
+    return {"records": valid_records, "summary": {"total_income": total, "paid_income": paid, "pending_income": total - paid}}
 
 @api_router.get("/finance/income/coordinator/{coordinator_id}")
 async def get_coordinator_income(coordinator_id: str, current_user: User = Depends(get_current_user)):
