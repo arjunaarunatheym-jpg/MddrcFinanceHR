@@ -7474,7 +7474,7 @@ async def record_payment(payment_data: PaymentCreate, current_user: User = Depen
 
 @api_router.get("/finance/payments")
 async def get_payments(invoice_id: Optional[str] = None, current_user: User = Depends(get_current_user)):
-    """Get payments"""
+    """Get payments with invoice details"""
     if current_user.role not in ["admin", "super_admin", "finance"]:
         raise HTTPException(status_code=403, detail="Access denied")
     
@@ -7482,7 +7482,21 @@ async def get_payments(invoice_id: Optional[str] = None, current_user: User = De
     if invoice_id:
         query["invoice_id"] = invoice_id
     
-    return await db.payments.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    payments = await db.payments.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    
+    # Enrich with invoice details
+    result = []
+    for payment in payments:
+        invoice = await db.invoices.find_one({"id": payment.get("invoice_id")}, {"_id": 0, "invoice_number": 1, "company_name": 1, "session_id": 1})
+        if invoice:  # Only include if invoice exists
+            payment["invoice_number"] = invoice.get("invoice_number", "N/A")
+            payment["company_name"] = invoice.get("company_name", "")
+            result.append(payment)
+        else:
+            # Orphaned payment - delete it
+            await db.payments.delete_one({"id": payment.get("id")})
+    
+    return result
 
 @api_router.get("/finance/income/trainer/{trainer_id}")
 async def get_trainer_income(trainer_id: str, current_user: User = Depends(get_current_user)):
