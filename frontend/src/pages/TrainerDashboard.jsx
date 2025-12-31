@@ -1104,17 +1104,6 @@ const TrainerDashboard = ({ user, onLogout }) => {
                   })()
                 )}
               </CardContent>
-                                  </Badge>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
             </Card>
           </TabsContent>
 
