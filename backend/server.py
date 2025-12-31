@@ -7763,8 +7763,8 @@ async def get_pending_trainer_fees(current_user: User = Depends(get_current_user
         raise HTTPException(status_code=403, detail="Access denied")
     
     # Get valid session IDs first
-    sessions = await db.sessions.find({}, {"_id": 0, "id": 1, "name": 1}).to_list(1000)
-    session_map = {s["id"]: s["name"] for s in sessions}
+    sessions = await db.sessions.find({}, {"_id": 0, "id": 1, "name": 1, "start_date": 1}).to_list(1000)
+    session_map = {s["id"]: {"name": s["name"], "start_date": s.get("start_date")} for s in sessions}
     
     fees = await db.trainer_fees.find({}, {"_id": 0}).to_list(1000)
     
@@ -7778,7 +7778,8 @@ async def get_pending_trainer_fees(current_user: User = Depends(get_current_user
             
         trainer = await db.users.find_one({"id": fee.get("trainer_id")}, {"_id": 0, "full_name": 1})
         fee["trainer_name"] = trainer.get("full_name") if trainer else "Unknown"
-        fee["session_name"] = session_map.get(fee.get("session_id"), "Unknown Session")
+        fee["session_name"] = session_map.get(fee.get("session_id"), {}).get("name", "Unknown Session")
+        fee["session_start_date"] = session_map.get(fee.get("session_id"), {}).get("start_date")
         result.append(fee)
     
     return result
@@ -7790,8 +7791,8 @@ async def get_pending_coordinator_fees(current_user: User = Depends(get_current_
         raise HTTPException(status_code=403, detail="Access denied")
     
     # Get valid session IDs
-    sessions = await db.sessions.find({}, {"_id": 0, "id": 1, "name": 1}).to_list(1000)
-    session_map = {s["id"]: s["name"] for s in sessions}
+    sessions = await db.sessions.find({}, {"_id": 0, "id": 1, "name": 1, "start_date": 1}).to_list(1000)
+    session_map = {s["id"]: {"name": s["name"], "start_date": s.get("start_date")} for s in sessions}
     
     fees = await db.coordinator_fees.find({}, {"_id": 0}).to_list(1000)
     
@@ -7803,7 +7804,8 @@ async def get_pending_coordinator_fees(current_user: User = Depends(get_current_
             
         coordinator = await db.users.find_one({"id": fee.get("coordinator_id")}, {"_id": 0, "full_name": 1})
         fee["coordinator_name"] = coordinator.get("full_name") if coordinator else "Unknown"
-        fee["session_name"] = session_map.get(fee.get("session_id"), "Unknown Session")
+        fee["session_name"] = session_map.get(fee.get("session_id"), {}).get("name", "Unknown Session")
+        fee["session_start_date"] = session_map.get(fee.get("session_id"), {}).get("start_date")
         result.append(fee)
     
     return result
@@ -7815,8 +7817,8 @@ async def get_pending_marketing_commissions(current_user: User = Depends(get_cur
         raise HTTPException(status_code=403, detail="Access denied")
     
     # Get valid session IDs
-    sessions = await db.sessions.find({}, {"_id": 0, "id": 1, "name": 1}).to_list(1000)
-    session_map = {s["id"]: s["name"] for s in sessions}
+    sessions = await db.sessions.find({}, {"_id": 0, "id": 1, "name": 1, "start_date": 1}).to_list(1000)
+    session_map = {s["id"]: {"name": s["name"], "start_date": s.get("start_date")} for s in sessions}
     
     comms = await db.marketing_commissions.find({}, {"_id": 0}).to_list(1000)
     
@@ -7828,7 +7830,8 @@ async def get_pending_marketing_commissions(current_user: User = Depends(get_cur
             
         user = await db.users.find_one({"id": comm.get("marketing_user_id")}, {"_id": 0, "full_name": 1})
         comm["marketing_user_name"] = user.get("full_name") if user else "Unknown"
-        comm["session_name"] = session_map.get(comm.get("session_id"), "Unknown Session")
+        comm["session_name"] = session_map.get(comm.get("session_id"), {}).get("name", "Unknown Session")
+        comm["session_start_date"] = session_map.get(comm.get("session_id"), {}).get("start_date")
         result.append(comm)
     
     return result
