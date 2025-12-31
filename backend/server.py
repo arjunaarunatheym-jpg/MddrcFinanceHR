@@ -7740,6 +7740,85 @@ async def mark_coordinator_fee_paid(fee_id: str, current_user: User = Depends(ge
     
     return {"message": "Coordinator fee marked as paid"}
 
+# ============ PAYABLES LIST ENDPOINTS ============
+
+@api_router.get("/finance/payables/trainer-fees")
+async def get_pending_trainer_fees(current_user: User = Depends(get_current_user)):
+    """Get all trainer fees (pending and paid)"""
+    if current_user.role not in ["admin", "super_admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get valid session IDs first
+    sessions = await db.sessions.find({}, {"_id": 0, "id": 1, "name": 1}).to_list(1000)
+    session_map = {s["id"]: s["name"] for s in sessions}
+    
+    fees = await db.trainer_fees.find({}, {"_id": 0}).to_list(1000)
+    
+    # Enrich with trainer and session names, filter out orphans
+    result = []
+    for fee in fees:
+        if fee.get("session_id") not in session_map:
+            # Orphaned record - delete it
+            await db.trainer_fees.delete_one({"id": fee.get("id")})
+            continue
+            
+        trainer = await db.users.find_one({"id": fee.get("trainer_id")}, {"_id": 0, "full_name": 1})
+        fee["trainer_name"] = trainer.get("full_name") if trainer else "Unknown"
+        fee["session_name"] = session_map.get(fee.get("session_id"), "Unknown Session")
+        result.append(fee)
+    
+    return result
+
+@api_router.get("/finance/payables/coordinator-fees")
+async def get_pending_coordinator_fees(current_user: User = Depends(get_current_user)):
+    """Get all coordinator fees"""
+    if current_user.role not in ["admin", "super_admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get valid session IDs
+    sessions = await db.sessions.find({}, {"_id": 0, "id": 1, "name": 1}).to_list(1000)
+    session_map = {s["id"]: s["name"] for s in sessions}
+    
+    fees = await db.coordinator_fees.find({}, {"_id": 0}).to_list(1000)
+    
+    result = []
+    for fee in fees:
+        if fee.get("session_id") not in session_map:
+            await db.coordinator_fees.delete_one({"id": fee.get("id")})
+            continue
+            
+        coordinator = await db.users.find_one({"id": fee.get("coordinator_id")}, {"_id": 0, "full_name": 1})
+        fee["coordinator_name"] = coordinator.get("full_name") if coordinator else "Unknown"
+        fee["session_name"] = session_map.get(fee.get("session_id"), "Unknown Session")
+        result.append(fee)
+    
+    return result
+
+@api_router.get("/finance/payables/marketing-commissions")
+async def get_pending_marketing_commissions(current_user: User = Depends(get_current_user)):
+    """Get all marketing commissions"""
+    if current_user.role not in ["admin", "super_admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get valid session IDs
+    sessions = await db.sessions.find({}, {"_id": 0, "id": 1, "name": 1}).to_list(1000)
+    session_map = {s["id"]: s["name"] for s in sessions}
+    
+    comms = await db.marketing_commissions.find({}, {"_id": 0}).to_list(1000)
+    
+    result = []
+    for comm in comms:
+        if comm.get("session_id") not in session_map:
+            await db.marketing_commissions.delete_one({"id": comm.get("id")})
+            continue
+            
+        user = await db.users.find_one({"id": comm.get("marketing_user_id")}, {"_id": 0, "full_name": 1})
+        comm["marketing_user_name"] = user.get("full_name") if user else "Unknown"
+        comm["session_name"] = session_map.get(comm.get("session_id"), "Unknown Session")
+        result.append(comm)
+    
+    return result
+
 # ============ SESSION COSTING & PROFIT ENDPOINTS ============
 
 @api_router.get("/finance/session/{session_id}/costing")
