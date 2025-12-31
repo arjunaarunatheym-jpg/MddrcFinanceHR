@@ -268,16 +268,32 @@ const ParticipantDashboard = ({ user, onLogout }) => {
     try {
       const response = await axiosInstance.get(`/attendance/${sessionId}/${user.id}`);
       if (response.data && response.data.length > 0) {
-        // Get today's date
-        const today = new Date().toISOString().split('T')[0];
-        const todayAttendance = response.data.find(a => a.date === today);
+        // Get Malaysian date for comparison (UTC+8)
+        const malaysiaOffset = 8 * 60; // UTC+8 in minutes
+        const now = new Date();
+        const malaysiaTime = new Date(now.getTime() + (malaysiaOffset + now.getTimezoneOffset()) * 60000);
+        const today = malaysiaTime.toISOString().split('T')[0];
         
-        if (todayAttendance) {
+        // First try to find today's attendance record
+        let attendanceRecord = response.data.find(a => a.date === today);
+        
+        // If no record for today, check if there's any existing record for this session
+        // This handles cases where super admin set attendance on a different date
+        // or timezone differences caused date mismatch
+        if (!attendanceRecord && response.data.length > 0) {
+          // Get the most recent record (sort by date descending)
+          const sortedRecords = [...response.data].sort((a, b) => 
+            new Date(b.date || 0) - new Date(a.date || 0)
+          );
+          attendanceRecord = sortedRecords[0];
+        }
+        
+        if (attendanceRecord) {
           setAttendanceToday(prev => ({
             ...prev,
             [sessionId]: {
-              clock_in: todayAttendance.clock_in_time || todayAttendance.clock_in,
-              clock_out: todayAttendance.clock_out_time || todayAttendance.clock_out
+              clock_in: attendanceRecord.clock_in_time || attendanceRecord.clock_in,
+              clock_out: attendanceRecord.clock_out_time || attendanceRecord.clock_out
             }
           }));
         }
