@@ -46,6 +46,7 @@ const FinanceDashboard = ({ user, onLogout }) => {
     loadInvoices();
     loadPendingInvoices();
     loadCreditNotes();
+    loadPayables();
   }, []);
 
   const loadDashboard = async () => {
@@ -54,6 +55,40 @@ const FinanceDashboard = ({ user, onLogout }) => {
       setDashboard(response.data);
     } catch (error) {
       console.error('Failed to load dashboard:', error);
+    }
+  };
+
+  const loadPayables = async () => {
+    try {
+      // Load all pending payables
+      const [trainerRes, coordRes, commRes] = await Promise.all([
+        axiosInstance.get('/finance/payables/trainer-fees'),
+        axiosInstance.get('/finance/payables/coordinator-fees'),
+        axiosInstance.get('/finance/payables/marketing-commissions')
+      ]);
+      setPayables({
+        trainer_fees: trainerRes.data || [],
+        coordinator_fees: coordRes.data || [],
+        marketing_commissions: commRes.data || []
+      });
+    } catch (error) {
+      console.error('Failed to load payables:', error);
+    }
+  };
+
+  const handleMarkPaid = async (type, id) => {
+    try {
+      let endpoint = '';
+      if (type === 'trainer') endpoint = `/finance/trainer-fees/${id}/mark-paid`;
+      else if (type === 'coordinator') endpoint = `/finance/coordinator-fees/${id}/mark-paid`;
+      else if (type === 'marketing') endpoint = `/finance/income/commission/${id}/mark-paid`;
+      
+      await axiosInstance.post(endpoint);
+      toast.success('Marked as paid successfully');
+      loadPayables();
+      loadDashboard();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to mark as paid');
     }
   };
 
