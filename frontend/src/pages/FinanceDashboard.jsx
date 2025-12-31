@@ -441,93 +441,217 @@ const FinanceDashboard = ({ user, onLogout }) => {
             </Card>
           </TabsContent>
 
-          {/* Payables Tab - Pay staff fees */}
+          {/* Payables Tab - Pay staff fees with monthly grouping */}
           <TabsContent value="payables">
             <Card>
               <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle>Staff Payables</CardTitle>
+                <div className="flex justify-between items-center flex-wrap gap-4">
+                  <div>
+                    <CardTitle>Staff Payables</CardTitle>
+                    <CardDescription>
+                      Monthly closing: 1st-31st | Payment release: 15th of following month
+                    </CardDescription>
+                  </div>
                   <Button variant="outline" onClick={loadPayables}>
                     <RefreshCw className="w-4 h-4 mr-2" />
                     Refresh
                   </Button>
                 </div>
-                <CardDescription>Manage trainer fees, coordinator fees, and marketing commissions</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-6">
-                  {/* Trainer Fees */}
-                  <div>
-                    <h3 className="text-lg font-semibold mb-3 text-blue-700">Trainer Fees</h3>
+                {/* Summary Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <Card className="bg-blue-50 border-blue-200">
+                    <CardContent className="p-4">
+                      <p className="text-sm text-blue-700 font-medium">Trainer Fees</p>
+                      <p className="text-xl font-bold text-blue-900">
+                        RM {payables.trainer_fees.filter(f => f.status !== 'paid').reduce((sum, f) => sum + (f.fee_amount || 0), 0).toLocaleString()}
+                      </p>
+                      <p className="text-xs text-blue-600">{payables.trainer_fees.filter(f => f.status !== 'paid').length} pending</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-green-50 border-green-200">
+                    <CardContent className="p-4">
+                      <p className="text-sm text-green-700 font-medium">Coordinator Fees</p>
+                      <p className="text-xl font-bold text-green-900">
+                        RM {payables.coordinator_fees.filter(f => f.status !== 'paid').reduce((sum, f) => sum + (f.total_fee || 0), 0).toLocaleString()}
+                      </p>
+                      <p className="text-xs text-green-600">{payables.coordinator_fees.filter(f => f.status !== 'paid').length} pending</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-purple-50 border-purple-200">
+                    <CardContent className="p-4">
+                      <p className="text-sm text-purple-700 font-medium">Marketing Commission</p>
+                      <p className="text-xl font-bold text-purple-900">
+                        RM {payables.marketing_commissions.filter(f => f.status !== 'paid').reduce((sum, f) => sum + (f.calculated_amount || 0), 0).toLocaleString()}
+                      </p>
+                      <p className="text-xs text-purple-600">{payables.marketing_commissions.filter(f => f.status !== 'paid').length} pending</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <Tabs defaultValue="trainer" className="w-full">
+                  <TabsList className="mb-4">
+                    <TabsTrigger value="trainer">Trainers ({payables.trainer_fees.length})</TabsTrigger>
+                    <TabsTrigger value="coordinator">Coordinators ({payables.coordinator_fees.length})</TabsTrigger>
+                    <TabsTrigger value="marketing">Marketing ({payables.marketing_commissions.length})</TabsTrigger>
+                  </TabsList>
+
+                  {/* Trainer Fees Tab */}
+                  <TabsContent value="trainer">
                     {payables.trainer_fees.length === 0 ? (
-                      <p className="text-gray-500 text-sm">No pending trainer fees</p>
+                      <p className="text-gray-500 text-center py-8">No trainer fees</p>
                     ) : (
-                      <div className="space-y-2">
-                        {payables.trainer_fees.map(fee => (
-                          <div key={fee.id} className="p-4 border rounded-lg flex justify-between items-center bg-blue-50">
-                            <div>
-                              <p className="font-medium">{fee.trainer_name || 'Trainer'}</p>
-                              <p className="text-sm text-gray-600">{fee.session_name || 'Session'}</p>
-                              <p className="text-xs text-gray-500">Role: {fee.trainer_role || fee.role || 'Trainer'}</p>
-                            </div>
-                            <div className="text-right flex items-center gap-4">
+                      <div className="space-y-4">
+                        {groupByMonth(payables.trainer_fees).map(group => (
+                          <div key={group.key} className="border rounded-lg overflow-hidden">
+                            <div className="bg-blue-100 px-4 py-3 flex justify-between items-center">
                               <div>
-                                <p className="font-bold text-lg">RM {(fee.fee_amount || 0).toLocaleString()}</p>
-                                <Badge className={fee.status === 'paid' ? 'bg-green-500' : 'bg-yellow-500'}>
-                                  {fee.status || 'pending'}
-                                </Badge>
+                                <h4 className="font-semibold text-blue-900">{group.label}</h4>
+                                <p className="text-sm text-blue-700">Total: RM {group.total.toLocaleString()} | {group.records.length} item(s)</p>
                               </div>
-                              {fee.status !== 'paid' && (
-                                <Button size="sm" onClick={() => handleMarkPaid('trainer', fee.id)}>
+                              {group.records.some(r => r.status !== 'paid') && (
+                                <Button size="sm" onClick={() => handleBulkMarkPaid('trainer', group.records)}>
                                   <Check className="w-4 h-4 mr-1" />
-                                  Mark Paid
+                                  Pay All ({group.records.filter(r => r.status !== 'paid').length})
                                 </Button>
                               )}
+                            </div>
+                            <div className="divide-y">
+                              {group.records.map(fee => (
+                                <div key={fee.id} className="p-3 flex justify-between items-center hover:bg-gray-50">
+                                  <div>
+                                    <p className="font-medium">{fee.trainer_name}</p>
+                                    <p className="text-sm text-gray-600">{fee.session_name}</p>
+                                    <p className="text-xs text-gray-500">Role: {fee.trainer_role || 'Trainer'}</p>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <div className="text-right">
+                                      <p className="font-bold">RM {(fee.fee_amount || 0).toLocaleString()}</p>
+                                      <Badge className={fee.status === 'paid' ? 'bg-green-500' : 'bg-yellow-500'}>
+                                        {fee.status || 'pending'}
+                                      </Badge>
+                                    </div>
+                                    {fee.status !== 'paid' && (
+                                      <Button size="sm" variant="outline" onClick={() => handleMarkPaid('trainer', fee.id)}>
+                                        <Check className="w-4 h-4" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           </div>
                         ))}
                       </div>
                     )}
-                  </div>
+                  </TabsContent>
 
-                  {/* Coordinator Fees */}
-                  <div>
-                    <h3 className="text-lg font-semibold mb-3 text-green-700">Coordinator Fees</h3>
+                  {/* Coordinator Fees Tab */}
+                  <TabsContent value="coordinator">
                     {payables.coordinator_fees.length === 0 ? (
-                      <p className="text-gray-500 text-sm">No pending coordinator fees</p>
+                      <p className="text-gray-500 text-center py-8">No coordinator fees</p>
                     ) : (
-                      <div className="space-y-2">
-                        {payables.coordinator_fees.map(fee => (
-                          <div key={fee.id} className="p-4 border rounded-lg flex justify-between items-center bg-green-50">
-                            <div>
-                              <p className="font-medium">{fee.coordinator_name || 'Coordinator'}</p>
-                              <p className="text-sm text-gray-600">{fee.session_name || 'Session'}</p>
-                              <p className="text-xs text-gray-500">{fee.days || 1} day(s) × RM {fee.daily_rate || 0}</p>
-                            </div>
-                            <div className="text-right flex items-center gap-4">
+                      <div className="space-y-4">
+                        {groupByMonth(payables.coordinator_fees).map(group => (
+                          <div key={group.key} className="border rounded-lg overflow-hidden">
+                            <div className="bg-green-100 px-4 py-3 flex justify-between items-center">
                               <div>
-                                <p className="font-bold text-lg">RM {(fee.total_fee || 0).toLocaleString()}</p>
-                                <Badge className={fee.status === 'paid' ? 'bg-green-500' : 'bg-yellow-500'}>
-                                  {fee.status || 'pending'}
-                                </Badge>
+                                <h4 className="font-semibold text-green-900">{group.label}</h4>
+                                <p className="text-sm text-green-700">Total: RM {group.total.toLocaleString()} | {group.records.length} item(s)</p>
                               </div>
-                              {fee.status !== 'paid' && (
-                                <Button size="sm" onClick={() => handleMarkPaid('coordinator', fee.id)}>
+                              {group.records.some(r => r.status !== 'paid') && (
+                                <Button size="sm" onClick={() => handleBulkMarkPaid('coordinator', group.records)}>
                                   <Check className="w-4 h-4 mr-1" />
-                                  Mark Paid
+                                  Pay All ({group.records.filter(r => r.status !== 'paid').length})
                                 </Button>
                               )}
+                            </div>
+                            <div className="divide-y">
+                              {group.records.map(fee => (
+                                <div key={fee.id} className="p-3 flex justify-between items-center hover:bg-gray-50">
+                                  <div>
+                                    <p className="font-medium">{fee.coordinator_name}</p>
+                                    <p className="text-sm text-gray-600">{fee.session_name}</p>
+                                    <p className="text-xs text-gray-500">{fee.num_days || 1} day(s) × RM {fee.daily_rate || 0}</p>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <div className="text-right">
+                                      <p className="font-bold">RM {(fee.total_fee || 0).toLocaleString()}</p>
+                                      <Badge className={fee.status === 'paid' ? 'bg-green-500' : 'bg-yellow-500'}>
+                                        {fee.status || 'pending'}
+                                      </Badge>
+                                    </div>
+                                    {fee.status !== 'paid' && (
+                                      <Button size="sm" variant="outline" onClick={() => handleMarkPaid('coordinator', fee.id)}>
+                                        <Check className="w-4 h-4" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           </div>
                         ))}
                       </div>
                     )}
-                  </div>
+                  </TabsContent>
 
-                  {/* Marketing Commissions */}
-                  <div>
-                    <h3 className="text-lg font-semibold mb-3 text-purple-700">Marketing Commissions</h3>
+                  {/* Marketing Commissions Tab */}
+                  <TabsContent value="marketing">
                     {payables.marketing_commissions.length === 0 ? (
+                      <p className="text-gray-500 text-center py-8">No marketing commissions</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {groupByMonth(payables.marketing_commissions).map(group => (
+                          <div key={group.key} className="border rounded-lg overflow-hidden">
+                            <div className="bg-purple-100 px-4 py-3 flex justify-between items-center">
+                              <div>
+                                <h4 className="font-semibold text-purple-900">{group.label}</h4>
+                                <p className="text-sm text-purple-700">Total: RM {group.total.toLocaleString()} | {group.records.length} item(s)</p>
+                              </div>
+                              {group.records.some(r => r.status !== 'paid') && (
+                                <Button size="sm" onClick={() => handleBulkMarkPaid('marketing', group.records)}>
+                                  <Check className="w-4 h-4 mr-1" />
+                                  Pay All ({group.records.filter(r => r.status !== 'paid').length})
+                                </Button>
+                              )}
+                            </div>
+                            <div className="divide-y">
+                              {group.records.map(comm => (
+                                <div key={comm.id} className="p-3 flex justify-between items-center hover:bg-gray-50">
+                                  <div>
+                                    <p className="font-medium">{comm.marketing_user_name}</p>
+                                    <p className="text-sm text-gray-600">{comm.session_name}</p>
+                                    <p className="text-xs text-gray-500">{comm.commission_percentage || 0}% of RM {(comm.invoice_amount || 0).toLocaleString()}</p>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <div className="text-right">
+                                      <p className="font-bold">RM {(comm.calculated_amount || 0).toLocaleString()}</p>
+                                      <Badge className={comm.status === 'paid' ? 'bg-green-500' : 'bg-yellow-500'}>
+                                        {comm.status || 'pending'}
+                                      </Badge>
+                                    </div>
+                                    {comm.status !== 'paid' && (
+                                      <Button size="sm" variant="outline" onClick={() => handleMarkPaid('marketing', comm.id)}>
+                                        <Check className="w-4 h-4" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Invoices Tab */}
                       <p className="text-gray-500 text-sm">No pending marketing commissions</p>
                     ) : (
                       <div className="space-y-2">
