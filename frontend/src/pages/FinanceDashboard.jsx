@@ -295,6 +295,7 @@ const FinanceDashboard = ({ user, onLogout }) => {
           <TabsList className="mb-6">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="invoices">Invoices</TabsTrigger>
+            <TabsTrigger value="payables">Payables</TabsTrigger>
             <TabsTrigger value="payments">Payments</TabsTrigger>
             <TabsTrigger value="credit-notes">Credit Notes</TabsTrigger>
             <TabsTrigger value="audit">Audit Log</TabsTrigger>
