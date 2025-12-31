@@ -7618,11 +7618,12 @@ async def get_finance_dashboard(current_user: User = Depends(get_current_user)):
     total_issued_amount = sum(inv.get("total_amount", 0) for inv in all_invoices)
     total_collected = sum(inv.get("total_amount", 0) for inv in all_invoices if inv.get("status") == "paid")
     
-    pending_trainer = await db.trainer_income.find({"status": "pending"}, {"_id": 0, "amount": 1}).to_list(1000)
-    pending_coord = await db.coordinator_fees.find({"status": "pending"}, {"_id": 0, "amount": 1}).to_list(1000)
+    # Get pending payables from trainer_fees (not trainer_income)
+    pending_trainer = await db.trainer_fees.find({"status": {"$ne": "paid"}}, {"_id": 0, "fee_amount": 1}).to_list(1000)
+    pending_coord = await db.coordinator_fees.find({"status": {"$ne": "paid"}}, {"_id": 0, "total_fee": 1}).to_list(1000)
     pending_comm = await db.marketing_commissions.find({"status": {"$in": ["pending", "approved"]}}, {"_id": 0, "calculated_amount": 1}).to_list(1000)
     
-    total_pending = sum(r.get("amount", 0) for r in pending_trainer) + sum(r.get("amount", 0) for r in pending_coord) + sum(r.get("calculated_amount", 0) for r in pending_comm)
+    total_pending = sum(r.get("fee_amount", 0) for r in pending_trainer) + sum(r.get("total_fee", 0) for r in pending_coord) + sum(r.get("calculated_amount", 0) for r in pending_comm)
     
     return {
         "invoices": {"total": total_invoices, "draft": draft_invoices, "approved": approved_invoices, "issued": issued_invoices, "paid": paid_invoices},
