@@ -652,41 +652,6 @@ const FinanceDashboard = ({ user, onLogout }) => {
           </TabsContent>
 
           {/* Invoices Tab */}
-                      <p className="text-gray-500 text-sm">No pending marketing commissions</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {payables.marketing_commissions.map(comm => (
-                          <div key={comm.id} className="p-4 border rounded-lg flex justify-between items-center bg-purple-50">
-                            <div>
-                              <p className="font-medium">{comm.marketing_user_name || 'Marketing'}</p>
-                              <p className="text-sm text-gray-600">{comm.session_name || 'Session'}</p>
-                              <p className="text-xs text-gray-500">{comm.commission_percentage || 0}% of RM {(comm.invoice_amount || 0).toLocaleString()}</p>
-                            </div>
-                            <div className="text-right flex items-center gap-4">
-                              <div>
-                                <p className="font-bold text-lg">RM {(comm.calculated_amount || 0).toLocaleString()}</p>
-                                <Badge className={comm.status === 'paid' ? 'bg-green-500' : 'bg-yellow-500'}>
-                                  {comm.status || 'pending'}
-                                </Badge>
-                              </div>
-                              {comm.status !== 'paid' && (
-                                <Button size="sm" onClick={() => handleMarkPaid('marketing', comm.id)}>
-                                  <Check className="w-4 h-4 mr-1" />
-                                  Mark Paid
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Invoices Tab */}
           <TabsContent value="invoices">
             <Card>
               <CardHeader>
