@@ -7532,21 +7532,27 @@ async def get_coordinator_income(coordinator_id: str, current_user: User = Depen
     
     records = await db.coordinator_fees.find({"coordinator_id": coordinator_id}, {"_id": 0}).to_list(1000)
     
-    # Enrich with session details
+    # Filter out records for deleted sessions and enrich with session details
+    valid_records = []
     for record in records:
         session = await db.sessions.find_one({"id": record.get("session_id")}, {"_id": 0, "name": 1, "start_date": 1, "end_date": 1, "company_id": 1})
-        if session:
+        if session:  # Only include if session still exists
             record["session_name"] = session.get("name")
             record["training_dates"] = f"{session.get('start_date')} to {session.get('end_date')}"
+            record["start_date"] = session.get("start_date")  # For filtering
             # Get company name
             company = await db.companies.find_one({"id": session.get("company_id")}, {"_id": 0, "name": 1})
             record["company_name"] = company.get("name") if company else None
-        record["amount"] = record.get("total_fee", 0)  # Map total_fee to amount for consistency
+            record["amount"] = record.get("total_fee", 0)  # Map total_fee to amount for consistency
+            valid_records.append(record)
+        else:
+            # Session was deleted - clean up orphaned fee record
+            await db.coordinator_fees.delete_one({"id": record.get("id")})
     
-    total = sum(r.get("total_fee", 0) for r in records)
-    paid = sum(r.get("total_fee", 0) for r in records if r.get("status") == "paid")
+    total = sum(r.get("total_fee", 0) for r in valid_records)
+    paid = sum(r.get("total_fee", 0) for r in valid_records if r.get("status") == "paid")
     
-    return {"records": records, "summary": {"total_fees": total, "paid_fees": paid, "pending_fees": total - paid}}
+    return {"records": valid_records, "summary": {"total_fees": total, "paid_fees": paid, "pending_fees": total - paid}}
 
 @api_router.get("/finance/income/marketing/{marketing_id}")
 async def get_marketing_income(marketing_id: str, current_user: User = Depends(get_current_user)):
@@ -7562,18 +7568,25 @@ async def get_marketing_income(marketing_id: str, current_user: User = Depends(g
     
     records = await db.marketing_commissions.find({"marketing_user_id": marketing_id}, {"_id": 0}).to_list(1000)
     
+    # Filter out records for deleted sessions
+    valid_records = []
     for record in records:
         session = await db.sessions.find_one({"id": record.get("session_id")}, {"_id": 0, "name": 1, "start_date": 1, "end_date": 1, "company_id": 1})
-        if session:
+        if session:  # Only include if session still exists
             record["session_name"] = session.get("name")
             record["training_dates"] = f"{session.get('start_date')} to {session.get('end_date')}"
+            record["start_date"] = session.get("start_date")  # For filtering
             company = await db.companies.find_one({"id": session.get("company_id")}, {"_id": 0, "name": 1})
             record["company_name"] = company.get("name") if company else None
+            valid_records.append(record)
+        else:
+            # Session was deleted - clean up orphaned commission record
+            await db.marketing_commissions.delete_one({"id": record.get("id")})
     
-    total = sum(r.get("calculated_amount", 0) for r in records)
-    paid = sum(r.get("calculated_amount", 0) for r in records if r.get("status") == "paid")
+    total = sum(r.get("calculated_amount", 0) for r in valid_records)
+    paid = sum(r.get("calculated_amount", 0) for r in valid_records if r.get("status") == "paid")
     
-    return {"records": records, "summary": {"total_commission": total, "paid_commission": paid, "pending_commission": total - paid}}
+    return {"records": valid_records, "summary": {"total_commission": total, "paid_commission": paid, "pending_commission": total - paid}}
 
 @api_router.get("/finance/marketing-users")
 async def get_marketing_users(current_user: User = Depends(get_current_user)):
