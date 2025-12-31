@@ -294,49 +294,56 @@ const SuperAdminDashboard = ({ user, onLogout }) => {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Search className="w-5 h-5 mr-2" />
-              Advanced Search
-            </CardTitle>
-            <CardDescription>
-              Search by session, company, or participant to manage training data
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Select value={searchType} onValueChange={setSearchType}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="session">Session</SelectItem>
-                  <SelectItem value="company">Company</SelectItem>
-                  <SelectItem value="participant">Participant</SelectItem>
-                </SelectContent>
-              </Select>
+        <Tabs defaultValue="search" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="search" data-testid="search-tab">Search & Manage</TabsTrigger>
+            <TabsTrigger value="sessions" data-testid="sessions-tab">Sessions</TabsTrigger>
+          </TabsList>
 
-              <div className="md:col-span-2">
-                <Input
-                  placeholder={`Search by ${searchType} name...`}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-                />
-              </div>
+          <TabsContent value="search" className="mt-6">
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Search className="w-5 h-5 mr-2" />
+                  Advanced Search
+                </CardTitle>
+                <CardDescription>
+                  Search by session, company, or participant to manage training data
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <Select value={searchType} onValueChange={setSearchType}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="session">Session</SelectItem>
+                      <SelectItem value="company">Company</SelectItem>
+                      <SelectItem value="participant">Participant</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-              <Button 
-                onClick={handleSearch} 
-                disabled={loading}
-                className="bg-gradient-to-r from-purple-600 to-pink-600"
-              >
-                <Search className="w-4 h-4 mr-2" />
-                Search
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+                  <div className="md:col-span-2">
+                    <Input
+                      placeholder={`Search by ${searchType} name...`}
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+                    />
+                  </div>
+
+                  <Button 
+                    onClick={handleSearch} 
+                    disabled={loading}
+                    className="bg-gradient-to-r from-purple-600 to-pink-600"
+                  >
+                    <Search className="w-4 h-4 mr-2" />
+                    Search
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
 
         {searchResults.length > 0 && (
           <Card className="mb-6">
