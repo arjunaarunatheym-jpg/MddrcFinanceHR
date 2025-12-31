@@ -276,10 +276,10 @@ const FinanceDashboard = ({ user, onLogout }) => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-blue-900">
-                    {dashboard?.total_invoices || 0}
+                    {dashboard?.invoices?.total || 0}
                   </div>
                   <p className="text-sm text-blue-600">
-                    RM {(dashboard?.total_invoiced || 0).toLocaleString()}
+                    RM {(dashboard?.financials?.total_issued || 0).toLocaleString()}
                   </p>
                 </CardContent>
               </Card>
@@ -293,10 +293,10 @@ const FinanceDashboard = ({ user, onLogout }) => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-green-900">
-                    RM {(dashboard?.total_collected || 0).toLocaleString()}
+                    RM {(dashboard?.financials?.total_collected || 0).toLocaleString()}
                   </div>
                   <p className="text-sm text-green-600">
-                    {dashboard?.paid_invoices || 0} invoices paid
+                    {dashboard?.invoices?.paid || 0} invoices paid
                   </p>
                 </CardContent>
               </Card>
@@ -310,10 +310,10 @@ const FinanceDashboard = ({ user, onLogout }) => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-orange-900">
-                    RM {(dashboard?.outstanding || 0).toLocaleString()}
+                    RM {(dashboard?.financials?.outstanding_receivables || 0).toLocaleString()}
                   </div>
                   <p className="text-sm text-orange-600">
-                    {dashboard?.pending_invoices || 0} pending
+                    {dashboard?.invoices?.issued || 0} pending
                   </p>
                 </CardContent>
               </Card>
@@ -327,7 +327,7 @@ const FinanceDashboard = ({ user, onLogout }) => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-purple-900">
-                    RM {((dashboard?.pending_trainer_fees || 0) + (dashboard?.pending_coordinator_fees || 0)).toLocaleString()}
+                    RM {(dashboard?.payables?.pending_total || 0).toLocaleString()}
                   </div>
                   <p className="text-sm text-purple-600">
                     Staff payments pending
