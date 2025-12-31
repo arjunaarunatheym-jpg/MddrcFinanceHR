@@ -345,130 +345,136 @@ const SuperAdminDashboard = ({ user, onLogout }) => {
               </CardContent>
             </Card>
 
-        {searchResults.length > 0 && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Search Results ({searchResults.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {searchResults.map((session) => (
-                  <Card
-                    key={session.id}
-                    className={`cursor-pointer transition-all ${
-                      selectedSession?.id === session.id ? "ring-2 ring-purple-500" : "hover:shadow-md"
-                    }`}
-                    onClick={() => handleSelectSession(session)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-semibold text-lg">{session.company_name || "Unknown Company"}</h3>
-                          <p className="text-sm text-gray-600">{session.program_name || "Unknown Program"}</p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            {session.start_date} to {session.end_date} • {session.location}
-                          </p>
-                        </div>
-                        <Badge variant={selectedSession?.id === session.id ? "default" : "outline"}>
-                          {session.participant_ids?.length || 0} Participants
-                        </Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+            {searchResults.length > 0 && (
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle>Search Results ({searchResults.length})</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {searchResults.map((session) => (
+                      <Card
+                        key={session.id}
+                        className={`cursor-pointer transition-all ${
+                          selectedSession?.id === session.id ? "ring-2 ring-purple-500" : "hover:shadow-md"
+                        }`}
+                        onClick={() => handleSelectSession(session)}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className="font-semibold text-lg">{session.company_name || "Unknown Company"}</h3>
+                              <p className="text-sm text-gray-600">{session.program_name || "Unknown Program"}</p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {session.start_date} to {session.end_date} • {session.location}
+                              </p>
+                            </div>
+                            <Badge variant={selectedSession?.id === session.id ? "default" : "outline"}>
+                              {session.participant_ids?.length || 0} Participants
+                            </Badge>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-        {selectedSession && (
-          <Card>
-            <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50">
-              <CardTitle>
-                Participants in {selectedSession.company_name} - {selectedSession.program_name}
-              </CardTitle>
-              <CardDescription>
-                View and manage participant progress, tests, and checklists
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6">
-              {loading ? (
-                <div className="text-center py-8">Loading participants...</div>
-              ) : participants.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">No participants found</div>
-              ) : (
-                <div className="space-y-4">
-                  {participants.map((participant) => (
-                    <Card key={participant.id} className="bg-gray-50">
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-lg">{participant.full_name}</h4>
-                            <p className="text-sm text-gray-600">IC: {participant.id_number}</p>
-                            {participant.email && (
-                              <p className="text-sm text-gray-600">Email: {participant.email}</p>
-                            )}
-                            
-                            <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
-                              <div>
-                                <Label className="text-xs">Pre-Test:</Label>
-                                <div className="mt-1 flex gap-2 items-center">
-                                  {getStatusBadge(participant.preTest)}
-                                  <Button size="sm" variant="ghost" onClick={() => handleEditTest(participant, "pre")}>
-                                    <Edit className="w-3 h-3" />
-                                  </Button>
+            {selectedSession && (
+              <Card>
+                <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50">
+                  <CardTitle>
+                    Participants in {selectedSession.company_name} - {selectedSession.program_name}
+                  </CardTitle>
+                  <CardDescription>
+                    View and manage participant progress, tests, and checklists
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  {loading ? (
+                    <div className="text-center py-8">Loading participants...</div>
+                  ) : participants.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">No participants found</div>
+                  ) : (
+                    <div className="space-y-4">
+                      {participants.map((participant) => (
+                        <Card key={participant.id} className="bg-gray-50">
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <h4 className="font-semibold text-lg">{participant.full_name}</h4>
+                                <p className="text-sm text-gray-600">IC: {participant.id_number}</p>
+                                {participant.email && (
+                                  <p className="text-sm text-gray-600">Email: {participant.email}</p>
+                                )}
+                                
+                                <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+                                  <div>
+                                    <Label className="text-xs">Pre-Test:</Label>
+                                    <div className="mt-1 flex gap-2 items-center">
+                                      {getStatusBadge(participant.preTest)}
+                                      <Button size="sm" variant="ghost" onClick={() => handleEditTest(participant, "pre")}>
+                                        <Edit className="w-3 h-3" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <Label className="text-xs">Post-Test:</Label>
+                                    <div className="mt-1 flex gap-2 items-center">
+                                      {getStatusBadge(participant.postTest)}
+                                      <Button size="sm" variant="ghost" onClick={() => handleEditTest(participant, "post")}>
+                                        <Edit className="w-3 h-3" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <Label className="text-xs">Checklist:</Label>
+                                    <div className="mt-1">
+                                      {participant.checklistStatus === "completed" ? (
+                                        <Badge className="bg-green-500"><CheckCircle className="w-3 h-3 mr-1" /> Completed</Badge>
+                                      ) : (
+                                        <Badge variant="outline"><Clock className="w-3 h-3 mr-1" /> Pending</Badge>
+                                      )}
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
-                              <div>
-                                <Label className="text-xs">Post-Test:</Label>
-                                <div className="mt-1 flex gap-2 items-center">
-                                  {getStatusBadge(participant.postTest)}
-                                  <Button size="sm" variant="ghost" onClick={() => handleEditTest(participant, "post")}>
-                                    <Edit className="w-3 h-3" />
-                                  </Button>
-                                </div>
-                              </div>
-                              <div>
-                                <Label className="text-xs">Checklist:</Label>
-                                <div className="mt-1">
-                                  {participant.checklistStatus === "completed" ? (
-                                    <Badge className="bg-green-500"><CheckCircle className="w-3 h-3 mr-1" /> Completed</Badge>
-                                  ) : (
-                                    <Badge variant="outline"><Clock className="w-3 h-3 mr-1" /> Pending</Badge>
-                                  )}
-                                </div>
+                              
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleEditParticipant(participant)}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => {
+                                    setDeleteTarget(participant);
+                                    setDeleteConfirmOpen(true);
+                                  }}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
                               </div>
                             </div>
-                          </div>
-                          
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleEditParticipant(participant)}
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => {
-                                setDeleteTarget(participant);
-                                setDeleteConfirmOpen(true);
-                              }}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="sessions" className="mt-6">
+            <SuperAdminPanel />
+          </TabsContent>
+        </Tabs>
       </main>
 
       {/* Edit Participant Dialog */}
