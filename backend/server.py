@@ -2074,6 +2074,13 @@ async def delete_session(session_id: str, current_user: User = Depends(get_curre
         "training_reports",
         "chief_trainer_feedback",
         "coordinator_feedback",
+        # Finance-related collections
+        "trainer_fees",
+        "coordinator_fees",
+        "session_expenses",
+        "invoices",
+        "credit_notes",
+        "marketing_commissions",
     ]
     
     for collection_name in related_collections:
