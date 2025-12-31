@@ -996,58 +996,112 @@ const TrainerDashboard = ({ user, onLogout }) => {
                     </Button>
                   </div>
                 ) : (
-                  <div className="space-y-6">
-                    {/* Summary Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm font-medium text-green-700">Total Income</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-2xl font-bold text-green-900">
-                            RM {incomeData.summary.total_income?.toLocaleString() || '0'}
-                          </div>
-                        </CardContent>
-                      </Card>
-                      <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm font-medium text-blue-700">Paid</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-2xl font-bold text-blue-900">
-                            RM {incomeData.summary.paid_income?.toLocaleString() || '0'}
-                          </div>
-                        </CardContent>
-                      </Card>
-                      <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm font-medium text-orange-700">Pending</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-2xl font-bold text-orange-900">
-                            RM {incomeData.summary.pending_income?.toLocaleString() || '0'}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
+                  (() => {
+                    // Calculate filtered records based on month/year filter
+                    const filteredRecords = incomeData.records.filter(record => {
+                      // Use start_date directly if available, otherwise parse from training_dates
+                      const dateStr = record.start_date || record.training_dates?.split(' to ')[0] || record.created_at;
+                      if (!dateStr) return false;
+                      
+                      const date = new Date(dateStr);
+                      if (isNaN(date.getTime())) return false;
+                      
+                      if (incomeFilter.showAll) {
+                        // Year-to-date: show all records for the selected year
+                        return date.getFullYear() === incomeFilter.year;
+                      }
+                      // Filter by specific month and year
+                      return date.getFullYear() === incomeFilter.year && (date.getMonth() + 1) === incomeFilter.month;
+                    });
+                    
+                    // Calculate filtered summary
+                    const filteredTotal = filteredRecords.reduce((sum, r) => sum + (r.fee_amount || r.amount || 0), 0);
+                    const filteredPaid = filteredRecords.filter(r => r.status === 'paid').reduce((sum, r) => sum + (r.fee_amount || r.amount || 0), 0);
+                    const filteredPending = filteredTotal - filteredPaid;
+                    
+                    return (
+                      <div className="space-y-6">
+                        {/* Summary Cards - Now shows filtered data */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-sm font-medium text-green-700">
+                                Total Income
+                                <span className="block text-xs font-normal text-green-600">
+                                  {incomeFilter.showAll 
+                                    ? `(YTD ${incomeFilter.year})` 
+                                    : `(${new Date(2000, incomeFilter.month - 1, 1).toLocaleString('default', { month: 'short' })} ${incomeFilter.year})`
+                                  }
+                                </span>
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="text-2xl font-bold text-green-900">
+                                RM {filteredTotal.toLocaleString()}
+                              </div>
+                            </CardContent>
+                          </Card>
+                          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-sm font-medium text-blue-700">Paid</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="text-2xl font-bold text-blue-900">
+                                RM {filteredPaid.toLocaleString()}
+                              </div>
+                            </CardContent>
+                          </Card>
+                          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-sm font-medium text-orange-700">Pending</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="text-2xl font-bold text-orange-900">
+                                RM {filteredPending.toLocaleString()}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
 
-                    {/* Income Records */}
-                    <div>
-                      <h3 className="font-semibold mb-3">
-                        Income Records 
-                        {!incomeFilter.showAll && (
-                          <span className="text-sm font-normal text-gray-500 ml-2">
-                            ({new Date(2000, incomeFilter.month - 1, 1).toLocaleString('default', { month: 'long' })} {incomeFilter.year})
-                          </span>
-                        )}
-                        {incomeFilter.showAll && (
-                          <span className="text-sm font-normal text-gray-500 ml-2">(Year-to-Date {incomeFilter.year})</span>
-                        )}
-                      </h3>
-                      {(() => {
-                        // Filter records by month/year
-                        const filteredRecords = incomeData.records.filter(record => {
-                          if (incomeFilter.showAll) {
+                        {/* Income Records */}
+                        <div>
+                          <h3 className="font-semibold mb-3">
+                            Income Records 
+                            <span className="text-sm font-normal text-gray-500 ml-2">
+                              ({filteredRecords.length} record{filteredRecords.length !== 1 ? 's' : ''})
+                            </span>
+                          </h3>
+                          {filteredRecords.length === 0 ? (
+                            <p className="text-gray-500 text-center py-4">
+                              No income records for {!incomeFilter.showAll ? 
+                                `${new Date(2000, incomeFilter.month - 1, 1).toLocaleString('default', { month: 'long' })} ${incomeFilter.year}` : 
+                                `year ${incomeFilter.year}`
+                              }
+                            </p>
+                          ) : (
+                            <div className="space-y-2">
+                              {filteredRecords.map((record) => (
+                                <div key={record.id} className="p-4 bg-gray-50 rounded-lg flex justify-between items-center">
+                                  <div>
+                                    <p className="font-medium">{record.company_name || record.session_name || 'Training Session'}</p>
+                                    <p className="text-sm text-gray-600">{record.session_name}</p>
+                                    <p className="text-sm text-gray-500">{record.training_dates}</p>
+                                    <p className="text-xs text-gray-400">Role: {record.role || record.trainer_role || 'Trainer'}</p>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="font-bold text-lg">RM {(record.fee_amount || record.amount)?.toLocaleString() || '0'}</p>
+                                    <Badge className={record.status === 'paid' ? 'bg-green-500' : 'bg-yellow-500'}>
+                                      {record.status === 'paid' ? 'Paid' : 'Pending'}
+                                    </Badge>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()
                             // Show all records for the year
                             const dateStr = record.training_dates?.split(' to ')[0] || record.created_at;
                             if (dateStr) {
