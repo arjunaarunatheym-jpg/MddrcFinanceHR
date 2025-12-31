@@ -653,7 +653,7 @@ const FinanceDashboard = ({ user, onLogout }) => {
                       </SelectTrigger>
                       <SelectContent>
                         {pendingInvoices.length === 0 ? (
-                          <SelectItem value="" disabled>No pending invoices</SelectItem>
+                          <SelectItem value="none" disabled>No pending invoices</SelectItem>
                         ) : (
                           pendingInvoices.map(inv => (
                             <SelectItem key={inv.id} value={inv.id}>
