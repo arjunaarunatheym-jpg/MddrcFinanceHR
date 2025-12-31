@@ -3787,25 +3787,40 @@ async def clock_in(attendance_data: AttendanceClockIn, current_user: User = Depe
     today = get_malaysia_date().isoformat()
     now = get_malaysia_time_str()
     
-    # Check if already clocked in today
-    existing = await db.attendance.find_one({
+    # First check if ANY attendance record exists for this participant/session (regardless of date)
+    # This prevents double check-in when super admin has already set attendance
+    existing_any = await db.attendance.find_one({
+        "participant_id": current_user.id,
+        "session_id": attendance_data.session_id
+    }, {"_id": 0})
+    
+    if existing_any and existing_any.get('clock_in'):
+        raise HTTPException(status_code=400, detail="Already clocked in for this session")
+    
+    # Check if there's a record for today specifically
+    existing_today = await db.attendance.find_one({
         "participant_id": current_user.id,
         "session_id": attendance_data.session_id,
         "date": today
     }, {"_id": 0})
     
-    if existing and existing.get('clock_in'):
-        raise HTTPException(status_code=400, detail="Already clocked in today")
-    
-    if existing:
-        # Update existing
+    if existing_today:
+        # Update existing today's record
         await db.attendance.update_one(
-            {"id": existing['id']},
+            {"id": existing_today['id']},
             {"$set": {"clock_in": now}}
         )
         return {"message": "Clocked in successfully", "time": now}
     
-    # Create new
+    if existing_any:
+        # Update the existing record (from a different date) with today's clock in
+        await db.attendance.update_one(
+            {"id": existing_any['id']},
+            {"$set": {"clock_in": now, "date": today}}
+        )
+        return {"message": "Clocked in successfully", "time": now}
+    
+    # Create new record
     attendance_obj = Attendance(
         participant_id=current_user.id,
         session_id=attendance_data.session_id,
