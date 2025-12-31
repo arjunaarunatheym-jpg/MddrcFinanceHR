@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { LogOut, Search, Edit, Trash2, Eye, CheckCircle, XCircle, Clock, AlertCircle, FileText, ClipboardList, MessageSquare } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
+import SuperAdminPanel from "../components/SuperAdminPanel";
 
 const SuperAdminDashboard = ({ user, onLogout }) => {
   const navigate = useNavigate();
