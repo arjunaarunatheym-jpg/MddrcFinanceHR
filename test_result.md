@@ -880,3 +880,59 @@ frontend:
         comment: "Verified: Invoice persists after save. New endpoint POST /finance/session/{session_id}/invoice handles create/update. Tested via screenshots - 8000 value persisted correctly."
   - agent: "testing"
     message: "❌ ATTENDANCE SYNCHRONIZATION TEST FAILED - SUPER ADMIN SESSIONS TAB NOT ACCESSIBLE! Tested attendance check-in/check-out synchronization between Super Admin and Participant portals as requested. ✅ AUTHENTICATION: Successfully logged in as Super Admin (arjuna@mddrc.com.my). ✅ SUPER ADMIN DASHBOARD ACCESS: Can access Super Admin dashboard. ❌ CRITICAL ISSUE: Sessions tab not found in Super Admin dashboard. The SuperAdminPanel component with attendance controls exists but is not properly integrated. FINDINGS: 1) Super Admin login successful and redirects to calendar page, 2) Navigation to /super-admin URL redirects back to login (session/auth issue), 3) Sessions tab with attendance controls not accessible through UI, 4) SuperAdminPanel component exists with Clock In/Out functionality but not integrated into main dashboard. IMPACT: Cannot test attendance synchronization because Super Admin cannot access the Sessions tab with attendance controls. RECOMMENDATION: Fix Super Admin dashboard integration to include Sessions tab with SuperAdminPanel component for attendance management."
+
+  - agent: "main"
+    message: "✅ BUG FIX COMPLETE - ATTENDANCE SYNCHRONIZATION ISSUE:
+
+    PROBLEM: When Super Admin set check-in time for a participant via the Data Management panel, 
+    the time displayed correctly in coordinator's portal but NOT in the participant's portal. 
+    This allowed the participant to check-in again, creating duplicate records.
+
+    ROOT CAUSE IDENTIFIED:
+    1. Super Admin endpoint stored dates in UTC timezone format
+    2. Participant's loadAttendanceToday() filtered by browser's local 'today' date
+    3. Date mismatch caused existing attendance records to not be found
+    4. Backend clock-in checked only for records matching today's date
+
+    FIXES APPLIED:
+
+    1. FRONTEND FIX (ParticipantDashboard.jsx lines 267-300):
+       - Updated loadAttendanceToday() to use Malaysian timezone (UTC+8)
+       - Changed to first try today's date, then fall back to most recent attendance record
+       - Ensures attendance set by super admin on any date is picked up
+
+    2. BACKEND FIX (server.py):
+       - Updated super_admin_clock_in and super_admin_clock_out endpoints
+       - Now converts datetime to Malaysian timezone (MALAYSIA_TZ) before storing
+       - Consistent timezone handling across all attendance endpoints
+
+    3. BACKEND FIX - DOUBLE CHECK-IN PREVENTION (server.py lines 3781-3835):
+       - Updated participant clock-in endpoint to first check for ANY existing attendance
+         record regardless of date before allowing new clock-in
+       - Error message changed to 'Already clocked in for this session'
+       - Clock-out endpoint also updated to find records regardless of date
+
+    TESTING VERIFIED:
+    ✅ Super Admin set check-in time for 'Babu' via Data Management panel
+    ✅ Attendance saved successfully (02:21:00 on 2025-12-31)
+    ✅ Backend API returns correct attendance: curl /api/attendance/{session}/{participant}
+    ✅ Participant (Babu) logged in and sees 'Clocked in at 2:21 AM' in My Details tab
+    ✅ Clock-in checkbox is checked and shows correct time
+    ✅ Attempting clock-in via API returns: 'Already clocked in for this session'
+    ✅ No duplicate check-in possible
+
+    FILES MODIFIED:
+    - /app/backend/server.py (3 changes: super_admin_clock_in, super_admin_clock_out, clock_in, clock_out)
+    - /app/frontend/src/pages/ParticipantDashboard.jsx (loadAttendanceToday function)"
+
+  - task: "Attendance Sync - Super Admin to Participant Portal"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py, /app/frontend/src/pages/ParticipantDashboard.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "✅ FIX VERIFIED: Attendance set by Super Admin now correctly displays in Participant portal. Timezone mismatch fixed, double check-in prevention working. Tested with participant 'Babu' - clock-in time (2:21 AM) shows correctly, checkbox is checked, cannot create duplicate check-in."
