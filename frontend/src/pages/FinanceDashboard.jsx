@@ -397,6 +397,127 @@ const FinanceDashboard = ({ user, onLogout }) => {
             </Card>
           </TabsContent>
 
+          {/* Payables Tab - Pay staff fees */}
+          <TabsContent value="payables">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Staff Payables</CardTitle>
+                  <Button variant="outline" onClick={loadPayables}>
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Refresh
+                  </Button>
+                </div>
+                <CardDescription>Manage trainer fees, coordinator fees, and marketing commissions</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {/* Trainer Fees */}
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3 text-blue-700">Trainer Fees</h3>
+                    {payables.trainer_fees.length === 0 ? (
+                      <p className="text-gray-500 text-sm">No pending trainer fees</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {payables.trainer_fees.map(fee => (
+                          <div key={fee.id} className="p-4 border rounded-lg flex justify-between items-center bg-blue-50">
+                            <div>
+                              <p className="font-medium">{fee.trainer_name || 'Trainer'}</p>
+                              <p className="text-sm text-gray-600">{fee.session_name || 'Session'}</p>
+                              <p className="text-xs text-gray-500">Role: {fee.trainer_role || fee.role || 'Trainer'}</p>
+                            </div>
+                            <div className="text-right flex items-center gap-4">
+                              <div>
+                                <p className="font-bold text-lg">RM {(fee.fee_amount || 0).toLocaleString()}</p>
+                                <Badge className={fee.status === 'paid' ? 'bg-green-500' : 'bg-yellow-500'}>
+                                  {fee.status || 'pending'}
+                                </Badge>
+                              </div>
+                              {fee.status !== 'paid' && (
+                                <Button size="sm" onClick={() => handleMarkPaid('trainer', fee.id)}>
+                                  <Check className="w-4 h-4 mr-1" />
+                                  Mark Paid
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Coordinator Fees */}
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3 text-green-700">Coordinator Fees</h3>
+                    {payables.coordinator_fees.length === 0 ? (
+                      <p className="text-gray-500 text-sm">No pending coordinator fees</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {payables.coordinator_fees.map(fee => (
+                          <div key={fee.id} className="p-4 border rounded-lg flex justify-between items-center bg-green-50">
+                            <div>
+                              <p className="font-medium">{fee.coordinator_name || 'Coordinator'}</p>
+                              <p className="text-sm text-gray-600">{fee.session_name || 'Session'}</p>
+                              <p className="text-xs text-gray-500">{fee.days || 1} day(s) × RM {fee.daily_rate || 0}</p>
+                            </div>
+                            <div className="text-right flex items-center gap-4">
+                              <div>
+                                <p className="font-bold text-lg">RM {(fee.total_fee || 0).toLocaleString()}</p>
+                                <Badge className={fee.status === 'paid' ? 'bg-green-500' : 'bg-yellow-500'}>
+                                  {fee.status || 'pending'}
+                                </Badge>
+                              </div>
+                              {fee.status !== 'paid' && (
+                                <Button size="sm" onClick={() => handleMarkPaid('coordinator', fee.id)}>
+                                  <Check className="w-4 h-4 mr-1" />
+                                  Mark Paid
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Marketing Commissions */}
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3 text-purple-700">Marketing Commissions</h3>
+                    {payables.marketing_commissions.length === 0 ? (
+                      <p className="text-gray-500 text-sm">No pending marketing commissions</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {payables.marketing_commissions.map(comm => (
+                          <div key={comm.id} className="p-4 border rounded-lg flex justify-between items-center bg-purple-50">
+                            <div>
+                              <p className="font-medium">{comm.marketing_user_name || 'Marketing'}</p>
+                              <p className="text-sm text-gray-600">{comm.session_name || 'Session'}</p>
+                              <p className="text-xs text-gray-500">{comm.commission_percentage || 0}% of RM {(comm.invoice_amount || 0).toLocaleString()}</p>
+                            </div>
+                            <div className="text-right flex items-center gap-4">
+                              <div>
+                                <p className="font-bold text-lg">RM {(comm.calculated_amount || 0).toLocaleString()}</p>
+                                <Badge className={comm.status === 'paid' ? 'bg-green-500' : 'bg-yellow-500'}>
+                                  {comm.status || 'pending'}
+                                </Badge>
+                              </div>
+                              {comm.status !== 'paid' && (
+                                <Button size="sm" onClick={() => handleMarkPaid('marketing', comm.id)}>
+                                  <Check className="w-4 h-4 mr-1" />
+                                  Mark Paid
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Invoices Tab */}
           <TabsContent value="invoices">
             <Card>
