@@ -3337,10 +3337,12 @@ async def super_admin_clock_in(data: SuperAdminClockIn, current_user: User = Dep
     if current_user.email != "arjuna@mddrc.com.my":
         raise HTTPException(status_code=403, detail="Only super admin can manage attendance")
     
-    from datetime import datetime
+    # Parse the datetime and convert to Malaysian timezone for consistency
     clock_in_dt = datetime.fromisoformat(data.clock_in.replace('Z', '+00:00'))
-    date_str = clock_in_dt.date().isoformat()
-    time_str = clock_in_dt.strftime("%H:%M:%S")
+    # Convert to Malaysia timezone
+    clock_in_malaysia = clock_in_dt.astimezone(MALAYSIA_TZ)
+    date_str = clock_in_malaysia.date().isoformat()
+    time_str = clock_in_malaysia.strftime("%H:%M:%S")
     
     # Find existing attendance by participant and session ONLY (not date)
     # This ensures only ONE attendance record per participant per session
