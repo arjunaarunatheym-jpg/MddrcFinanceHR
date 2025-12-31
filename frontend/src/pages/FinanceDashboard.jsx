@@ -92,6 +92,50 @@ const FinanceDashboard = ({ user, onLogout }) => {
     }
   };
 
+  const handleBulkMarkPaid = async (type, items) => {
+    try {
+      let successCount = 0;
+      for (const item of items) {
+        if (item.status === 'paid') continue;
+        let endpoint = '';
+        if (type === 'trainer') endpoint = `/finance/trainer-fees/${item.id}/mark-paid`;
+        else if (type === 'coordinator') endpoint = `/finance/coordinator-fees/${item.id}/mark-paid`;
+        else if (type === 'marketing') endpoint = `/finance/income/commission/${item.id}/mark-paid`;
+        
+        await axiosInstance.post(endpoint);
+        successCount++;
+      }
+      toast.success(`Marked ${successCount} items as paid`);
+      loadPayables();
+      loadDashboard();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to mark as paid');
+    }
+  };
+
+  // Group payables by month based on session start_date
+  const groupByMonth = (records) => {
+    const groups = {};
+    records.forEach(record => {
+      // Get month from created_at or session date
+      const dateStr = record.session_start_date || record.created_at;
+      if (!dateStr) return;
+      const date = new Date(dateStr);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const monthLabel = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+      
+      if (!groups[monthKey]) {
+        groups[monthKey] = { label: monthLabel, records: [], total: 0 };
+      }
+      groups[monthKey].records.push(record);
+      groups[monthKey].total += record.fee_amount || record.total_fee || record.calculated_amount || 0;
+    });
+    // Sort by month descending (newest first)
+    return Object.entries(groups)
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([key, value]) => ({ key, ...value }));
+  };
+
   const loadInvoices = async () => {
     setLoading(true);
     try {
