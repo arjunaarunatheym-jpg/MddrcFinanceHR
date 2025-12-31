@@ -39,6 +39,7 @@ const FinanceDashboard = ({ user, onLogout }) => {
   const [pendingInvoices, setPendingInvoices] = useState([]);
   const [creditNotes, setCreditNotes] = useState([]);
   const [showCNDialog, setShowCNDialog] = useState(false);
+  const [payables, setPayables] = useState({ trainer_fees: [], coordinator_fees: [], marketing_commissions: [] });
 
   useEffect(() => {
     loadDashboard();
