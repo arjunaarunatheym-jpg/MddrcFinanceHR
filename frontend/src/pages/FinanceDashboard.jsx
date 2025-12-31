@@ -893,7 +893,7 @@ const FinanceDashboard = ({ user, onLogout }) => {
               <CardContent>
                 {auditLogs.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
-                    <p>Click 'Load Logs' to view audit history</p>
+                    <p>Click Load Logs to view audit history</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
