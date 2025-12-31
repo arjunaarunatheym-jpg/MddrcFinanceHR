@@ -3840,20 +3840,20 @@ async def clock_out(attendance_data: AttendanceClockOut, current_user: User = De
         raise HTTPException(status_code=403, detail="Only participants can clock out")
     
     # Use Malaysian time
-    today = get_malaysia_date().isoformat()
     now = get_malaysia_time_str()
     
+    # First check for ANY existing attendance record (regardless of date)
+    # This handles cases where super admin set attendance on a different date
     existing = await db.attendance.find_one({
         "participant_id": current_user.id,
-        "session_id": attendance_data.session_id,
-        "date": today
+        "session_id": attendance_data.session_id
     }, {"_id": 0})
     
     if not existing or not existing.get('clock_in'):
         raise HTTPException(status_code=400, detail="Please clock in first")
     
     if existing.get('clock_out'):
-        raise HTTPException(status_code=400, detail="Already clocked out today")
+        raise HTTPException(status_code=400, detail="Already clocked out for this session")
     
     await db.attendance.update_one(
         {"id": existing['id']},
