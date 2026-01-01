@@ -19,6 +19,7 @@ const TrainerDashboard = ({ user, onLogout }) => {
   const [selectedSession, setSelectedSession] = useState(null);
   const [expandedSession, setExpandedSession] = useState(null);
   const [sessionParticipants, setSessionParticipants] = useState({});
+  const [sessionAccess, setSessionAccess] = useState([]);
 
   const [feedbackTemplate, setFeedbackTemplate] = useState(null);
   const [selectedFeedbackSession, setSelectedFeedbackSession] = useState(null);
@@ -47,6 +48,34 @@ const TrainerDashboard = ({ user, onLogout }) => {
   // Check if user has additional roles
   const hasCoordinatorRole = user.additional_roles?.includes('coordinator') || user.role === 'coordinator';
   const hasMarketingRole = user.additional_roles?.includes('marketing') || user.role === 'marketing';
+
+  // Load session access status
+  const loadSessionAccess = async (sessionId) => {
+    try {
+      const response = await axiosInstance.get(`/participant-access/session/${sessionId}`);
+      setSessionAccess(response.data || []);
+    } catch (error) {
+      console.error('Failed to load session access:', error);
+      setSessionAccess([]);
+    }
+  };
+
+  // Toggle pre-test, post-test, feedback access
+  const handleToggleAccess = async (accessType, enabled) => {
+    if (!selectedSession) return;
+    
+    try {
+      await axiosInstance.post(`/participant-access/session/${selectedSession.id}/toggle`, {
+        access_type: accessType,
+        enabled: enabled
+      });
+      
+      toast.success(`${accessType.replace('_', ' ')} ${enabled ? 'enabled' : 'disabled'} for all participants`);
+      await loadSessionAccess(selectedSession.id);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || `Failed to update ${accessType} access`);
+    }
+  };
 
   // Load all income data
   const loadAllIncome = async () => {
