@@ -1358,6 +1358,15 @@ async def update_own_profile(profile_data: dict, current_user: User = Depends(ge
         update_data["indemnity_accepted"] = profile_data["indemnity_accepted"]
     if "indemnity_accepted_at" in profile_data:
         update_data["indemnity_accepted_at"] = profile_data["indemnity_accepted_at"]
+    # Digital signature fields
+    if "indemnity_signature" in profile_data:
+        update_data["indemnity_signature"] = profile_data["indemnity_signature"]
+    if "indemnity_signed_name" in profile_data:
+        update_data["indemnity_signed_name"] = profile_data["indemnity_signed_name"]
+    if "indemnity_signed_ic" in profile_data:
+        update_data["indemnity_signed_ic"] = profile_data["indemnity_signed_ic"]
+    if "indemnity_signed_date" in profile_data:
+        update_data["indemnity_signed_date"] = profile_data["indemnity_signed_date"]
     
     if not update_data:
         raise HTTPException(status_code=400, detail="No valid fields to update")
