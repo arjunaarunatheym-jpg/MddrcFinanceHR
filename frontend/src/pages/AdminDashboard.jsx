@@ -757,6 +757,63 @@ const AdminDashboard = ({ user, onLogout }) => {
     }
   };
 
+  // Standalone bulk upload for session cards (same as Coordinator/Assistant Admin)
+  const handleStandaloneBulkUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+      toast.error("Please upload an Excel file (.xlsx or .xls)");
+      return;
+    }
+
+    if (!bulkUploadSession?.id) {
+      toast.error("No session selected for upload");
+      return;
+    }
+
+    setUploading(true);
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await axiosInstance.post(
+        `/sessions/${bulkUploadSession.id}/participants/bulk-upload`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      const { total_uploaded, new_companies_created } = response.data;
+      
+      let message = `✓ Successfully uploaded ${total_uploaded} participant(s)!`;
+      if (new_companies_created && new_companies_created.length > 0) {
+        message += `\n✓ Created new companies: ${new_companies_created.join(', ')}`;
+      }
+      
+      toast.success(message);
+      setBulkUploadSession(null);
+      
+      // Reload session data to show new participants
+      loadData();
+      
+      // Reset file input
+      event.target.value = '';
+      
+    } catch (error) {
+      console.error('Bulk upload error:', error);
+      const errorMessage = error.response?.data?.detail || "Failed to process Excel file";
+      toast.error(errorMessage);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleRemoveNewParticipant = (index) => {
     const updated = editingSession.newParticipants.filter((_, i) => i !== index);
     setEditingSession({ ...editingSession, newParticipants: updated });
