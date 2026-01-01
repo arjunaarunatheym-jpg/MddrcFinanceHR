@@ -8111,7 +8111,7 @@ async def save_coordinator_fee(session_id: str, fee_data: dict, current_user: Us
     
     # Check if coordinator fee exists for this session
     existing_fee = await db.coordinator_fees.find_one({"session_id": session_id}, {"_id": 0, "id": 1})
-    fee_id = existing_fee.get("id") if existing_fee else str(uuid4())
+    fee_id = existing_fee.get("id") if existing_fee else str(uuid.uuid4())
     
     # Upsert coordinator fee with id
     await db.coordinator_fees.update_one(
