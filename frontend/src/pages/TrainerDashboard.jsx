@@ -70,11 +70,20 @@ const TrainerDashboard = ({ user, onLogout }) => {
         enabled: enabled
       });
       
-      toast.success(`${accessType.replace('_', ' ')} ${enabled ? 'enabled' : 'disabled'} for all participants`);
+      toast.success(`${accessType.replace('_', ' ')} ${enabled ? 'released' : 'disabled'} for all participants`);
       await loadSessionAccess(selectedSession.id);
     } catch (error) {
       toast.error(error.response?.data?.detail || `Failed to update ${accessType} access`);
     }
+  };
+
+  // Check if any access is enabled for a specific type
+  const isAccessEnabled = (accessType) => {
+    if (!sessionAccess || sessionAccess.length === 0) return false;
+    const field = accessType === 'pre_test' ? 'can_access_pre_test' : 
+                  accessType === 'post_test' ? 'can_access_post_test' : 
+                  accessType === 'feedback' ? 'can_access_feedback' : 'can_access_checklist';
+    return sessionAccess.some(a => a[field] === true);
   };
 
   // Load all income data
