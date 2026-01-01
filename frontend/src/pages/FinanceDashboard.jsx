@@ -1312,6 +1312,239 @@ const FinanceDashboard = ({ user, onLogout }) => {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Edit Invoice Dialog */}
+      <Dialog open={editingInvoice !== null} onOpenChange={(open) => !open && setEditingInvoice(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="w-5 h-5" />
+              Edit Invoice: {editingInvoice?.invoice_number}
+            </DialogTitle>
+            <DialogDescription>
+              Modify invoice details before approval/issuance
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            {/* Bill To Section */}
+            <div className="p-4 bg-blue-50 rounded-lg space-y-4">
+              <h3 className="font-semibold text-blue-900">Bill To (M/S)</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Company/Organization Name</Label>
+                  <Input
+                    value={editForm.bill_to_name}
+                    onChange={(e) => setEditForm({...editForm, bill_to_name: e.target.value})}
+                    placeholder="e.g., HUMAN RESOURCES DEVELOPMENT CORPORATION"
+                  />
+                </div>
+                <div>
+                  <Label>Co. Reg. No.</Label>
+                  <Input
+                    value={editForm.bill_to_reg_no}
+                    onChange={(e) => setEditForm({...editForm, bill_to_reg_no: e.target.value})}
+                    placeholder="Company registration number"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>Address</Label>
+                  <Input
+                    value={editForm.bill_to_address}
+                    onChange={(e) => setEditForm({...editForm, bill_to_address: e.target.value})}
+                    placeholder="Full address"
+                  />
+                </div>
+                <div>
+                  <Label>Your Reference</Label>
+                  <Input
+                    value={editForm.your_reference}
+                    onChange={(e) => setEditForm({...editForm, your_reference: e.target.value})}
+                    placeholder="Client's reference number"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Training Details */}
+            <div className="p-4 bg-green-50 rounded-lg space-y-4">
+              <h3 className="font-semibold text-green-900">Training Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Program Name</Label>
+                  <Input
+                    value={editForm.programme_name}
+                    onChange={(e) => setEditForm({...editForm, programme_name: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Training Dates</Label>
+                  <Input
+                    value={editForm.training_dates}
+                    onChange={(e) => setEditForm({...editForm, training_dates: e.target.value})}
+                    placeholder="e.g., 18th November 2025"
+                  />
+                </div>
+                <div>
+                  <Label>Venue</Label>
+                  <Input
+                    value={editForm.venue}
+                    onChange={(e) => setEditForm({...editForm, venue: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Number of Participants</Label>
+                  <Input
+                    type="number"
+                    value={editForm.pax}
+                    onChange={(e) => setEditForm({...editForm, pax: parseInt(e.target.value) || 0})}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Line Items */}
+            <div className="p-4 bg-gray-50 rounded-lg space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="font-semibold text-gray-900">Line Items</h3>
+                <Button type="button" variant="outline" size="sm" onClick={addLineItem}>
+                  <Plus className="w-4 h-4 mr-1" /> Add Item
+                </Button>
+              </div>
+              
+              <div className="space-y-3">
+                {editForm.line_items.map((item, idx) => (
+                  <div key={idx} className="grid grid-cols-12 gap-2 items-end">
+                    <div className="col-span-5">
+                      {idx === 0 && <Label className="text-xs">Description</Label>}
+                      <Input
+                        value={item.description}
+                        onChange={(e) => updateLineItem(idx, 'description', e.target.value)}
+                        placeholder="Item description"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      {idx === 0 && <Label className="text-xs">Qty</Label>}
+                      <Input
+                        type="number"
+                        value={item.quantity}
+                        onChange={(e) => updateLineItem(idx, 'quantity', parseFloat(e.target.value) || 0)}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      {idx === 0 && <Label className="text-xs">Unit Price</Label>}
+                      <Input
+                        type="number"
+                        value={item.unit_price}
+                        onChange={(e) => updateLineItem(idx, 'unit_price', parseFloat(e.target.value) || 0)}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      {idx === 0 && <Label className="text-xs">Amount</Label>}
+                      <Input
+                        type="number"
+                        value={item.amount}
+                        disabled
+                        className="bg-gray-100"
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      {editForm.line_items.length > 1 && (
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-red-600"
+                          onClick={() => removeLineItem(idx)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Totals */}
+            <div className="p-4 bg-purple-50 rounded-lg space-y-4">
+              <h3 className="font-semibold text-purple-900">Totals</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <Label>Sub-Total (RM)</Label>
+                  <Input
+                    type="number"
+                    value={editForm.subtotal}
+                    disabled
+                    className="bg-gray-100"
+                  />
+                </div>
+                <div>
+                  <Label>Mobilisation Fee (RM)</Label>
+                  <Input
+                    type="number"
+                    value={editForm.mobilisation_fee}
+                    onChange={(e) => recalculateTotals({mobilisation_fee: parseFloat(e.target.value) || 0})}
+                  />
+                </div>
+                <div>
+                  <Label>Rounding (RM)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={editForm.rounding}
+                    onChange={(e) => recalculateTotals({rounding: parseFloat(e.target.value) || 0})}
+                  />
+                </div>
+                <div>
+                  <Label>Discount (RM)</Label>
+                  <Input
+                    type="number"
+                    value={editForm.discount}
+                    onChange={(e) => recalculateTotals({discount: parseFloat(e.target.value) || 0})}
+                  />
+                </div>
+                <div>
+                  <Label>Tax Rate (%)</Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={editForm.tax_rate}
+                    onChange={(e) => recalculateTotals({tax_rate: parseFloat(e.target.value) || 0})}
+                  />
+                </div>
+                <div>
+                  <Label>Tax Amount (RM)</Label>
+                  <Input
+                    type="number"
+                    value={editForm.tax_amount?.toFixed(2)}
+                    disabled
+                    className="bg-gray-100"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label className="text-lg font-bold">Grand Total (RM)</Label>
+                  <Input
+                    type="number"
+                    value={editForm.total_amount?.toFixed(2)}
+                    disabled
+                    className="bg-green-100 text-lg font-bold"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button variant="outline" onClick={() => setEditingInvoice(null)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveInvoice}>
+              Save Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
