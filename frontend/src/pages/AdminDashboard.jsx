@@ -160,6 +160,7 @@ const AdminDashboard = ({ user, onLogout }) => {
   const [editSessionDialogOpen, setEditSessionDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [bulkUploadSession, setBulkUploadSession] = useState(null);  // Session for standalone bulk upload
 
   const [trainerForm, setTrainerForm] = useState({
     email: "",
