@@ -481,7 +481,7 @@ const TrainerDashboard = ({ user, onLogout }) => {
         )}
 
         <Tabs defaultValue="sessions" className="w-full">
-          <TabsList className="flex flex-wrap w-full mb-8 h-auto justify-start gap-2 bg-gray-100 p-2 rounded-lg md:grid md:grid-cols-4">
+          <TabsList className="flex flex-wrap w-full mb-8 h-auto justify-start gap-2 bg-gray-100 p-2 rounded-lg md:grid md:grid-cols-5">
             <TabsTrigger value="sessions" data-testid="sessions-tab" className="flex-1 min-w-[140px] md:min-w-0">
               <Calendar className="w-4 h-4 mr-2" />
               <span className="text-sm">My Sessions</span>
