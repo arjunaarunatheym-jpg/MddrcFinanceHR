@@ -618,26 +618,25 @@ const AssistantAdminDashboard = ({ user, onLogout }) => {
                           <p className="text-sm text-gray-600 mb-3">
                             Allow participants to take pre-test
                           </p>
-                          <div className="flex gap-2">
+                          {isAccessEnabled('pre_test') ? (
                             <Button 
                               size="sm" 
-                              variant={isAccessEnabled('pre_test') ? 'default' : 'outline'}
-                              className={isAccessEnabled('pre_test') ? 'bg-green-500 hover:bg-green-600' : ''}
+                              className="w-full bg-green-600 hover:bg-green-600 cursor-default"
+                              disabled
+                            >
+                              ✓ RELEASED
+                            </Button>
+                          ) : (
+                            <Button 
+                              size="sm" 
+                              className="w-full bg-blue-600 hover:bg-blue-700"
                               onClick={() => handleToggleAccess('pre_test', true)}
                             >
-                              Enable
+                              Release Pre-Test
                             </Button>
-                            <Button 
-                              size="sm" 
-                              variant={!isAccessEnabled('pre_test') ? 'default' : 'outline'}
-                              className={!isAccessEnabled('pre_test') ? 'bg-red-500 hover:bg-red-600' : ''}
-                              onClick={() => handleToggleAccess('pre_test', false)}
-                            >
-                              Disable
-                            </Button>
-                          </div>
-                          <Badge className={`mt-2 ${isAccessEnabled('pre_test') ? 'bg-green-500' : 'bg-gray-400'}`}>
-                            {isAccessEnabled('pre_test') ? 'Currently Enabled' : 'Currently Disabled'}
+                          )}
+                          <Badge className={`mt-2 w-full justify-center ${isAccessEnabled('pre_test') ? 'bg-green-500' : 'bg-gray-400'}`}>
+                            {isAccessEnabled('pre_test') ? 'Status: Released' : 'Status: Not Released'}
                           </Badge>
                         </CardContent>
                       </Card>
@@ -654,26 +653,25 @@ const AssistantAdminDashboard = ({ user, onLogout }) => {
                           <p className="text-sm text-gray-600 mb-3">
                             Allow participants to take post-test
                           </p>
-                          <div className="flex gap-2">
+                          {isAccessEnabled('post_test') ? (
                             <Button 
                               size="sm" 
-                              variant={isAccessEnabled('post_test') ? 'default' : 'outline'}
-                              className={isAccessEnabled('post_test') ? 'bg-green-500 hover:bg-green-600' : ''}
+                              className="w-full bg-green-600 hover:bg-green-600 cursor-default"
+                              disabled
+                            >
+                              ✓ RELEASED
+                            </Button>
+                          ) : (
+                            <Button 
+                              size="sm" 
+                              className="w-full bg-green-600 hover:bg-green-700"
                               onClick={() => handleToggleAccess('post_test', true)}
                             >
-                              Enable
+                              Release Post-Test
                             </Button>
-                            <Button 
-                              size="sm" 
-                              variant={!isAccessEnabled('post_test') ? 'default' : 'outline'}
-                              className={!isAccessEnabled('post_test') ? 'bg-red-500 hover:bg-red-600' : ''}
-                              onClick={() => handleToggleAccess('post_test', false)}
-                            >
-                              Disable
-                            </Button>
-                          </div>
-                          <Badge className={`mt-2 ${isAccessEnabled('post_test') ? 'bg-green-500' : 'bg-gray-400'}`}>
-                            {isAccessEnabled('post_test') ? 'Currently Enabled' : 'Currently Disabled'}
+                          )}
+                          <Badge className={`mt-2 w-full justify-center ${isAccessEnabled('post_test') ? 'bg-green-500' : 'bg-gray-400'}`}>
+                            {isAccessEnabled('post_test') ? 'Status: Released' : 'Status: Not Released'}
                           </Badge>
                         </CardContent>
                       </Card>
@@ -690,26 +688,25 @@ const AssistantAdminDashboard = ({ user, onLogout }) => {
                           <p className="text-sm text-gray-600 mb-3">
                             Allow participants to submit feedback
                           </p>
-                          <div className="flex gap-2">
+                          {isAccessEnabled('feedback') ? (
                             <Button 
                               size="sm" 
-                              variant={isAccessEnabled('feedback') ? 'default' : 'outline'}
-                              className={isAccessEnabled('feedback') ? 'bg-green-500 hover:bg-green-600' : ''}
+                              className="w-full bg-green-600 hover:bg-green-600 cursor-default"
+                              disabled
+                            >
+                              ✓ RELEASED
+                            </Button>
+                          ) : (
+                            <Button 
+                              size="sm" 
+                              className="w-full bg-purple-600 hover:bg-purple-700"
                               onClick={() => handleToggleAccess('feedback', true)}
                             >
-                              Enable
+                              Release Feedback
                             </Button>
-                            <Button 
-                              size="sm" 
-                              variant={!isAccessEnabled('feedback') ? 'default' : 'outline'}
-                              className={!isAccessEnabled('feedback') ? 'bg-red-500 hover:bg-red-600' : ''}
-                              onClick={() => handleToggleAccess('feedback', false)}
-                            >
-                              Disable
-                            </Button>
-                          </div>
-                          <Badge className={`mt-2 ${isAccessEnabled('feedback') ? 'bg-green-500' : 'bg-gray-400'}`}>
-                            {isAccessEnabled('feedback') ? 'Currently Enabled' : 'Currently Disabled'}
+                          )}
+                          <Badge className={`mt-2 w-full justify-center ${isAccessEnabled('feedback') ? 'bg-green-500' : 'bg-gray-400'}`}>
+                            {isAccessEnabled('feedback') ? 'Status: Released' : 'Status: Not Released'}
                           </Badge>
                         </CardContent>
                       </Card>
