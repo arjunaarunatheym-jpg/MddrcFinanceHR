@@ -1061,13 +1061,13 @@ const TrainerDashboard = ({ user, onLogout }) => {
                     
                     return (
                       <div className="space-y-6">
-                        {/* Summary Cards - Now shows filtered data */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+                        {/* Summary Cards - Shows all role incomes */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
                             <CardHeader className="pb-2">
-                              <CardTitle className="text-sm font-medium text-green-700">
-                                Total Income
-                                <span className="block text-xs font-normal text-green-600">
+                              <CardTitle className="text-sm font-medium text-blue-700">
+                                Trainer Fees
+                                <span className="block text-xs font-normal text-blue-600">
                                   {incomeFilter.showAll 
                                     ? `(YTD ${incomeFilter.year})` 
                                     : `(${new Date(2000, incomeFilter.month - 1, 1).toLocaleString('default', { month: 'short' })} ${incomeFilter.year})`
@@ -1076,37 +1076,51 @@ const TrainerDashboard = ({ user, onLogout }) => {
                               </CardTitle>
                             </CardHeader>
                             <CardContent>
-                              <div className="text-2xl font-bold text-green-900">
+                              <div className="text-2xl font-bold text-blue-900">
                                 RM {filteredTotal.toLocaleString()}
                               </div>
                             </CardContent>
                           </Card>
-                          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-                            <CardHeader className="pb-2">
-                              <CardTitle className="text-sm font-medium text-blue-700">Paid</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="text-2xl font-bold text-blue-900">
-                                RM {filteredPaid.toLocaleString()}
-                              </div>
-                            </CardContent>
-                          </Card>
+                          {hasCoordinatorRole && (
+                            <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+                              <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium text-green-700">Coordinator Fees</CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="text-2xl font-bold text-green-900">
+                                  RM {coordTotal.toLocaleString()}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )}
+                          {hasMarketingRole && (
+                            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+                              <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium text-purple-700">Marketing Commission</CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="text-2xl font-bold text-purple-900">
+                                  RM {mktTotal.toLocaleString()}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )}
                           <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
                             <CardHeader className="pb-2">
-                              <CardTitle className="text-sm font-medium text-orange-700">Pending</CardTitle>
+                              <CardTitle className="text-sm font-medium text-orange-700">Total Pending</CardTitle>
                             </CardHeader>
                             <CardContent>
                               <div className="text-2xl font-bold text-orange-900">
-                                RM {filteredPending.toLocaleString()}
+                                RM {(filteredPending + (coordTotal - coordPaid) + (mktTotal - mktPaid)).toLocaleString()}
                               </div>
                             </CardContent>
                           </Card>
                         </div>
 
-                        {/* Income Records */}
+                        {/* Trainer Fee Records */}
                         <div>
-                          <h3 className="font-semibold mb-3">
-                            Income Records 
+                          <h3 className="font-semibold mb-3 text-blue-700">
+                            Trainer Fee Records 
                             <span className="text-sm font-normal text-gray-500 ml-2">
                               ({filteredRecords.length} record{filteredRecords.length !== 1 ? 's' : ''})
                             </span>
