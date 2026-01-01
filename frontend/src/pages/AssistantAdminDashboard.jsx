@@ -338,6 +338,11 @@ const AssistantAdminDashboard = ({ user, onLogout }) => {
               <span className="hidden sm:inline">Past Training</span>
               <span className="sm:hidden">Archive</span>
             </TabsTrigger>
+            <TabsTrigger value="income" className="flex-1 min-w-[80px]">
+              <DollarSign className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">My Income</span>
+              <span className="sm:hidden">Income</span>
+            </TabsTrigger>
           </TabsList>
 
           {/* Active Sessions Tab */}
