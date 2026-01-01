@@ -97,6 +97,14 @@ class User(BaseModel):
     phone_number: Optional[str] = None
     created_at: datetime = Field(default_factory=get_malaysia_time)
     is_active: bool = True
+    # Profile verification fields for participants
+    profile_verified: Optional[bool] = False
+    indemnity_accepted: Optional[bool] = False
+    indemnity_accepted_at: Optional[str] = None
+    indemnity_signature: Optional[str] = None  # Digital signature data
+    indemnity_signed_name: Optional[str] = None  # Full name typed by user
+    indemnity_signed_ic: Optional[str] = None  # IC typed by user
+    indemnity_signed_date: Optional[str] = None  # Date typed by user
 
 class UserCreate(BaseModel):
     email: Optional[str] = None  # Changed from EmailStr to str - no validation, auto-generated if needed
