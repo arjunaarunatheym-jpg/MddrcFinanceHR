@@ -2929,17 +2929,7 @@ const CoordinatorDashboard = ({ user, onLogout }) => {
                         />
                         Show All (YTD)
                       </label>
-                      <Button variant="outline" size="sm" onClick={async () => {
-                        setLoadingIncome(true);
-                        try {
-                          const response = await axiosInstance.get(`/finance/income/coordinator/${user.id}`);
-                          setIncomeData(response.data);
-                        } catch (error) {
-                          console.error('Failed to load income:', error);
-                        } finally {
-                          setLoadingIncome(false);
-                        }
-                      }} disabled={loadingIncome}>
+                      <Button variant="outline" size="sm" onClick={loadAllIncome} disabled={loadingIncome}>
                         {loadingIncome ? 'Loading...' : 'Refresh'}
                       </Button>
                     </div>
@@ -2949,17 +2939,7 @@ const CoordinatorDashboard = ({ user, onLogout }) => {
                   {!incomeData ? (
                     <div className="text-center py-8">
                       <p className="text-gray-500 mb-4">Click refresh to load your income data</p>
-                      <Button onClick={async () => {
-                        setLoadingIncome(true);
-                        try {
-                          const response = await axiosInstance.get(`/finance/income/coordinator/${user.id}`);
-                          setIncomeData(response.data);
-                        } catch (error) {
-                          console.error('Failed to load income:', error);
-                        } finally {
-                          setLoadingIncome(false);
-                        }
-                      }} disabled={loadingIncome}>
+                      <Button onClick={loadAllIncome} disabled={loadingIncome}>
                         {loadingIncome ? 'Loading...' : 'Load Income Data'}
                       </Button>
                     </div>
