@@ -933,6 +933,18 @@ const FinanceDashboard = ({ user, onLogout }) => {
                             <td className="px-4 py-3 text-center">{getStatusBadge(invoice.status)}</td>
                             <td className="px-4 py-3 text-center">
                               <div className="flex justify-center gap-1">
+                                {/* Edit Button - Available before issuing */}
+                                {!['issued', 'paid', 'cancelled'].includes(invoice.status) && (
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    className="text-orange-600"
+                                    onClick={() => handleEditInvoice(invoice)}
+                                    title="Edit Invoice"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                )}
                                 {(invoice.status === 'auto_draft' || invoice.status === 'draft') && (
                                   <Button 
                                     variant="ghost" 
@@ -956,17 +968,39 @@ const FinanceDashboard = ({ user, onLogout }) => {
                                   </Button>
                                 )}
                                 {invoice.status === 'issued' && (
+                                  <>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      className="text-purple-600"
+                                      onClick={() => handlePrintInvoice(invoice)}
+                                      title="Print Invoice"
+                                    >
+                                      <Printer className="w-4 h-4" />
+                                    </Button>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      className="text-green-600"
+                                      onClick={() => {
+                                        handleInvoiceSelect(invoice.id);
+                                        setActiveTab('payments');
+                                      }}
+                                      title="Record Payment"
+                                    >
+                                      <CreditCard className="w-4 h-4" />
+                                    </Button>
+                                  </>
+                                )}
+                                {invoice.status === 'paid' && (
                                   <Button 
                                     variant="ghost" 
                                     size="sm"
-                                    className="text-green-600"
-                                    onClick={() => {
-                                      handleInvoiceSelect(invoice.id);
-                                      setActiveTab('payments');
-                                    }}
-                                    title="Record Payment"
+                                    className="text-purple-600"
+                                    onClick={() => handlePrintInvoice(invoice)}
+                                    title="Print Invoice"
                                   >
-                                    <CreditCard className="w-4 h-4" />
+                                    <Printer className="w-4 h-4" />
                                   </Button>
                                 )}
                                 {!['paid', 'cancelled'].includes(invoice.status) && (
