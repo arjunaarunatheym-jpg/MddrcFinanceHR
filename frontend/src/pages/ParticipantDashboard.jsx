@@ -458,7 +458,7 @@ const ParticipantDashboard = ({ user, onLogout, onUserUpdate }) => {
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">
-            <div className="bg-gray-50 p-4 rounded-lg text-sm space-y-3 max-h-[400px] overflow-y-auto border">
+            <div className="bg-gray-50 p-4 rounded-lg text-sm space-y-3 max-h-[300px] overflow-y-auto border">
               <h4 className="font-bold text-lg">RELEASE AND WAIVER OF LIABILITY</h4>
               
               <p><strong>MDDRC Training Programme</strong></p>
@@ -490,8 +490,47 @@ const ParticipantDashboard = ({ user, onLogout, onUserUpdate }) => {
               </ol>
               
               <p className="font-semibold mt-4">
-                By accepting below, I acknowledge that I have read and understood this waiver, and I agree to be bound by its terms.
+                By signing below, I acknowledge that I have read and understood this waiver, and I agree to be bound by its terms.
               </p>
+            </div>
+            
+            {/* Digital Signature Section */}
+            <div className="border-t pt-4 space-y-4">
+              <h4 className="font-semibold text-gray-900">Digital Signature</h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="signed_name">Full Name (as signature)</Label>
+                  <Input 
+                    id="signed_name"
+                    value={signatureData.signed_name}
+                    onChange={(e) => setSignatureData({...signatureData, signed_name: e.target.value})}
+                    placeholder="Type your full name"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="signed_ic">IC Number</Label>
+                  <Input 
+                    id="signed_ic"
+                    value={signatureData.signed_ic}
+                    onChange={(e) => setSignatureData({...signatureData, signed_ic: e.target.value})}
+                    placeholder="Your IC number"
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+              
+              <div className="w-full md:w-1/2">
+                <Label htmlFor="signed_date">Date</Label>
+                <Input 
+                  id="signed_date"
+                  type="date"
+                  value={signatureData.signed_date}
+                  onChange={(e) => setSignatureData({...signatureData, signed_date: e.target.value})}
+                  className="mt-1"
+                />
+              </div>
             </div>
             
             <div className="flex items-center space-x-2 pt-2">
@@ -511,10 +550,10 @@ const ParticipantDashboard = ({ user, onLogout, onUserUpdate }) => {
           <DialogFooter>
             <Button 
               onClick={handleIndemnityAccept} 
-              disabled={!indemnityAccepted}
+              disabled={!indemnityAccepted || !signatureData.signed_name || !signatureData.signed_ic || !signatureData.signed_date}
               className="w-full"
             >
-              Accept & Continue
+              Sign & Accept
             </Button>
           </DialogFooter>
         </DialogContent>
