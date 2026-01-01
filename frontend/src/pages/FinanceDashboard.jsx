@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { 
   DollarSign, FileText, CreditCard, TrendingUp, 
   CheckCircle, Clock, AlertCircle, LogOut, RefreshCw,
-  Check, X, Plus, FileX, Receipt, Edit, Printer
+  Check, X, Plus, FileX, Receipt, Edit, Printer, Settings, Download, FileSpreadsheet
 } from 'lucide-react';
 
 const FinanceDashboard = ({ user, onLogout }) => {
@@ -23,6 +23,27 @@ const FinanceDashboard = ({ user, onLogout }) => {
   const [auditLogs, setAuditLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('pending');
+  
+  // Company Settings State
+  const [companySettings, setCompanySettings] = useState({
+    company_name: 'MDDRC SDN BHD',
+    company_reg_no: '',
+    address_line1: '',
+    address_line2: '',
+    city: '',
+    postcode: '',
+    state: '',
+    phone: '',
+    email: '',
+    website: '',
+    logo_url: '',
+    bank_name: '',
+    bank_account_name: '',
+    bank_account_number: '',
+    invoice_terms: 'Upon receipt of invoice',
+    invoice_footer_note: 'Thank you for your business!'
+  });
+  const [settingsLoading, setSettingsLoading] = useState(false);
   
   // Payment form state
   const [paymentForm, setPaymentForm] = useState({
