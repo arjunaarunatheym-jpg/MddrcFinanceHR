@@ -596,6 +596,163 @@ const TrainerDashboard = ({ user, onLogout }) => {
             </Card>
           </TabsContent>
 
+          <TabsContent value="session-mgmt">
+            <Card>
+              <CardHeader>
+                <CardTitle>Session Management</CardTitle>
+                <CardDescription>Control participant access to pre-test, post-test, and feedback</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {!selectedSession ? (
+                  <div className="text-center py-12">
+                    <Settings className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                    <p className="text-gray-500">Please select a session above to manage access</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <h3 className="font-semibold text-blue-900 mb-2">
+                        Managing: {selectedSession.company_name} - {selectedSession.program_name}
+                      </h3>
+                      <p className="text-sm text-blue-700">
+                        Control when participants can access different components of the training
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <Card className="border-2">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                            Pre-Test Access
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            <p className="text-sm text-gray-600">
+                              Allow participants to take the pre-training assessment
+                            </p>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">Enable Pre-Test</span>
+                              <button
+                                onClick={() => handleToggleAccess('pre_test', true)}
+                                className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
+                              >
+                                Enable
+                              </button>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">Disable Pre-Test</span>
+                              <button
+                                onClick={() => handleToggleAccess('pre_test', false)}
+                                className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
+                              >
+                                Disable
+                              </button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="border-2">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                            Post-Test Access
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            <p className="text-sm text-gray-600">
+                              Allow participants to take the post-training assessment
+                            </p>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">Enable Post-Test</span>
+                              <button
+                                onClick={() => handleToggleAccess('post_test', true)}
+                                className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
+                              >
+                                Enable
+                              </button>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">Disable Post-Test</span>
+                              <button
+                                onClick={() => handleToggleAccess('post_test', false)}
+                                className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
+                              >
+                                Disable
+                              </button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="border-2">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                            Feedback Access
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            <p className="text-sm text-gray-600">
+                              Allow participants to submit training feedback
+                            </p>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">Enable Feedback</span>
+                              <button
+                                onClick={() => handleToggleAccess('feedback', true)}
+                                className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
+                              >
+                                Enable
+                              </button>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">Disable Feedback</span>
+                              <button
+                                onClick={() => handleToggleAccess('feedback', false)}
+                                className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
+                              >
+                                Disable
+                              </button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    <Card className="bg-gray-50">
+                      <CardHeader>
+                        <CardTitle className="text-base">Current Access Status</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                          <div className="flex items-center justify-between">
+                            <span>Pre-Test:</span>
+                            <span className="font-medium text-orange-600">Check status</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>Post-Test:</span>
+                            <span className="font-medium text-blue-600">Check status</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>Feedback:</span>
+                            <span className="font-medium text-purple-600">Check status</span>
+                          </div>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-3">
+                          Note: Changes apply to all participants in this session immediately
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="checklists">
             <Card>
               <CardHeader>
