@@ -3058,6 +3058,33 @@ const CoordinatorDashboard = ({ user, onLogout }) => {
                           );
                         })()}
                       </div>
+
+                      {/* Marketing Commission Records (if user has marketing role) */}
+                      {hasMarketingRole && marketingIncomeData && marketingIncomeData.records?.length > 0 && (
+                        <div>
+                          <h3 className="font-semibold mb-3 text-purple-700">
+                            Marketing Commission Records
+                          </h3>
+                          <div className="space-y-2">
+                            {marketingIncomeData.records.map((record, idx) => (
+                              <div key={record.id || idx} className="p-4 bg-purple-50 rounded-lg flex justify-between items-center">
+                                <div>
+                                  <p className="font-medium">{record.company_name || record.session_name || 'Session'}</p>
+                                  <p className="text-sm text-gray-600">{record.session_name}</p>
+                                  <p className="text-sm text-gray-500">{record.training_dates}</p>
+                                  <p className="text-xs text-gray-400">{record.commission_percentage || 0}% commission</p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-bold text-lg">RM {(record.calculated_amount || 0).toLocaleString()}</p>
+                                  <Badge className={record.status === 'paid' ? 'bg-green-500' : 'bg-yellow-500'}>
+                                    {record.status === 'paid' ? 'Paid' : 'Pending'}
+                                  </Badge>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </CardContent>
