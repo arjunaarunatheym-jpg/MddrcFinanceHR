@@ -535,7 +535,9 @@ const FinanceDashboard = ({ user, onLogout }) => {
       try {
         const appSettings = await axiosInstance.get('/settings');
         logoUrl = appSettings.data?.logo_url;
-      } catch (e) {}
+      } catch (e) {
+        // Ignore error, use default
+      }
     }
     
     const printWindow = window.open('', '_blank');
