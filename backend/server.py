@@ -209,6 +209,7 @@ class SessionCreate(BaseModel):
     supervisors: List[SupervisorData] = []  # New supervisors to create or link
     trainer_assignments: List[dict] = []
     coordinator_id: Optional[str] = None
+    assistant_coordinator_ids: List[str] = []  # Backup coordinators
     # Marketing commission fields
     marketing_user_id: Optional[str] = None
     commission_type: Optional[str] = None  # percentage or fixed
