@@ -91,6 +91,43 @@ const AssistantAdminDashboard = ({ user, onLogout }) => {
     }
   };
 
+  // Load session access status
+  const loadSessionAccess = async (sessionId) => {
+    try {
+      const response = await axiosInstance.get(`/participant-access/session/${sessionId}`);
+      setSessionAccess(response.data || []);
+    } catch (error) {
+      console.error('Failed to load session access:', error);
+      setSessionAccess([]);
+    }
+  };
+
+  // Toggle pre-test, post-test, feedback access
+  const handleToggleAccess = async (accessType, enabled) => {
+    if (!selectedSession) return;
+    
+    try {
+      await axiosInstance.post(`/participant-access/session/${selectedSession.id}/toggle`, {
+        access_type: accessType,
+        enabled: enabled
+      });
+      
+      toast.success(`${accessType.replace('_', ' ')} ${enabled ? 'enabled' : 'disabled'} for all participants`);
+      await loadSessionAccess(selectedSession.id);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || `Failed to update ${accessType} access`);
+    }
+  };
+
+  // Check if any access is enabled
+  const isAccessEnabled = (accessType) => {
+    if (!sessionAccess || sessionAccess.length === 0) return false;
+    const field = accessType === 'pre_test' ? 'can_access_pre_test' : 
+                  accessType === 'post_test' ? 'can_access_post_test' : 
+                  accessType === 'feedback' ? 'can_access_feedback' : 'can_access_checklist';
+    return sessionAccess.some(a => a[field] === true);
+  };
+
   const loadParticipants = async (sessionId) => {
     try {
       const response = await axiosInstance.get(`/sessions/${sessionId}/participants`);
@@ -103,6 +140,7 @@ const AssistantAdminDashboard = ({ user, onLogout }) => {
   const handleSelectSession = (session) => {
     setSelectedSession(session);
     loadParticipants(session.id);
+    loadSessionAccess(session.id);
   };
 
   const handleAddParticipant = async (e) => {
