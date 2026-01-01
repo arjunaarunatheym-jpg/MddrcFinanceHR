@@ -220,6 +220,15 @@ const FinanceDashboard = ({ user, onLogout }) => {
       const response = await axiosInstance.get(`/finance/payments/${payment.id}/receipt`);
       const { receipt_number, invoice, company_settings: settings } = response.data;
       
+      // Also get app settings for logo
+      let logoUrl = settings?.logo_url;
+      if (!logoUrl) {
+        try {
+          const appSettings = await axiosInstance.get('/settings');
+          logoUrl = appSettings.data?.logo_url;
+        } catch (e) {}
+      }
+      
       const printWindow = window.open('', '_blank');
       printWindow.document.write(`
         <!DOCTYPE html>
@@ -229,7 +238,8 @@ const FinanceDashboard = ({ user, onLogout }) => {
           <style>
             body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
             .header { text-align: center; margin-bottom: 30px; }
-            .logo { font-size: 24px; font-weight: bold; color: #1a365d; }
+            .logo-img { max-height: 80px; margin-bottom: 10px; }
+            .logo-text { font-size: 24px; font-weight: bold; color: #1a365d; }
             .company-info { font-size: 12px; color: #666; margin-top: 5px; }
             .receipt-title { font-size: 20px; font-weight: bold; margin: 20px 0; text-align: center; background: #f0f0f0; padding: 10px; }
             .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
@@ -244,7 +254,8 @@ const FinanceDashboard = ({ user, onLogout }) => {
         </head>
         <body>
           <div class="header">
-            <div class="logo">${settings?.company_name || 'MDDRC SDN BHD'}</div>
+            ${logoUrl ? `<img src="${logoUrl}" class="logo-img" alt="Logo" />` : ''}
+            <div class="logo-text">${settings?.company_name || 'MDDRC SDN BHD'}</div>
             <div class="company-info">
               ${settings?.company_reg_no ? `(${settings.company_reg_no})` : ''}<br>
               ${settings?.address_line1 || ''} ${settings?.address_line2 || ''}<br>
