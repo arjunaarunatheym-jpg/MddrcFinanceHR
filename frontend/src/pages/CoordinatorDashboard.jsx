@@ -217,6 +217,26 @@ const CoordinatorDashboard = ({ user, onLogout }) => {
     }
   };
 
+  // Load all income data (coordinator + marketing if applicable)
+  const loadAllIncome = async () => {
+    setLoadingIncome(true);
+    try {
+      // Load coordinator income
+      const coordResponse = await axiosInstance.get(`/finance/income/coordinator/${user.id}`);
+      setIncomeData(coordResponse.data);
+      
+      // If user has marketing role, also load marketing income
+      if (hasMarketingRole) {
+        const mktResponse = await axiosInstance.get(`/finance/income/marketing/${user.id}`);
+        setMarketingIncomeData(mktResponse.data);
+      }
+    } catch (error) {
+      console.error('Failed to load income:', error);
+    } finally {
+      setLoadingIncome(false);
+    }
+  };
+
   // Load existing coordinator feedback for session
   const loadCoordinatorFeedback = async (sessionId) => {
     try {
