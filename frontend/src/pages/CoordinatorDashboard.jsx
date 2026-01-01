@@ -455,7 +455,7 @@ const CoordinatorDashboard = ({ user, onLogout }) => {
       
       toast.success(message);
       setUploadDialogOpen(false);
-      loadParticipants(selectedSession.id);
+      loadSessions();
       
       // Reset file input
       e.target.value = '';
