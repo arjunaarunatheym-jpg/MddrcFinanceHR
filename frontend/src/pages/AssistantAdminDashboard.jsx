@@ -317,18 +317,23 @@ const AssistantAdminDashboard = ({ user, onLogout }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Main Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="flex flex-wrap w-full grid-cols-3 mb-6 h-auto justify-start gap-2 bg-white shadow-sm p-2 rounded-lg sm:grid sm:grid-cols-3">
-            <TabsTrigger value="sessions" className="flex-1 min-w-[100px] sm:min-w-0">
+          <TabsList className="flex flex-wrap w-full mb-6 h-auto justify-start gap-2 bg-white shadow-sm p-2 rounded-lg">
+            <TabsTrigger value="sessions" className="flex-1 min-w-[80px]">
               <Calendar className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline">Active Sessions</span>
               <span className="sm:hidden">Sessions</span>
             </TabsTrigger>
-            <TabsTrigger value="programs" className="flex-1 min-w-[100px] sm:min-w-0">
+            <TabsTrigger value="session-mgmt" className="flex-1 min-w-[80px] bg-gradient-to-r from-blue-500 to-indigo-500 text-white data-[state=active]:text-white">
+              <Settings className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">Session Mgmt</span>
+              <span className="sm:hidden">Mgmt</span>
+            </TabsTrigger>
+            <TabsTrigger value="programs" className="flex-1 min-w-[80px]">
               <BookOpen className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline">Program Content</span>
               <span className="sm:hidden">Content</span>
             </TabsTrigger>
-            <TabsTrigger value="past-training" className="flex-1 min-w-[100px] sm:min-w-0">
+            <TabsTrigger value="past-training" className="flex-1 min-w-[80px]">
               <Archive className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline">Past Training</span>
               <span className="sm:hidden">Archive</span>
