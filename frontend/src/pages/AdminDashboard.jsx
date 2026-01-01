@@ -3944,6 +3944,36 @@ const AdminDashboard = ({ user, onLogout }) => {
                 </div>
               </div>
 
+              {/* Assistant Coordinators */}
+              <div>
+                <Label>Assistant Coordinators (can manage session if coordinator unavailable)</Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {staff.filter(s => s.role === 'trainer' || s.role === 'assistant_admin' || s.role === 'coordinator').map(s => (
+                    <label key={s.id} className="flex items-center gap-2 text-sm border rounded px-2 py-1 cursor-pointer hover:bg-gray-50">
+                      <input
+                        type="checkbox"
+                        checked={(editingSession.assistant_coordinator_ids || []).includes(s.id)}
+                        onChange={(e) => {
+                          const current = editingSession.assistant_coordinator_ids || [];
+                          if (e.target.checked) {
+                            setEditingSession({ ...editingSession, assistant_coordinator_ids: [...current, s.id] });
+                          } else {
+                            setEditingSession({ ...editingSession, assistant_coordinator_ids: current.filter(id => id !== s.id) });
+                          }
+                        }}
+                      />
+                      {s.full_name}
+                      <span className="text-xs text-gray-500">({s.role})</span>
+                    </label>
+                  ))}
+                </div>
+                {(editingSession.assistant_coordinator_ids || []).length > 0 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Selected: {(editingSession.assistant_coordinator_ids || []).length} assistant coordinator(s)
+                  </p>
+                )}
+              </div>
+
               <div className="border-t pt-4">
                 <h3 className="font-semibold mb-3">Add More Participants</h3>
                 <div className="grid grid-cols-2 gap-3">
