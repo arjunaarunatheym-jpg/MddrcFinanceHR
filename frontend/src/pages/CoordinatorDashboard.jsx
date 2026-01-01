@@ -2946,10 +2946,10 @@ const CoordinatorDashboard = ({ user, onLogout }) => {
                   ) : (
                     <div className="space-y-6">
                       {/* Summary Cards */}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
                           <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-green-700">Total Fees</CardTitle>
+                            <CardTitle className="text-sm font-medium text-green-700">Coordinator Fees</CardTitle>
                           </CardHeader>
                           <CardContent>
                             <div className="text-2xl font-bold text-green-900">
@@ -2957,32 +2957,44 @@ const CoordinatorDashboard = ({ user, onLogout }) => {
                             </div>
                           </CardContent>
                         </Card>
+                        {hasMarketingRole && marketingIncomeData && (
+                          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-sm font-medium text-purple-700">Marketing Commission</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="text-2xl font-bold text-purple-900">
+                                RM {marketingIncomeData.summary.total_commission?.toLocaleString() || '0'}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )}
                         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
                           <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-blue-700">Paid</CardTitle>
+                            <CardTitle className="text-sm font-medium text-blue-700">Total Paid</CardTitle>
                           </CardHeader>
                           <CardContent>
                             <div className="text-2xl font-bold text-blue-900">
-                              RM {incomeData.summary.paid_fees?.toLocaleString() || '0'}
+                              RM {((incomeData.summary.paid_fees || 0) + (marketingIncomeData?.summary.paid_commission || 0)).toLocaleString()}
                             </div>
                           </CardContent>
                         </Card>
                         <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
                           <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-orange-700">Pending</CardTitle>
+                            <CardTitle className="text-sm font-medium text-orange-700">Total Pending</CardTitle>
                           </CardHeader>
                           <CardContent>
                             <div className="text-2xl font-bold text-orange-900">
-                              RM {incomeData.summary.pending_fees?.toLocaleString() || '0'}
+                              RM {((incomeData.summary.pending_fees || 0) + (marketingIncomeData?.summary.pending_commission || 0)).toLocaleString()}
                             </div>
                           </CardContent>
                         </Card>
                       </div>
 
-                      {/* Fee Records */}
+                      {/* Coordinator Fee Records */}
                       <div>
-                        <h3 className="font-semibold mb-3">
-                          Fee Records
+                        <h3 className="font-semibold mb-3 text-green-700">
+                          Coordinator Fee Records
                           {!incomeFilter.showAll && (
                             <span className="text-sm font-normal text-gray-500 ml-2">
                               ({new Date(2000, incomeFilter.month - 1, 1).toLocaleString('default', { month: 'long' })} {incomeFilter.year})
