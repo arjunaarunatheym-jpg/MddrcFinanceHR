@@ -4016,7 +4016,7 @@ const AdminDashboard = ({ user, onLogout }) => {
               <div>
                 <Label>Assistant Coordinators (can manage session if coordinator unavailable)</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {staff.filter(s => s.role === 'trainer' || s.role === 'assistant_admin' || s.role === 'coordinator').map(s => (
+                  {users.filter(s => s.role === 'trainer' || s.role === 'assistant_admin' || s.role === 'coordinator').map(s => (
                     <label key={s.id} className="flex items-center gap-2 text-sm border rounded px-2 py-1 cursor-pointer hover:bg-gray-50">
                       <input
                         type="checkbox"
