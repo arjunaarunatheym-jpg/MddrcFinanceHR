@@ -7678,7 +7678,214 @@ async def record_payment(payment_data: PaymentCreate, current_user: User = Depen
     
     return payment
 
-@api_router.get("/finance/payments")
+# Company Settings APIs
+@api_router.get("/finance/company-settings")
+async def get_company_settings(current_user: User = Depends(get_current_user)):
+    """Get company settings for invoices/receipts"""
+    if current_user.role not in ["admin", "super_admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    settings = await db.company_settings.find_one({"id": "company_settings"}, {"_id": 0})
+    if not settings:
+        # Return default settings
+        settings = CompanySettings().model_dump()
+        await db.company_settings.insert_one(settings)
+    
+    return settings
+
+@api_router.put("/finance/company-settings")
+async def update_company_settings(settings_data: dict, current_user: User = Depends(get_current_user)):
+    """Update company settings"""
+    if current_user.role not in ["admin", "super_admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Only Admin/Finance can update settings")
+    
+    settings_data["updated_at"] = get_malaysia_time().isoformat()
+    settings_data["updated_by"] = current_user.id
+    settings_data["id"] = "company_settings"
+    
+    await db.company_settings.update_one(
+        {"id": "company_settings"},
+        {"$set": settings_data},
+        upsert=True
+    )
+    
+    return {"message": "Settings updated successfully"}
+
+# Receipt Data API (for printing)
+@api_router.get("/finance/payments/{payment_id}/receipt")
+async def get_receipt_data(payment_id: str, current_user: User = Depends(get_current_user)):
+    """Get receipt data for printing"""
+    if current_user.role not in ["admin", "super_admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    payment = await db.payments.find_one({"id": payment_id}, {"_id": 0})
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    # Get invoice details
+    invoice = await db.invoices.find_one({"id": payment.get("invoice_id")}, {"_id": 0})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    
+    # Get company settings
+    settings = await db.company_settings.find_one({"id": "company_settings"}, {"_id": 0})
+    if not settings:
+        settings = CompanySettings().model_dump()
+    
+    # Generate receipt number
+    receipt_count = await db.payments.count_documents({})
+    year = get_malaysia_time().year
+    month = get_malaysia_time().month
+    receipt_number = f"RCP/{year}/{month:02d}/{receipt_count:04d}"
+    
+    return {
+        "receipt_number": receipt_number,
+        "payment": payment,
+        "invoice": invoice,
+        "company_settings": settings
+    }
+
+# Excel Export API
+@api_router.get("/finance/invoices/export")
+async def export_invoices(
+    status: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Export invoices data for Excel download"""
+    if current_user.role not in ["admin", "super_admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    query = {}
+    if status:
+        query["status"] = status
+    
+    invoices = await db.invoices.find(query, {"_id": 0}).sort("created_at", -1).to_list(10000)
+    
+    # Format for Excel export
+    export_data = []
+    for inv in invoices:
+        export_data.append({
+            "Invoice No": inv.get("invoice_number", ""),
+            "Date": inv.get("created_at", "")[:10] if inv.get("created_at") else "",
+            "Bill To": inv.get("bill_to_name") or inv.get("company_name", ""),
+            "Company": inv.get("company_name", ""),
+            "Program": inv.get("programme_name", ""),
+            "Training Dates": inv.get("training_dates", ""),
+            "Venue": inv.get("venue", ""),
+            "Pax": inv.get("pax", 0),
+            "Subtotal (RM)": inv.get("subtotal", 0),
+            "Mobilisation Fee (RM)": inv.get("mobilisation_fee", 0),
+            "Tax (RM)": inv.get("tax_amount", 0),
+            "Discount (RM)": inv.get("discount", 0),
+            "Total Amount (RM)": inv.get("total_amount", 0),
+            "Status": inv.get("status", ""),
+            "Issued Date": inv.get("issued_at", "")[:10] if inv.get("issued_at") else "",
+            "Your Reference": inv.get("your_reference", "")
+        })
+    
+    return export_data
+
+# Session Payables Report (Course Registration Form style)
+@api_router.get("/finance/session/{session_id}/payables-report")
+async def get_session_payables_report(session_id: str, current_user: User = Depends(get_current_user)):
+    """Get comprehensive payables report for a session (like Course Registration Form)"""
+    if current_user.role not in ["admin", "super_admin", "finance", "coordinator"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get session
+    session = await db.sessions.find_one({"id": session_id}, {"_id": 0})
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Get company
+    company = await db.companies.find_one({"id": session.get("company_id")}, {"_id": 0})
+    
+    # Get program
+    program = await db.programs.find_one({"id": session.get("program_id")}, {"_id": 0})
+    
+    # Get participants count
+    participant_count = len(session.get("participant_ids", []))
+    
+    # Get coordinator
+    coordinator = await db.users.find_one({"id": session.get("coordinator_id")}, {"_id": 0, "full_name": 1})
+    
+    # Get invoice
+    invoice = await db.invoices.find_one({"session_id": session_id}, {"_id": 0})
+    
+    # Get trainer fees
+    trainer_fees = await db.trainer_fees.find({"session_id": session_id}, {"_id": 0}).to_list(100)
+    
+    # Get coordinator fees
+    coordinator_fees = await db.coordinator_fees.find({"session_id": session_id}, {"_id": 0}).to_list(10)
+    
+    # Get expenses
+    expenses = await db.session_expenses.find({"session_id": session_id}, {"_id": 0}).to_list(100)
+    
+    # Get marketing commission
+    marketing = await db.marketing_commissions.find({"session_id": session_id}, {"_id": 0}).to_list(10)
+    
+    # Calculate totals
+    total_trainer_fees = sum(t.get("fee_amount", 0) for t in trainer_fees)
+    total_coordinator_fees = sum(c.get("total_fee", 0) for c in coordinator_fees)
+    total_marketing = sum(m.get("commission_amount", 0) for m in marketing)
+    total_expenses = sum(e.get("actual_amount") or e.get("amount", 0) for e in expenses)
+    
+    # Get costing data
+    costing = await db.session_costing.find_one({"session_id": session_id}, {"_id": 0})
+    
+    return {
+        "session": {
+            "id": session_id,
+            "name": session.get("name"),
+            "start_date": session.get("start_date"),
+            "end_date": session.get("end_date"),
+            "venue": session.get("venue"),
+            "num_days": session.get("num_days", 1)
+        },
+        "client": {
+            "company_name": company.get("name") if company else session.get("company_name"),
+            "contact_person": session.get("contact_person"),
+            "contact_phone": session.get("contact_phone"),
+            "contact_email": session.get("contact_email")
+        },
+        "program": {
+            "name": program.get("name") if program else session.get("program_name"),
+            "category": program.get("category") if program else ""
+        },
+        "participants": {
+            "count": participant_count,
+            "target": session.get("pax", 0)
+        },
+        "coordinator": {
+            "name": coordinator.get("full_name") if coordinator else "",
+            "id": session.get("coordinator_id")
+        },
+        "invoice": {
+            "number": invoice.get("invoice_number") if invoice else "",
+            "status": invoice.get("status") if invoice else "",
+            "total_amount": invoice.get("total_amount", 0) if invoice else 0,
+            "bill_to": invoice.get("bill_to_name") if invoice else ""
+        },
+        "payables": {
+            "trainer_fees": trainer_fees,
+            "coordinator_fees": coordinator_fees,
+            "marketing_commissions": marketing,
+            "expenses": expenses
+        },
+        "totals": {
+            "trainer_fees": total_trainer_fees,
+            "coordinator_fees": total_coordinator_fees,
+            "marketing_commissions": total_marketing,
+            "expenses": total_expenses,
+            "total_payables": total_trainer_fees + total_coordinator_fees + total_marketing + total_expenses,
+            "invoice_amount": invoice.get("total_amount", 0) if invoice else 0,
+            "profit": (invoice.get("total_amount", 0) if invoice else 0) - (total_trainer_fees + total_coordinator_fees + total_marketing + total_expenses)
+        },
+        "costing": costing
+    }
+
 async def get_payments(invoice_id: Optional[str] = None, current_user: User = Depends(get_current_user)):
     """Get payments with invoice details"""
     if current_user.role not in ["admin", "super_admin", "finance"]:
