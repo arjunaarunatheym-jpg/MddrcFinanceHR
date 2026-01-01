@@ -738,15 +738,21 @@ const TrainerDashboard = ({ user, onLogout }) => {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                           <div className="flex items-center justify-between">
                             <span>Pre-Test:</span>
-                            <span className="font-medium text-orange-600">Check status</span>
+                            <span className={`font-medium ${sessionAccess.find(a => a.access_type === 'pre_test')?.enabled ? 'text-green-600' : 'text-red-600'}`}>
+                              {sessionAccess.find(a => a.access_type === 'pre_test')?.enabled ? 'Enabled' : 'Disabled'}
+                            </span>
                           </div>
                           <div className="flex items-center justify-between">
                             <span>Post-Test:</span>
-                            <span className="font-medium text-blue-600">Check status</span>
+                            <span className={`font-medium ${sessionAccess.find(a => a.access_type === 'post_test')?.enabled ? 'text-green-600' : 'text-red-600'}`}>
+                              {sessionAccess.find(a => a.access_type === 'post_test')?.enabled ? 'Enabled' : 'Disabled'}
+                            </span>
                           </div>
                           <div className="flex items-center justify-between">
                             <span>Feedback:</span>
-                            <span className="font-medium text-purple-600">Check status</span>
+                            <span className={`font-medium ${sessionAccess.find(a => a.access_type === 'feedback')?.enabled ? 'text-green-600' : 'text-red-600'}`}>
+                              {sessionAccess.find(a => a.access_type === 'feedback')?.enabled ? 'Enabled' : 'Disabled'}
+                            </span>
                           </div>
                         </div>
                         <p className="text-xs text-gray-500 mt-3">
