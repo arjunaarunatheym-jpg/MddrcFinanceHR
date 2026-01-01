@@ -1092,6 +1092,183 @@ const AssistantAdminDashboard = ({ user, onLogout }) => {
             </Card>
           </TabsContent>
 
+          {/* Income Tab */}
+          <TabsContent value="income">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <DollarSign className="w-5 h-5 text-green-600" />
+                      My Income
+                      {hasCoordinatorRole && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">Coordinator</span>}
+                      {hasMarketingRole && <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">Marketing</span>}
+                      {hasTrainerRole && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">Trainer</span>}
+                    </CardTitle>
+                    <CardDescription>View your income based on your roles</CardDescription>
+                  </div>
+                  <Button variant="outline" onClick={loadAllIncome} disabled={loadingIncome}>
+                    {loadingIncome ? 'Loading...' : 'Refresh'}
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {!coordinatorIncomeData && !marketingIncomeData && !incomeData ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 mb-4">Click refresh to load your income data</p>
+                    <Button onClick={loadAllIncome} disabled={loadingIncome}>
+                      {loadingIncome ? 'Loading...' : 'Load Income Data'}
+                    </Button>
+                    {!hasCoordinatorRole && !hasMarketingRole && !hasTrainerRole && (
+                      <p className="text-sm text-gray-400 mt-4">
+                        Note: Income will appear when you have roles assigned (Coordinator, Marketing, or Trainer)
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Summary Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      {hasCoordinatorRole && coordinatorIncomeData && (
+                        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-green-700">Coordinator Fees</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-2xl font-bold text-green-900">
+                              RM {(coordinatorIncomeData.summary?.total_fees || 0).toLocaleString()}
+                            </div>
+                            <p className="text-xs text-green-600">
+                              Paid: RM {(coordinatorIncomeData.summary?.paid_fees || 0).toLocaleString()}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      )}
+                      {hasMarketingRole && marketingIncomeData && (
+                        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-purple-700">Marketing Commission</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-2xl font-bold text-purple-900">
+                              RM {(marketingIncomeData.summary?.total_commission || 0).toLocaleString()}
+                            </div>
+                            <p className="text-xs text-purple-600">
+                              Paid: RM {(marketingIncomeData.summary?.paid_commission || 0).toLocaleString()}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      )}
+                      {hasTrainerRole && incomeData && (
+                        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-blue-700">Trainer Fees</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-2xl font-bold text-blue-900">
+                              RM {(incomeData.summary?.total_income || 0).toLocaleString()}
+                            </div>
+                            <p className="text-xs text-blue-600">
+                              Paid: RM {(incomeData.summary?.paid_income || 0).toLocaleString()}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      )}
+                      <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm font-medium text-orange-700">Total Pending</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-2xl font-bold text-orange-900">
+                            RM {(
+                              (coordinatorIncomeData?.summary?.pending_fees || 0) +
+                              (marketingIncomeData?.summary?.pending_commission || 0) +
+                              (incomeData?.summary?.pending_income || 0)
+                            ).toLocaleString()}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Coordinator Fee Records */}
+                    {hasCoordinatorRole && coordinatorIncomeData?.records?.length > 0 && (
+                      <div>
+                        <h3 className="font-semibold mb-3 text-green-700">Coordinator Fee Records</h3>
+                        <div className="space-y-2">
+                          {coordinatorIncomeData.records.map((record, idx) => (
+                            <div key={record.id || idx} className="p-4 bg-green-50 rounded-lg flex justify-between items-center">
+                              <div>
+                                <p className="font-medium">{record.company_name || record.session_name || 'Session'}</p>
+                                <p className="text-sm text-gray-600">{record.session_name}</p>
+                                <p className="text-sm text-gray-500">{record.training_dates}</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-bold text-lg">RM {(record.total_fee || 0).toLocaleString()}</p>
+                                <Badge className={record.status === 'paid' ? 'bg-green-500' : 'bg-yellow-500'}>
+                                  {record.status === 'paid' ? 'Paid' : 'Pending'}
+                                </Badge>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Marketing Commission Records */}
+                    {hasMarketingRole && marketingIncomeData?.records?.length > 0 && (
+                      <div>
+                        <h3 className="font-semibold mb-3 text-purple-700">Marketing Commission Records</h3>
+                        <div className="space-y-2">
+                          {marketingIncomeData.records.map((record, idx) => (
+                            <div key={record.id || idx} className="p-4 bg-purple-50 rounded-lg flex justify-between items-center">
+                              <div>
+                                <p className="font-medium">{record.company_name || record.session_name || 'Session'}</p>
+                                <p className="text-sm text-gray-600">{record.session_name}</p>
+                                <p className="text-sm text-gray-500">{record.training_dates}</p>
+                                <p className="text-xs text-gray-400">{record.commission_percentage || 0}% commission</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-bold text-lg">RM {(record.calculated_amount || 0).toLocaleString()}</p>
+                                <Badge className={record.status === 'paid' ? 'bg-green-500' : 'bg-yellow-500'}>
+                                  {record.status === 'paid' ? 'Paid' : 'Pending'}
+                                </Badge>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Trainer Fee Records */}
+                    {hasTrainerRole && incomeData?.records?.length > 0 && (
+                      <div>
+                        <h3 className="font-semibold mb-3 text-blue-700">Trainer Fee Records</h3>
+                        <div className="space-y-2">
+                          {incomeData.records.map((record, idx) => (
+                            <div key={record.id || idx} className="p-4 bg-blue-50 rounded-lg flex justify-between items-center">
+                              <div>
+                                <p className="font-medium">{record.company_name || record.session_name || 'Session'}</p>
+                                <p className="text-sm text-gray-600">{record.session_name}</p>
+                                <p className="text-sm text-gray-500">{record.training_dates}</p>
+                                <p className="text-xs text-gray-400">Role: {record.trainer_role || 'Trainer'}</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-bold text-lg">RM {(record.fee_amount || record.amount || 0).toLocaleString()}</p>
+                                <Badge className={record.status === 'paid' ? 'bg-green-500' : 'bg-yellow-500'}>
+                                  {record.status === 'paid' ? 'Paid' : 'Pending'}
+                                </Badge>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
         </Tabs>
       </div>
     </div>
