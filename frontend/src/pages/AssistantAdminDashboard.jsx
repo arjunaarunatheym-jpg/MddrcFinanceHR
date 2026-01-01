@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useTheme } from "../context/ThemeContext";
-import { Plus, Users, LogOut, Calendar, BookOpen, ClipboardList, ClipboardCheck, MessageSquare, FileText, Search, Eye, Building2, BarChart3, Archive, Upload } from "lucide-react";
+import { Plus, Users, LogOut, Calendar, BookOpen, ClipboardList, ClipboardCheck, MessageSquare, FileText, Search, Eye, Building2, BarChart3, Archive, Upload, Settings, DollarSign } from "lucide-react";
 import TestManagement from "./TestManagement";
 import ChecklistManagement from "./ChecklistManagement";
 import FeedbackManagement from "./FeedbackManagement";
@@ -43,6 +43,20 @@ const AssistantAdminDashboard = ({ user, onLogout }) => {
   // Bulk upload states
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+
+  // Session access control states
+  const [sessionAccess, setSessionAccess] = useState([]);
+  
+  // Income states (dual role support)
+  const [incomeData, setIncomeData] = useState(null);
+  const [coordinatorIncomeData, setCoordinatorIncomeData] = useState(null);
+  const [marketingIncomeData, setMarketingIncomeData] = useState(null);
+  const [loadingIncome, setLoadingIncome] = useState(false);
+  
+  // Check additional roles
+  const hasCoordinatorRole = user.additional_roles?.includes('coordinator') || user.role === 'coordinator';
+  const hasMarketingRole = user.additional_roles?.includes('marketing') || user.role === 'marketing';
+  const hasTrainerRole = user.additional_roles?.includes('trainer') || user.role === 'trainer';
 
   useEffect(() => {
     loadSessions();
