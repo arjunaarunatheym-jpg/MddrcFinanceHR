@@ -40,6 +40,27 @@ const FinanceDashboard = ({ user, onLogout }) => {
   const [creditNotes, setCreditNotes] = useState([]);
   const [showCNDialog, setShowCNDialog] = useState(false);
   const [payables, setPayables] = useState({ trainer_fees: [], coordinator_fees: [], marketing_commissions: [] });
+  
+  // Invoice Edit State
+  const [editingInvoice, setEditingInvoice] = useState(null);
+  const [editForm, setEditForm] = useState({
+    bill_to_name: '',
+    bill_to_address: '',
+    bill_to_reg_no: '',
+    your_reference: '',
+    programme_name: '',
+    training_dates: '',
+    venue: '',
+    pax: 0,
+    line_items: [],
+    subtotal: 0,
+    mobilisation_fee: 0,
+    rounding: 0,
+    tax_rate: 0,
+    tax_amount: 0,
+    discount: 0,
+    total_amount: 0
+  });
 
   useEffect(() => {
     loadDashboard();
