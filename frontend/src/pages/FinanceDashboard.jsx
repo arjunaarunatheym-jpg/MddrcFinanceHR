@@ -1373,9 +1373,19 @@ const FinanceDashboard = ({ user, onLogout }) => {
                               <p className="font-medium">{payment.invoice_number}</p>
                               <p className="text-sm text-gray-500">{payment.payment_date}</p>
                             </div>
-                            <div className="text-right">
-                              <p className="font-bold text-green-600">RM {payment.amount?.toLocaleString()}</p>
-                              <p className="text-xs text-gray-500">{payment.payment_method}</p>
+                            <div className="text-right flex items-center gap-2">
+                              <div>
+                                <p className="font-bold text-green-600">RM {payment.amount?.toLocaleString()}</p>
+                                <p className="text-xs text-gray-500">{payment.payment_method}</p>
+                              </div>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handlePrintReceipt(payment)}
+                                title="Print Receipt"
+                              >
+                                <Receipt className="w-4 h-4 text-purple-600" />
+                              </Button>
                             </div>
                           </div>
                         </div>
