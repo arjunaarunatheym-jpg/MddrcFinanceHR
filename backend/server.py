@@ -720,6 +720,34 @@ class PaymentCreate(BaseModel):
     reference_number: Optional[str] = None
     notes: Optional[str] = None
 
+# Company Settings for Invoice/Receipt customization
+class CompanySettings(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = "company_settings"  # Singleton
+    company_name: str = "MDDRC SDN BHD"
+    company_reg_no: str = ""
+    address_line1: str = ""
+    address_line2: str = ""
+    city: str = ""
+    postcode: str = ""
+    state: str = ""
+    country: str = "Malaysia"
+    phone: str = ""
+    email: str = ""
+    website: str = ""
+    logo_url: Optional[str] = None
+    # Bank details
+    bank_name: str = ""
+    bank_account_name: str = ""
+    bank_account_number: str = ""
+    bank_swift_code: str = ""
+    # Invoice settings
+    invoice_prefix: str = "INV/MDDRC"
+    invoice_terms: str = "Upon receipt of invoice"
+    invoice_footer_note: str = "Thank you for your business!"
+    updated_at: datetime = Field(default_factory=get_malaysia_time)
+    updated_by: Optional[str] = None
+
 # Trainer Fee - Custom amount per trainer per session
 class TrainerFee(BaseModel):
     model_config = ConfigDict(extra="ignore")
