@@ -190,6 +190,152 @@ const FinanceDashboard = ({ user, onLogout }) => {
     }
   };
 
+  // Load company settings
+  const loadCompanySettings = async () => {
+    try {
+      const response = await axiosInstance.get('/finance/company-settings');
+      setCompanySettings(response.data);
+    } catch (error) {
+      console.error('Failed to load company settings');
+    }
+  };
+
+  // Save company settings
+  const handleSaveSettings = async () => {
+    setSettingsLoading(true);
+    try {
+      await axiosInstance.put('/finance/company-settings', companySettings);
+      toast.success('Company settings saved');
+    } catch (error) {
+      toast.error('Failed to save settings');
+    } finally {
+      setSettingsLoading(false);
+    }
+  };
+
+  // Print Receipt
+  const handlePrintReceipt = async (payment) => {
+    try {
+      const response = await axiosInstance.get(`/finance/payments/${payment.id}/receipt`);
+      const { receipt_number, invoice, company_settings: settings } = response.data;
+      
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Receipt ${receipt_number}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .logo { font-size: 24px; font-weight: bold; color: #1a365d; }
+            .company-info { font-size: 12px; color: #666; margin-top: 5px; }
+            .receipt-title { font-size: 20px; font-weight: bold; margin: 20px 0; text-align: center; background: #f0f0f0; padding: 10px; }
+            .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+            .detail-box { padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+            .detail-label { font-weight: bold; font-size: 12px; color: #666; margin-bottom: 5px; }
+            .detail-value { font-size: 14px; }
+            .amount-box { text-align: center; padding: 30px; background: #e8f5e9; border-radius: 10px; margin: 20px 0; }
+            .amount { font-size: 32px; font-weight: bold; color: #2e7d32; }
+            .footer { margin-top: 40px; font-size: 12px; color: #666; text-align: center; }
+            @media print { body { padding: 20px; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="logo">${settings?.company_name || 'MDDRC SDN BHD'}</div>
+            <div class="company-info">
+              ${settings?.company_reg_no ? `(${settings.company_reg_no})` : ''}<br>
+              ${settings?.address_line1 || ''} ${settings?.address_line2 || ''}<br>
+              ${settings?.city || ''} ${settings?.postcode || ''} ${settings?.state || ''}<br>
+              ${settings?.phone ? `Tel: ${settings.phone}` : ''} ${settings?.email ? `| Email: ${settings.email}` : ''}
+            </div>
+          </div>
+          
+          <div class="receipt-title">OFFICIAL RECEIPT</div>
+          
+          <div class="details-grid">
+            <div class="detail-box">
+              <div class="detail-label">Receipt No:</div>
+              <div class="detail-value">${receipt_number}</div>
+              <div class="detail-label" style="margin-top: 10px;">Date:</div>
+              <div class="detail-value">${new Date(payment.payment_date).toLocaleDateString('en-MY')}</div>
+            </div>
+            <div class="detail-box">
+              <div class="detail-label">Invoice No:</div>
+              <div class="detail-value">${invoice?.invoice_number || payment.invoice_number || '-'}</div>
+              <div class="detail-label" style="margin-top: 10px;">Payment Method:</div>
+              <div class="detail-value">${payment.payment_method?.replace('_', ' ').toUpperCase() || '-'}</div>
+            </div>
+          </div>
+          
+          <div class="detail-box">
+            <div class="detail-label">RECEIVED FROM:</div>
+            <div class="detail-value" style="font-size: 16px; font-weight: bold;">${invoice?.bill_to_name || invoice?.company_name || '-'}</div>
+            <div class="detail-value">${invoice?.programme_name || ''}</div>
+          </div>
+          
+          <div class="amount-box">
+            <div style="font-size: 14px; color: #666; margin-bottom: 10px;">Amount Received</div>
+            <div class="amount">RM ${payment.amount?.toLocaleString('en-MY', {minimumFractionDigits: 2})}</div>
+            ${payment.reference_number ? `<div style="font-size: 12px; color: #666; margin-top: 10px;">Ref: ${payment.reference_number}</div>` : ''}
+          </div>
+          
+          ${payment.notes ? `<div class="detail-box"><div class="detail-label">Notes:</div><div class="detail-value">${payment.notes}</div></div>` : ''}
+          
+          <div class="footer">
+            <p>This is a computer-generated receipt. No signature required.</p>
+            <p>${settings?.invoice_footer_note || 'Thank you for your business!'}</p>
+          </div>
+          
+          <script>window.onload = function() { window.print(); }</script>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+    } catch (error) {
+      toast.error('Failed to generate receipt');
+    }
+  };
+
+  // Export invoices to Excel
+  const handleExportInvoices = async () => {
+    try {
+      const response = await axiosInstance.get('/finance/invoices/export');
+      const data = response.data;
+      
+      // Convert to CSV
+      if (data.length === 0) {
+        toast.error('No invoices to export');
+        return;
+      }
+      
+      const headers = Object.keys(data[0]);
+      const csvContent = [
+        headers.join(','),
+        ...data.map(row => headers.map(h => {
+          const val = row[h];
+          // Escape commas and quotes
+          if (typeof val === 'string' && (val.includes(',') || val.includes('"'))) {
+            return `"${val.replace(/"/g, '""')}"`;
+          }
+          return val;
+        }).join(','))
+      ].join('\\n');
+      
+      // Download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `invoices_${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+      
+      toast.success('Invoices exported successfully');
+    } catch (error) {
+      toast.error('Failed to export invoices');
+    }
+  };
+
   const loadPendingInvoices = async () => {
     try {
       const response = await axiosInstance.get('/finance/invoices');
