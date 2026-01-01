@@ -108,12 +108,16 @@ const CoordinatorDashboard = ({ user, onLogout }) => {
   
   // Income states
   const [incomeData, setIncomeData] = useState(null);
+  const [marketingIncomeData, setMarketingIncomeData] = useState(null);
   const [loadingIncome, setLoadingIncome] = useState(false);
   const [incomeFilter, setIncomeFilter] = useState({
     year: new Date().getFullYear(),
     month: new Date().getMonth() + 1,
     showAll: false
   });
+  
+  // Check if user has marketing role
+  const hasMarketingRole = user.additional_roles?.includes('marketing') || user.role === 'marketing';
   
   // Completion checklist state
   const [completionChecklist, setCompletionChecklist] = useState(null);
