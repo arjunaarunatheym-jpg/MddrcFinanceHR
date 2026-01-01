@@ -118,6 +118,13 @@ const TrainerDashboard = ({ user, onLogout }) => {
     }
   }, []);
 
+  // Load session access when selectedSession changes
+  useEffect(() => {
+    if (selectedSession) {
+      loadSessionAccess(selectedSession.id);
+    }
+  }, [selectedSession]);
+
   const loadSessions = async () => {
     try {
       // Add timestamp to prevent caching
