@@ -2263,14 +2263,26 @@ async def get_session_access(session_id: str, current_user: User = Depends(get_c
 
 @api_router.post("/participant-access/session/{session_id}/toggle")
 async def toggle_session_access(session_id: str, access_data: dict, current_user: User = Depends(get_current_user)):
-    """Toggle access for all participants in a session (coordinator/admin)"""
-    if current_user.role not in ["coordinator", "admin"]:
-        raise HTTPException(status_code=403, detail="Only coordinators and admins can control access")
-    
-    # Get session to find all participants
+    """Toggle access for all participants in a session (coordinator/admin/trainer/assistant_admin)"""
+    # Get session to check permissions
     session = await db.sessions.find_one({"id": session_id}, {"_id": 0})
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Check permissions - admin, coordinator, assistant_admin can always access
+    # Trainers can access if they're assigned to the session or are assistant coordinators
+    can_access = False
+    if current_user.role in ["coordinator", "admin", "assistant_admin"]:
+        can_access = True
+    elif current_user.role == "trainer":
+        # Check if trainer is assigned to this session
+        trainer_ids = [t.get("trainer_id") for t in session.get("trainer_assignments", [])]
+        assistant_coord_ids = session.get("assistant_coordinator_ids", [])
+        if current_user.id in trainer_ids or current_user.id in assistant_coord_ids:
+            can_access = True
+    
+    if not can_access:
+        raise HTTPException(status_code=403, detail="You don't have permission to control access for this session")
     
     access_type = access_data.get("access_type")
     enabled = access_data.get("enabled", False)
