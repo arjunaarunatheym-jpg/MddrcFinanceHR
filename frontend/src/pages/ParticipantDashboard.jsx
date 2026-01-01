@@ -380,23 +380,38 @@ const ParticipantDashboard = ({ user, onLogout, onUserUpdate }) => {
       return;
     }
     
+    if (!signatureData.signed_name || !signatureData.signed_ic || !signatureData.signed_date) {
+      toast.error("Please fill in all signature fields");
+      return;
+    }
+    
     try {
-      // Mark profile as verified and indemnity accepted
+      // Mark profile as verified and indemnity accepted with signature data
       await axiosInstance.put("/users/profile", {
         profile_verified: true,
         indemnity_accepted: true,
-        indemnity_accepted_at: new Date().toISOString()
+        indemnity_accepted_at: new Date().toISOString(),
+        indemnity_signature: `Digitally signed by ${signatureData.signed_name}`,
+        indemnity_signed_name: signatureData.signed_name,
+        indemnity_signed_ic: signatureData.signed_ic,
+        indemnity_signed_date: signatureData.signed_date
       });
       
       setShowIndemnityDialog(false);
       
       // Update user state if callback provided
       if (onUserUpdate) {
-        onUserUpdate({ ...user, profile_verified: true, indemnity_accepted: true });
+        onUserUpdate({ 
+          ...user, 
+          profile_verified: true, 
+          indemnity_accepted: true,
+          indemnity_signed_name: signatureData.signed_name,
+          indemnity_signed_ic: signatureData.signed_ic,
+          indemnity_signed_date: signatureData.signed_date
+        });
       }
       
-      toast.success("Welcome! Please complete your details.");
-      setActiveTab("details");
+      toast.success("Welcome! Your indemnity form has been signed.");
       loadData();
     } catch (error) {
       toast.error(error.response?.data?.detail || "Failed to accept indemnity");
