@@ -647,7 +647,7 @@ const TrainerDashboard = ({ user, onLogout }) => {
                           <input
                             type="checkbox"
                             className="sr-only peer"
-                            checked={isAccessEnabled('pre_test')}
+                            checked={sessionAccess.some(a => a.can_access_pre_test)}
                             onChange={(e) => handleToggleAccess('pre_test', e.target.checked)}
                           />
                           <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
@@ -664,7 +664,7 @@ const TrainerDashboard = ({ user, onLogout }) => {
                           <input
                             type="checkbox"
                             className="sr-only peer"
-                            checked={isAccessEnabled('post_test')}
+                            checked={sessionAccess.some(a => a.can_access_post_test)}
                             onChange={(e) => handleToggleAccess('post_test', e.target.checked)}
                           />
                           <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
@@ -681,7 +681,7 @@ const TrainerDashboard = ({ user, onLogout }) => {
                           <input
                             type="checkbox"
                             className="sr-only peer"
-                            checked={isAccessEnabled('feedback')}
+                            checked={sessionAccess.some(a => a.can_access_feedback)}
                             onChange={(e) => handleToggleAccess('feedback', e.target.checked)}
                           />
                           <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
@@ -697,20 +697,20 @@ const TrainerDashboard = ({ user, onLogout }) => {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                           <div className="flex items-center justify-between">
                             <span>Pre-Test:</span>
-                            <span className={`font-medium ${isAccessEnabled('pre_test') ? 'text-green-600' : 'text-red-600'}`}>
-                              {isAccessEnabled('pre_test') ? 'Enabled' : 'Disabled'}
+                            <span className={`font-medium ${sessionAccess.some(a => a.can_access_pre_test) ? 'text-green-600' : 'text-red-600'}`}>
+                              {sessionAccess.some(a => a.can_access_pre_test) ? 'Enabled' : 'Disabled'}
                             </span>
                           </div>
                           <div className="flex items-center justify-between">
                             <span>Post-Test:</span>
-                            <span className={`font-medium ${isAccessEnabled('post_test') ? 'text-green-600' : 'text-red-600'}`}>
-                              {isAccessEnabled('post_test') ? 'Enabled' : 'Disabled'}
+                            <span className={`font-medium ${sessionAccess.some(a => a.can_access_post_test) ? 'text-green-600' : 'text-red-600'}`}>
+                              {sessionAccess.some(a => a.can_access_post_test) ? 'Enabled' : 'Disabled'}
                             </span>
                           </div>
                           <div className="flex items-center justify-between">
                             <span>Feedback:</span>
-                            <span className={`font-medium ${isAccessEnabled('feedback') ? 'text-green-600' : 'text-red-600'}`}>
-                              {isAccessEnabled('feedback') ? 'Enabled' : 'Disabled'}
+                            <span className={`font-medium ${sessionAccess.some(a => a.can_access_feedback) ? 'text-green-600' : 'text-red-600'}`}>
+                              {sessionAccess.some(a => a.can_access_feedback) ? 'Enabled' : 'Disabled'}
                             </span>
                           </div>
                         </div>
