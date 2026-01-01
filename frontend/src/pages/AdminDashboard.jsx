@@ -4281,6 +4281,51 @@ const AdminDashboard = ({ user, onLogout }) => {
           }}
         />
       )}
+
+      {/* Standalone Bulk Upload Dialog */}
+      <Dialog open={bulkUploadSession !== null} onOpenChange={(open) => !open && setBulkUploadSession(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Bulk Upload Participants</DialogTitle>
+            <DialogDescription>
+              {bulkUploadSession && (
+                <span>
+                  Upload participants to: <strong>{bulkUploadSession.company_name || 'Session'}</strong> - {bulkUploadSession.name}
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-blue-50 p-4 rounded-lg space-y-2">
+              <p className="text-sm font-medium text-blue-900">Excel Format Required:</p>
+              <ul className="text-sm text-blue-700 space-y-1">
+                <li>• Column 1: <strong>Full Name</strong></li>
+                <li>• Column 2: <strong>IC</strong> (UPPERCASE, no dashes)</li>
+                <li>• Column 3: <strong>Company Name</strong></li>
+              </ul>
+              <p className="text-xs text-blue-600 mt-2">
+                Note: New companies will be created automatically if not found
+              </p>
+            </div>
+            
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+              <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+              <label className="cursor-pointer">
+                <span className="text-sm text-gray-600">
+                  {uploading ? "Uploading..." : "Click to select Excel file"}
+                </span>
+                <Input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={handleStandaloneBulkUpload}
+                  disabled={uploading}
+                  className="hidden"
+                />
+              </label>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
