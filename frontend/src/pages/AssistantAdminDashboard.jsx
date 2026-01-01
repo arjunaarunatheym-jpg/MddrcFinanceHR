@@ -128,6 +128,34 @@ const AssistantAdminDashboard = ({ user, onLogout }) => {
     return sessionAccess.some(a => a[field] === true);
   };
 
+  // Load all income data based on roles
+  const loadAllIncome = async () => {
+    setLoadingIncome(true);
+    try {
+      // Check if user has coordinator role
+      if (hasCoordinatorRole) {
+        const coordRes = await axiosInstance.get(`/finance/income/coordinator/${user.id}`);
+        setCoordinatorIncomeData(coordRes.data);
+      }
+      
+      // Check if user has marketing role
+      if (hasMarketingRole) {
+        const mktRes = await axiosInstance.get(`/finance/income/marketing/${user.id}`);
+        setMarketingIncomeData(mktRes.data);
+      }
+      
+      // Check if user has trainer role
+      if (hasTrainerRole) {
+        const trainerRes = await axiosInstance.get(`/finance/income/trainer/${user.id}`);
+        setIncomeData(trainerRes.data);
+      }
+    } catch (error) {
+      console.error('Failed to load income:', error);
+    } finally {
+      setLoadingIncome(false);
+    }
+  };
+
   const loadParticipants = async (sessionId) => {
     try {
       const response = await axiosInstance.get(`/sessions/${sessionId}/participants`);
