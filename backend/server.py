@@ -7359,6 +7359,46 @@ async def get_invoices(
     invoices = await db.invoices.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
     return invoices
 
+# MUST be before /finance/invoices/{invoice_id} to avoid route conflict
+@api_router.get("/finance/invoices/export")
+async def export_invoices(
+    status: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Export invoices data for Excel download"""
+    if current_user.role not in ["admin", "super_admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    query = {}
+    if status:
+        query["status"] = status
+    
+    invoices = await db.invoices.find(query, {"_id": 0}).sort("created_at", -1).to_list(10000)
+    
+    # Format for Excel export
+    export_data = []
+    for inv in invoices:
+        export_data.append({
+            "Invoice No": inv.get("invoice_number", ""),
+            "Date": str(inv.get("created_at", ""))[:10] if inv.get("created_at") else "",
+            "Bill To": inv.get("bill_to_name") or inv.get("company_name", ""),
+            "Company": inv.get("company_name", ""),
+            "Program": inv.get("programme_name", ""),
+            "Training Dates": inv.get("training_dates", ""),
+            "Venue": inv.get("venue", ""),
+            "Pax": inv.get("pax", 0),
+            "Subtotal (RM)": inv.get("subtotal", 0),
+            "Mobilisation Fee (RM)": inv.get("mobilisation_fee", 0),
+            "Tax (RM)": inv.get("tax_amount", 0),
+            "Discount (RM)": inv.get("discount", 0),
+            "Total Amount (RM)": inv.get("total_amount", 0),
+            "Status": inv.get("status", ""),
+            "Issued Date": str(inv.get("issued_at", ""))[:10] if inv.get("issued_at") else "",
+            "Your Reference": inv.get("your_reference", "")
+        })
+    
+    return export_data
+
 @api_router.get("/finance/invoices/{invoice_id}")
 async def get_invoice(invoice_id: str, current_user: User = Depends(get_current_user)):
     """Get single invoice"""
