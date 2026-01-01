@@ -639,10 +639,18 @@ class Invoice(BaseModel):
     pax: int = 0
     num_days: int = 1  # Number of training days
     
+    # Bill To (editable by finance - e.g., HRD Corp)
+    bill_to_name: Optional[str] = None  # e.g., "HUMAN RESOURCES DEVELOPMENT CORPORATION"
+    bill_to_address: Optional[str] = None
+    bill_to_reg_no: Optional[str] = None  # Company Registration Number
+    your_reference: Optional[str] = None  # Client's reference number
+    
     # Pricing type and line items
     pricing_type: str = "lumpsum"  # lumpsum or per_pax
     line_items: List[dict] = []  # [{description, quantity, unit_price, amount}]
     subtotal: float = 0.0
+    mobilisation_fee: float = 0.0  # Mobilisation fee
+    rounding: float = 0.0  # Rounding adjustment
     tax_rate: float = 0.0  # SST/GST percentage
     tax_amount: float = 0.0
     discount: float = 0.0
@@ -667,9 +675,25 @@ class Invoice(BaseModel):
     parent_invoice_id: Optional[str] = None
 
 class InvoiceUpdate(BaseModel):
+    # Bill To fields (editable by finance)
+    bill_to_name: Optional[str] = None
+    bill_to_address: Optional[str] = None
+    bill_to_reg_no: Optional[str] = None
+    your_reference: Optional[str] = None
+    
+    # Training details (editable)
+    programme_name: Optional[str] = None
+    training_dates: Optional[str] = None
+    venue: Optional[str] = None
+    pax: Optional[int] = None
+    num_days: Optional[int] = None
+    
+    # Pricing
     pricing_type: Optional[str] = None
     line_items: Optional[List[dict]] = None
     subtotal: Optional[float] = None
+    mobilisation_fee: Optional[float] = None
+    rounding: Optional[float] = None
     tax_rate: Optional[float] = None
     tax_amount: Optional[float] = None
     discount: Optional[float] = None
