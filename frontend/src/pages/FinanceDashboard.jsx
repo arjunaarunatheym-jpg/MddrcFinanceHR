@@ -1057,6 +1057,10 @@ const FinanceDashboard = ({ user, onLogout }) => {
                 <div className="flex justify-between items-center flex-wrap gap-4">
                   <CardTitle>Invoice Management</CardTitle>
                   <div className="flex gap-2">
+                    <Button variant="outline" onClick={handleExportInvoices} className="text-green-600">
+                      <FileSpreadsheet className="w-4 h-4 mr-1" />
+                      Export Excel
+                    </Button>
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
                       <SelectTrigger className="w-40">
                         <SelectValue placeholder="Filter by status" />
