@@ -979,6 +979,8 @@ const TrainerDashboard = ({ user, onLogout }) => {
                     <CardTitle className="flex items-center gap-2">
                       <DollarSign className="w-5 h-5 text-green-600" />
                       My Income
+                      {hasCoordinatorRole && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">+ Coordinator</span>}
+                      {hasMarketingRole && <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">+ Marketing</span>}
                     </CardTitle>
                     <CardDescription>View your training income and payment status</CardDescription>
                   </div>
@@ -1013,7 +1015,7 @@ const TrainerDashboard = ({ user, onLogout }) => {
                       />
                       Show All (YTD)
                     </label>
-                    <Button variant="outline" size="sm" onClick={loadIncome} disabled={loadingIncome}>
+                    <Button variant="outline" size="sm" onClick={loadAllIncome} disabled={loadingIncome}>
                       {loadingIncome ? 'Loading...' : 'Refresh'}
                     </Button>
                   </div>
