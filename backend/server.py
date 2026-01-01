@@ -2310,8 +2310,25 @@ async def get_my_access(session_id: str, current_user: User = Depends(get_curren
 
 @api_router.get("/participant-access/session/{session_id}")
 async def get_session_access(session_id: str, current_user: User = Depends(get_current_user)):
-    """Get all participant access records for a session (for coordinators/admins)"""
-    if current_user.role not in ["coordinator", "admin"]:
+    """Get all participant access records for a session"""
+    # Get session to check permissions
+    session = await db.sessions.find_one({"id": session_id}, {"_id": 0})
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Check permissions - admin, coordinator, assistant_admin can always access
+    # Trainers can access if they're assigned to the session or are assistant coordinators
+    can_access = False
+    if current_user.role in ["coordinator", "admin", "assistant_admin"]:
+        can_access = True
+    elif current_user.role == "trainer":
+        # Check if trainer is assigned to this session
+        trainer_ids = [t.get("trainer_id") for t in session.get("trainer_assignments", [])]
+        assistant_coord_ids = session.get("assistant_coordinator_ids", [])
+        if current_user.id in trainer_ids or current_user.id in assistant_coord_ids:
+            can_access = True
+    
+    if not can_access:
         raise HTTPException(status_code=403, detail="Access denied")
     
     access_records = await db.participant_access.find({"session_id": session_id}, {"_id": 0}).to_list(1000)
