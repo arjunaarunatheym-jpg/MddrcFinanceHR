@@ -343,8 +343,174 @@ const ParticipantDashboard = ({ user, onLogout, onUserUpdate }) => {
     }
   };
 
+  // Handle profile verification
+  const handleVerification = async () => {
+    if (!verificationData.full_name.trim() || !verificationData.id_number.trim()) {
+      toast.error("Please fill in both name and IC number");
+      return;
+    }
+    
+    try {
+      // Update user profile with verified name and IC
+      await axiosInstance.put("/users/profile", {
+        full_name: verificationData.full_name.trim(),
+        id_number: verificationData.id_number.trim()
+      });
+      
+      setShowVerificationDialog(false);
+      setShowIndemnityDialog(true);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Failed to verify profile");
+    }
+  };
+
+  // Handle indemnity form acceptance
+  const handleIndemnityAccept = async () => {
+    if (!indemnityAccepted) {
+      toast.error("Please accept the indemnity form to continue");
+      return;
+    }
+    
+    try {
+      // Mark profile as verified and indemnity accepted
+      await axiosInstance.put("/users/profile", {
+        profile_verified: true,
+        indemnity_accepted: true,
+        indemnity_accepted_at: new Date().toISOString()
+      });
+      
+      setShowIndemnityDialog(false);
+      
+      // Update user state if callback provided
+      if (onUserUpdate) {
+        onUserUpdate({ ...user, profile_verified: true, indemnity_accepted: true });
+      }
+      
+      toast.success("Welcome! Please complete your details.");
+      setActiveTab("details");
+      loadData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Failed to accept indemnity");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
+      {/* Verification Dialog - First Time Login */}
+      <Dialog open={showVerificationDialog} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-blue-600" />
+              Verify Your Identity
+            </DialogTitle>
+            <DialogDescription>
+              Please verify your name and IC number to continue.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="verify-name">Full Name (as per IC)</Label>
+              <Input
+                id="verify-name"
+                value={verificationData.full_name}
+                onChange={(e) => setVerificationData({ ...verificationData, full_name: e.target.value })}
+                placeholder="Enter your full name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="verify-ic">IC Number</Label>
+              <Input
+                id="verify-ic"
+                value={verificationData.id_number}
+                onChange={(e) => setVerificationData({ ...verificationData, id_number: e.target.value })}
+                placeholder="e.g., 901231-14-5678"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleVerification} className="w-full">
+              Verify & Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Indemnity Form Dialog */}
+      <Dialog open={showIndemnityDialog} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto" onPointerDownOutside={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-orange-600" />
+              Indemnity & Waiver Form
+            </DialogTitle>
+            <DialogDescription>
+              Please read and accept the indemnity form before proceeding.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="bg-gray-50 p-4 rounded-lg text-sm space-y-3 max-h-[400px] overflow-y-auto border">
+              <h4 className="font-bold text-lg">RELEASE AND WAIVER OF LIABILITY</h4>
+              
+              <p><strong>MDDRC Training Programme</strong></p>
+              
+              <p>I, the undersigned participant, acknowledge and agree to the following:</p>
+              
+              <ol className="list-decimal pl-5 space-y-2">
+                <li>
+                  <strong>Assumption of Risk:</strong> I understand that participation in the defensive riding/driving training programme involves inherent risks, including but not limited to physical injury, property damage, or other hazards. I voluntarily assume all such risks.
+                </li>
+                <li>
+                  <strong>Release of Liability:</strong> I hereby release, waive, discharge, and covenant not to sue MDDRC, its officers, employees, instructors, and agents from any and all liability, claims, demands, or causes of action arising out of or related to any injury, damage, or loss which may occur as a result of my participation in the training programme.
+                </li>
+                <li>
+                  <strong>Medical Fitness:</strong> I confirm that I am physically fit to participate in this training programme and have no medical conditions that would prevent safe participation. I understand that I should consult with a physician if I have any concerns about my physical ability to participate.
+                </li>
+                <li>
+                  <strong>Compliance with Rules:</strong> I agree to follow all safety rules, regulations, and instructions provided by the training instructors. I understand that failure to comply may result in my removal from the programme.
+                </li>
+                <li>
+                  <strong>Personal Property:</strong> I understand that MDDRC is not responsible for any loss or damage to my personal property during the training programme.
+                </li>
+                <li>
+                  <strong>Photo/Video Consent:</strong> I consent to the use of photographs and videos taken during the training programme for promotional and educational purposes.
+                </li>
+                <li>
+                  <strong>Emergency Medical Treatment:</strong> In the event of an emergency, I authorize MDDRC to seek emergency medical treatment on my behalf if I am unable to do so myself.
+                </li>
+              </ol>
+              
+              <p className="font-semibold mt-4">
+                By accepting below, I acknowledge that I have read and understood this waiver, and I agree to be bound by its terms.
+              </p>
+            </div>
+            
+            <div className="flex items-center space-x-2 pt-2">
+              <Checkbox 
+                id="indemnity-accept" 
+                checked={indemnityAccepted}
+                onCheckedChange={setIndemnityAccepted}
+              />
+              <label 
+                htmlFor="indemnity-accept" 
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                I have read, understood, and agree to the terms of this Indemnity & Waiver Form
+              </label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              onClick={handleIndemnityAccept} 
+              disabled={!indemnityAccepted}
+              className="w-full"
+            >
+              Accept & Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
