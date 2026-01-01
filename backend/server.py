@@ -1579,6 +1579,13 @@ async def get_sessions(
                         {"completion_status": {"$exists": False}},
                         {"completion_status": "ongoing"}
                     ]
+                },
+                # Trainer can see sessions where they're assigned as trainer OR assistant coordinator
+                {
+                    "$or": [
+                        {"trainer_assignments.trainer_id": current_user.id},
+                        {"assistant_coordinator_ids": current_user.id}
+                    ]
                 }
             ]
         }
