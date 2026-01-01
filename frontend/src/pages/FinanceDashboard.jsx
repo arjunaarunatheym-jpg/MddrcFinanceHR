@@ -626,24 +626,24 @@ const FinanceDashboard = ({ user, onLogout }) => {
         </table>
         
         <div class="totals">
-          <div class="total-row"><span>Sub-Total:</span><span>RM \${(invoice.subtotal || 0).toLocaleString('en-MY', {minimumFractionDigits: 2})}</span></div>
-          \${invoice.mobilisation_fee ? \`<div class="total-row"><span>Mobilisation Fee:</span><span>RM \${invoice.mobilisation_fee.toLocaleString('en-MY', {minimumFractionDigits: 2})}</span></div>\` : ''}
-          \${invoice.rounding ? \`<div class="total-row"><span>Rounding:</span><span>RM \${invoice.rounding.toLocaleString('en-MY', {minimumFractionDigits: 2})}</span></div>\` : ''}
-          \${invoice.tax_amount ? \`<div class="total-row"><span>Service/Sales Tax (\${invoice.tax_rate || 0}%):</span><span>RM \${invoice.tax_amount.toLocaleString('en-MY', {minimumFractionDigits: 2})}</span></div>\` : ''}
-          \${invoice.discount ? \`<div class="total-row"><span>Discount:</span><span>- RM \${invoice.discount.toLocaleString('en-MY', {minimumFractionDigits: 2})}</span></div>\` : ''}
-          <div class="grand-total"><span>GRAND TOTAL:</span><span style="float: right;">RM \${(invoice.total_amount || 0).toLocaleString('en-MY', {minimumFractionDigits: 2})}</span></div>
+          <div class="total-row"><span>Sub-Total:</span><span>RM ${(invoice.subtotal || 0).toLocaleString('en-MY', {minimumFractionDigits: 2})}</span></div>
+          ${invoice.mobilisation_fee ? `<div class="total-row"><span>Mobilisation Fee:</span><span>RM ${invoice.mobilisation_fee.toLocaleString('en-MY', {minimumFractionDigits: 2})}</span></div>` : ''}
+          ${invoice.rounding ? `<div class="total-row"><span>Rounding:</span><span>RM ${invoice.rounding.toLocaleString('en-MY', {minimumFractionDigits: 2})}</span></div>` : ''}
+          ${invoice.tax_amount ? `<div class="total-row"><span>Service/Sales Tax (${invoice.tax_rate || 0}%):</span><span>RM ${invoice.tax_amount.toLocaleString('en-MY', {minimumFractionDigits: 2})}</span></div>` : ''}
+          ${invoice.discount ? `<div class="total-row"><span>Discount:</span><span>- RM ${invoice.discount.toLocaleString('en-MY', {minimumFractionDigits: 2})}</span></div>` : ''}
+          <div class="grand-total"><span>GRAND TOTAL:</span><span style="float: right;">RM ${(invoice.total_amount || 0).toLocaleString('en-MY', {minimumFractionDigits: 2})}</span></div>
         </div>
         
         <div class="footer">
-          <p><strong>Payment Terms:</strong> \${settings.invoice_terms || 'Upon receipt of invoice'}</p>
-          <p><strong>Bank Details:</strong> \${settings.bank_account_name || settings.company_name || 'MDDRC SDN BHD'} | \${settings.bank_name || 'Bank'} | \${settings.bank_account_number || ''}</p>
-          <p>\${settings.invoice_footer_note || 'Thank you for your business!'}</p>
+          <p><strong>Payment Terms:</strong> ${settings.invoice_terms || 'Upon receipt of invoice'}</p>
+          <p><strong>Bank Details:</strong> ${settings.bank_account_name || settings.company_name || 'MDDRC SDN BHD'} | ${settings.bank_name || 'Bank'} | ${settings.bank_account_number || ''}</p>
+          <p>${settings.invoice_footer_note || 'Thank you for your business!'}</p>
         </div>
         
         <script>window.onload = function() { window.print(); }</script>
       </body>
       </html>
-    \`);
+    `);
     printWindow.document.close();
   };
 
