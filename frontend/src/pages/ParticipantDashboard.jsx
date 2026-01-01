@@ -6,10 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { LogOut, FileText, ClipboardCheck, MessageSquare, Award, Play, Users, Clock, Download, Eye, Settings, Lock } from "lucide-react";
+import { LogOut, FileText, ClipboardCheck, MessageSquare, Award, Play, Users, Clock, Download, Eye, Settings, Lock, AlertTriangle, Shield } from "lucide-react";
 
-const ParticipantDashboard = ({ user, onLogout }) => {
+const ParticipantDashboard = ({ user, onLogout, onUserUpdate }) => {
   const navigate = useNavigate();
   const [sessions, setSessions] = useState([]);
   const [certificates, setCertificates] = useState([]);
@@ -25,10 +27,26 @@ const ParticipantDashboard = ({ user, onLogout }) => {
     roadtax_expiry: ""
   });
   
+  // First-time login states
+  const [showVerificationDialog, setShowVerificationDialog] = useState(false);
+  const [showIndemnityDialog, setShowIndemnityDialog] = useState(false);
+  const [verificationData, setVerificationData] = useState({ full_name: "", id_number: "" });
+  const [indemnityAccepted, setIndemnityAccepted] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+  
   // Tab restrictions removed - all tabs accessible
 
   useEffect(() => {
-    loadData();
+    // Check if first-time login (not verified)
+    if (!user.profile_verified) {
+      setVerificationData({
+        full_name: user.full_name || "",
+        id_number: user.id_number || ""
+      });
+      setShowVerificationDialog(true);
+    } else {
+      loadData();
+    }
     
     // Check if returning from feedback submission
     const justSubmittedFeedback = sessionStorage.getItem('feedbackSubmitted');
@@ -39,7 +57,7 @@ const ParticipantDashboard = ({ user, onLogout }) => {
       setTimeout(() => loadData(), 1500);
       setTimeout(() => loadData(), 3000);
     }
-  }, []);
+  }, [user.profile_verified]);
   
   // Also reload when component becomes visible (tab focus)
   useEffect(() => {
