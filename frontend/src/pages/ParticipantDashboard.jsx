@@ -543,7 +543,7 @@ const ParticipantDashboard = ({ user, onLogout, onUserUpdate }) => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Tabs defaultValue="overview" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="flex flex-wrap w-full mb-8 h-auto justify-start gap-2 bg-gray-100 p-2 rounded-lg md:grid md:grid-cols-5">
             <TabsTrigger value="overview" data-testid="overview-tab" className="flex-1 min-w-[120px] md:min-w-0">
               <FileText className="w-4 h-4 mr-2" />
