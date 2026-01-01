@@ -1025,7 +1025,7 @@ const TrainerDashboard = ({ user, onLogout }) => {
                 {!incomeData ? (
                   <div className="text-center py-8">
                     <p className="text-gray-500 mb-4">Click refresh to load your income data</p>
-                    <Button onClick={loadIncome} disabled={loadingIncome}>
+                    <Button onClick={loadAllIncome} disabled={loadingIncome}>
                       {loadingIncome ? 'Loading...' : 'Load Income Data'}
                     </Button>
                   </div>
@@ -1048,10 +1048,16 @@ const TrainerDashboard = ({ user, onLogout }) => {
                       return date.getFullYear() === incomeFilter.year && (date.getMonth() + 1) === incomeFilter.month;
                     });
                     
-                    // Calculate filtered summary
+                    // Calculate filtered summary for trainer income
                     const filteredTotal = filteredRecords.reduce((sum, r) => sum + (r.fee_amount || r.amount || 0), 0);
                     const filteredPaid = filteredRecords.filter(r => r.status === 'paid').reduce((sum, r) => sum + (r.fee_amount || r.amount || 0), 0);
                     const filteredPending = filteredTotal - filteredPaid;
+                    
+                    // Get coordinator and marketing totals
+                    const coordTotal = coordinatorIncomeData?.summary?.total_fees || 0;
+                    const coordPaid = coordinatorIncomeData?.summary?.paid_fees || 0;
+                    const mktTotal = marketingIncomeData?.summary?.total_commission || 0;
+                    const mktPaid = marketingIncomeData?.summary?.paid_commission || 0;
                     
                     return (
                       <div className="space-y-6">
