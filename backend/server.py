@@ -1566,7 +1566,8 @@ async def get_sessions(
     # Base query: exclude archived sessions
     # For trainers/assistant_admin: show sessions until coordinator completes them (not date-based)
     # For coordinators/admin: show ALL non-completed sessions (no date filtering) - manual completion required
-    if current_user.role in ["trainer", "assistant_admin"]:
+    if current_user.role == "trainer":
+        # Trainers see only sessions where they're assigned as trainer OR assistant coordinator
         query = {
             "$and": [
                 {"is_archived": {"$ne": True}},  # Not archived
@@ -1585,6 +1586,20 @@ async def get_sessions(
                     "$or": [
                         {"trainer_assignments.trainer_id": current_user.id},
                         {"assistant_coordinator_ids": current_user.id}
+                    ]
+                }
+            ]
+        }
+    elif current_user.role == "assistant_admin":
+        # Asst Admin sees all non-completed sessions (like admin) OR sessions where they're assistant coordinator
+        query = {
+            "$and": [
+                {"is_archived": {"$ne": True}},  # Not archived
+                {
+                    "$or": [
+                        {"completion_status": {"$exists": False}},  # Legacy: No completion_status field
+                        {"completion_status": "ongoing"},  # Ongoing sessions
+                        {"completion_status": {"$nin": ["completed", "archived"]}}  # Not completed or archived
                     ]
                 }
             ]
