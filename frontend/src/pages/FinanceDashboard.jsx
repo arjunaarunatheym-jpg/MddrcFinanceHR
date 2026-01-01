@@ -246,6 +246,212 @@ const FinanceDashboard = ({ user, onLogout }) => {
     }
   };
 
+  // Open edit dialog for an invoice
+  const handleEditInvoice = (invoice) => {
+    setEditForm({
+      bill_to_name: invoice.bill_to_name || invoice.company_name || '',
+      bill_to_address: invoice.bill_to_address || '',
+      bill_to_reg_no: invoice.bill_to_reg_no || '',
+      your_reference: invoice.your_reference || '',
+      programme_name: invoice.programme_name || '',
+      training_dates: invoice.training_dates || '',
+      venue: invoice.venue || '',
+      pax: invoice.pax || 0,
+      line_items: invoice.line_items || [{description: '', quantity: 1, unit_price: 0, amount: 0}],
+      subtotal: invoice.subtotal || 0,
+      mobilisation_fee: invoice.mobilisation_fee || 0,
+      rounding: invoice.rounding || 0,
+      tax_rate: invoice.tax_rate || 0,
+      tax_amount: invoice.tax_amount || 0,
+      discount: invoice.discount || 0,
+      total_amount: invoice.total_amount || 0
+    });
+    setEditingInvoice(invoice);
+  };
+
+  // Save invoice edits
+  const handleSaveInvoice = async () => {
+    try {
+      await axiosInstance.put(`/finance/invoices/${editingInvoice.id}`, editForm);
+      toast.success('Invoice updated');
+      setEditingInvoice(null);
+      loadInvoices();
+      loadDashboard();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to update invoice');
+    }
+  };
+
+  // Add line item
+  const addLineItem = () => {
+    setEditForm({
+      ...editForm,
+      line_items: [...editForm.line_items, {description: '', quantity: 1, unit_price: 0, amount: 0}]
+    });
+  };
+
+  // Update line item
+  const updateLineItem = (index, field, value) => {
+    const newItems = [...editForm.line_items];
+    newItems[index][field] = value;
+    
+    // Calculate amount
+    if (field === 'quantity' || field === 'unit_price') {
+      newItems[index].amount = (newItems[index].quantity || 0) * (newItems[index].unit_price || 0);
+    }
+    
+    // Recalculate subtotal
+    const subtotal = newItems.reduce((sum, item) => sum + (item.amount || 0), 0);
+    const totalBeforeTax = subtotal + (editForm.mobilisation_fee || 0) + (editForm.rounding || 0) - (editForm.discount || 0);
+    const taxAmount = totalBeforeTax * (editForm.tax_rate || 0) / 100;
+    const totalAmount = totalBeforeTax + taxAmount;
+    
+    setEditForm({
+      ...editForm,
+      line_items: newItems,
+      subtotal,
+      tax_amount: taxAmount,
+      total_amount: totalAmount
+    });
+  };
+
+  // Remove line item
+  const removeLineItem = (index) => {
+    const newItems = editForm.line_items.filter((_, i) => i !== index);
+    const subtotal = newItems.reduce((sum, item) => sum + (item.amount || 0), 0);
+    setEditForm({
+      ...editForm,
+      line_items: newItems,
+      subtotal
+    });
+  };
+
+  // Recalculate totals when fees change
+  const recalculateTotals = (updates) => {
+    const newForm = { ...editForm, ...updates };
+    const subtotal = (newForm.line_items || []).reduce((sum, item) => sum + (item.amount || 0), 0);
+    const totalBeforeTax = subtotal + (newForm.mobilisation_fee || 0) + (newForm.rounding || 0) - (newForm.discount || 0);
+    const taxAmount = totalBeforeTax * (newForm.tax_rate || 0) / 100;
+    const totalAmount = totalBeforeTax + taxAmount;
+    
+    setEditForm({
+      ...newForm,
+      subtotal,
+      tax_amount: taxAmount,
+      total_amount: totalAmount
+    });
+  };
+
+  // Print invoice
+  const handlePrintInvoice = (invoice) => {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Invoice ${invoice.invoice_number}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
+          .header { text-align: center; margin-bottom: 30px; }
+          .logo { font-size: 24px; font-weight: bold; color: #1a365d; }
+          .company-info { font-size: 12px; color: #666; margin-top: 5px; }
+          .invoice-title { font-size: 20px; font-weight: bold; margin: 20px 0; text-align: center; }
+          .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+          .detail-box { padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+          .detail-label { font-weight: bold; font-size: 12px; color: #666; margin-bottom: 5px; }
+          .detail-value { font-size: 14px; }
+          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+          th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+          th { background-color: #f5f5f5; font-weight: bold; }
+          .text-right { text-align: right; }
+          .totals { margin-top: 20px; }
+          .total-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+          .grand-total { font-size: 18px; font-weight: bold; background-color: #f5f5f5; padding: 15px; margin-top: 10px; }
+          .footer { margin-top: 40px; font-size: 12px; color: #666; }
+          @media print { body { padding: 20px; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="logo">MDDRC SDN BHD</div>
+          <div class="company-info">
+            (Company No: 1234567-A)<br>
+            123 Jalan Example, 47500 Subang Jaya, Selangor<br>
+            Tel: 03-1234 5678 | Email: info@mddrc.com.my
+          </div>
+        </div>
+        
+        <div class="invoice-title">INVOICE</div>
+        
+        <div class="details-grid">
+          <div class="detail-box">
+            <div class="detail-label">BILL TO (M/S):</div>
+            <div class="detail-value">${invoice.bill_to_name || invoice.company_name || '-'}</div>
+            ${invoice.bill_to_address ? `<div class="detail-value">${invoice.bill_to_address}</div>` : ''}
+            ${invoice.bill_to_reg_no ? `<div class="detail-value">Co. Reg. No.: ${invoice.bill_to_reg_no}</div>` : ''}
+          </div>
+          <div class="detail-box">
+            <div class="detail-label">Invoice No:</div>
+            <div class="detail-value">${invoice.invoice_number}</div>
+            <div class="detail-label" style="margin-top: 10px;">Date:</div>
+            <div class="detail-value">${invoice.issued_at ? new Date(invoice.issued_at).toLocaleDateString('en-MY') : new Date().toLocaleDateString('en-MY')}</div>
+            ${invoice.your_reference ? `<div class="detail-label" style="margin-top: 10px;">Your Reference:</div><div class="detail-value">${invoice.your_reference}</div>` : ''}
+          </div>
+        </div>
+        
+        <div class="detail-box" style="margin-bottom: 20px;">
+          <div class="detail-label">TRAINING DETAILS:</div>
+          <div class="detail-value"><strong>Program:</strong> ${invoice.programme_name || '-'}</div>
+          <div class="detail-value"><strong>Company:</strong> ${invoice.company_name || '-'}</div>
+          <div class="detail-value"><strong>Training Date:</strong> ${invoice.training_dates || '-'}</div>
+          <div class="detail-value"><strong>Venue:</strong> ${invoice.venue || '-'}</div>
+        </div>
+        
+        <table>
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Description</th>
+              <th class="text-right">Qty</th>
+              <th class="text-right">Price (RM)</th>
+              <th class="text-right">Total (RM)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(invoice.line_items || []).map((item, idx) => `
+              <tr>
+                <td>${idx + 1}</td>
+                <td>${item.description || '-'}</td>
+                <td class="text-right">${item.quantity || 0}</td>
+                <td class="text-right">${(item.unit_price || 0).toLocaleString('en-MY', {minimumFractionDigits: 2})}</td>
+                <td class="text-right">${(item.amount || 0).toLocaleString('en-MY', {minimumFractionDigits: 2})}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        
+        <div class="totals">
+          <div class="total-row"><span>Sub-Total:</span><span>RM ${(invoice.subtotal || 0).toLocaleString('en-MY', {minimumFractionDigits: 2})}</span></div>
+          ${invoice.mobilisation_fee ? `<div class="total-row"><span>Mobilisation Fee:</span><span>RM ${invoice.mobilisation_fee.toLocaleString('en-MY', {minimumFractionDigits: 2})}</span></div>` : ''}
+          ${invoice.rounding ? `<div class="total-row"><span>Rounding:</span><span>RM ${invoice.rounding.toLocaleString('en-MY', {minimumFractionDigits: 2})}</span></div>` : ''}
+          ${invoice.tax_amount ? `<div class="total-row"><span>Service/Sales Tax (${invoice.tax_rate || 0}%):</span><span>RM ${invoice.tax_amount.toLocaleString('en-MY', {minimumFractionDigits: 2})}</span></div>` : ''}
+          ${invoice.discount ? `<div class="total-row"><span>Discount:</span><span>- RM ${invoice.discount.toLocaleString('en-MY', {minimumFractionDigits: 2})}</span></div>` : ''}
+          <div class="grand-total"><span>GRAND TOTAL:</span><span style="float: right;">RM ${(invoice.total_amount || 0).toLocaleString('en-MY', {minimumFractionDigits: 2})}</span></div>
+        </div>
+        
+        <div class="footer">
+          <p><strong>Payment Terms:</strong> Upon receipt of invoice</p>
+          <p><strong>Bank Details:</strong> MDDRC SDN BHD | Maybank | 5123-4567-8901</p>
+          <p>Thank you for your business!</p>
+        </div>
+        
+        <script>window.onload = function() { window.print(); }</script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   const handleRecordPayment = async () => {
     if (!paymentForm.invoice_id) {
       toast.error('Please select an invoice');
