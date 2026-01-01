@@ -66,7 +66,7 @@ const ParticipantDashboard = ({ user, onLogout, onUserUpdate }) => {
       setTimeout(() => loadData(), 1500);
       setTimeout(() => loadData(), 3000);
     }
-  }, [user.profile_verified]);
+  }, [user.profile_verified, user.indemnity_accepted]);
   
   // Also reload when component becomes visible (tab focus)
   useEffect(() => {
