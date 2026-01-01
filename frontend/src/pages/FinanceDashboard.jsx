@@ -1486,6 +1486,164 @@ const FinanceDashboard = ({ user, onLogout }) => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Company Settings Tab */}
+          <TabsContent value="settings">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="w-5 h-5" />
+                  Company Settings
+                </CardTitle>
+                <CardDescription>
+                  Customize your company details for invoices and receipts
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Company Info */}
+                <div className="p-4 bg-blue-50 rounded-lg space-y-4">
+                  <h3 className="font-semibold text-blue-900">Company Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Company Name</Label>
+                      <Input
+                        value={companySettings.company_name}
+                        onChange={(e) => setCompanySettings({...companySettings, company_name: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <Label>Registration No.</Label>
+                      <Input
+                        value={companySettings.company_reg_no}
+                        onChange={(e) => setCompanySettings({...companySettings, company_reg_no: e.target.value})}
+                        placeholder="e.g., 1234567-A"
+                      />
+                    </div>
+                    <div>
+                      <Label>Address Line 1</Label>
+                      <Input
+                        value={companySettings.address_line1}
+                        onChange={(e) => setCompanySettings({...companySettings, address_line1: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <Label>Address Line 2</Label>
+                      <Input
+                        value={companySettings.address_line2}
+                        onChange={(e) => setCompanySettings({...companySettings, address_line2: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <Label>City</Label>
+                      <Input
+                        value={companySettings.city}
+                        onChange={(e) => setCompanySettings({...companySettings, city: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <Label>Postcode</Label>
+                      <Input
+                        value={companySettings.postcode}
+                        onChange={(e) => setCompanySettings({...companySettings, postcode: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <Label>State</Label>
+                      <Input
+                        value={companySettings.state}
+                        onChange={(e) => setCompanySettings({...companySettings, state: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <Label>Phone</Label>
+                      <Input
+                        value={companySettings.phone}
+                        onChange={(e) => setCompanySettings({...companySettings, phone: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <Label>Email</Label>
+                      <Input
+                        value={companySettings.email}
+                        onChange={(e) => setCompanySettings({...companySettings, email: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <Label>Website</Label>
+                      <Input
+                        value={companySettings.website}
+                        onChange={(e) => setCompanySettings({...companySettings, website: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bank Details */}
+                <div className="p-4 bg-green-50 rounded-lg space-y-4">
+                  <h3 className="font-semibold text-green-900">Bank Details (for invoices)</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Bank Name</Label>
+                      <Input
+                        value={companySettings.bank_name}
+                        onChange={(e) => setCompanySettings({...companySettings, bank_name: e.target.value})}
+                        placeholder="e.g., Maybank"
+                      />
+                    </div>
+                    <div>
+                      <Label>Account Name</Label>
+                      <Input
+                        value={companySettings.bank_account_name}
+                        onChange={(e) => setCompanySettings({...companySettings, bank_account_name: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <Label>Account Number</Label>
+                      <Input
+                        value={companySettings.bank_account_number}
+                        onChange={(e) => setCompanySettings({...companySettings, bank_account_number: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Invoice Settings */}
+                <div className="p-4 bg-purple-50 rounded-lg space-y-4">
+                  <h3 className="font-semibold text-purple-900">Invoice Settings</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Payment Terms</Label>
+                      <Input
+                        value={companySettings.invoice_terms}
+                        onChange={(e) => setCompanySettings({...companySettings, invoice_terms: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <Label>Footer Note</Label>
+                      <Input
+                        value={companySettings.invoice_footer_note}
+                        onChange={(e) => setCompanySettings({...companySettings, invoice_footer_note: e.target.value})}
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label>Logo URL (optional)</Label>
+                      <Input
+                        value={companySettings.logo_url || ''}
+                        onChange={(e) => setCompanySettings({...companySettings, logo_url: e.target.value})}
+                        placeholder="https://your-logo-url.com/logo.png"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button onClick={handleSaveSettings} disabled={settingsLoading}>
+                    {settingsLoading ? 'Saving...' : 'Save Settings'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </main>
 
