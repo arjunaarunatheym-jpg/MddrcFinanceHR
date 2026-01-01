@@ -556,6 +556,193 @@ const AssistantAdminDashboard = ({ user, onLogout }) => {
             </div>
           </TabsContent>
 
+          {/* Session Management Tab - Release Pre-test, Post-test, Feedback */}
+          <TabsContent value="session-mgmt">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="w-5 h-5 text-blue-600" />
+                  Session Management
+                </CardTitle>
+                <CardDescription>
+                  Control participant access to pre-test, post-test, and feedback forms.
+                  Use this when coordinator is unavailable.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {!selectedSession ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 mb-4">Select a session from the list below to manage access</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+                      {sessions.map(session => (
+                        <Card 
+                          key={session.id} 
+                          className="cursor-pointer hover:border-blue-500 transition-colors"
+                          onClick={() => handleSelectSession(session)}
+                        >
+                          <CardContent className="p-4">
+                            <p className="font-semibold">{session.company_name}</p>
+                            <p className="text-sm text-gray-600">{session.name}</p>
+                            <p className="text-xs text-gray-500">{session.start_date} - {session.end_date}</p>
+                            <Badge className="mt-2">{session.participant_ids?.length || 0} participants</Badge>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Selected Session Info */}
+                    <div className="flex justify-between items-center p-4 bg-blue-50 rounded-lg">
+                      <div>
+                        <h3 className="font-semibold text-lg">{selectedSession.company_name}</h3>
+                        <p className="text-gray-600">{selectedSession.name}</p>
+                        <p className="text-sm text-gray-500">{selectedSession.start_date} - {selectedSession.end_date}</p>
+                      </div>
+                      <Button variant="outline" onClick={() => setSelectedSession(null)}>
+                        Change Session
+                      </Button>
+                    </div>
+
+                    {/* Access Controls */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* Pre-Test Control */}
+                      <Card className="border-2 border-blue-200">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-blue-600" />
+                            Pre-Test
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm text-gray-600 mb-3">
+                            Allow participants to take pre-test
+                          </p>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant={isAccessEnabled('pre_test') ? 'default' : 'outline'}
+                              className={isAccessEnabled('pre_test') ? 'bg-green-500 hover:bg-green-600' : ''}
+                              onClick={() => handleToggleAccess('pre_test', true)}
+                            >
+                              Enable
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant={!isAccessEnabled('pre_test') ? 'default' : 'outline'}
+                              className={!isAccessEnabled('pre_test') ? 'bg-red-500 hover:bg-red-600' : ''}
+                              onClick={() => handleToggleAccess('pre_test', false)}
+                            >
+                              Disable
+                            </Button>
+                          </div>
+                          <Badge className={`mt-2 ${isAccessEnabled('pre_test') ? 'bg-green-500' : 'bg-gray-400'}`}>
+                            {isAccessEnabled('pre_test') ? 'Currently Enabled' : 'Currently Disabled'}
+                          </Badge>
+                        </CardContent>
+                      </Card>
+
+                      {/* Post-Test Control */}
+                      <Card className="border-2 border-green-200">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm flex items-center gap-2">
+                            <ClipboardCheck className="w-4 h-4 text-green-600" />
+                            Post-Test
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm text-gray-600 mb-3">
+                            Allow participants to take post-test
+                          </p>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant={isAccessEnabled('post_test') ? 'default' : 'outline'}
+                              className={isAccessEnabled('post_test') ? 'bg-green-500 hover:bg-green-600' : ''}
+                              onClick={() => handleToggleAccess('post_test', true)}
+                            >
+                              Enable
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant={!isAccessEnabled('post_test') ? 'default' : 'outline'}
+                              className={!isAccessEnabled('post_test') ? 'bg-red-500 hover:bg-red-600' : ''}
+                              onClick={() => handleToggleAccess('post_test', false)}
+                            >
+                              Disable
+                            </Button>
+                          </div>
+                          <Badge className={`mt-2 ${isAccessEnabled('post_test') ? 'bg-green-500' : 'bg-gray-400'}`}>
+                            {isAccessEnabled('post_test') ? 'Currently Enabled' : 'Currently Disabled'}
+                          </Badge>
+                        </CardContent>
+                      </Card>
+
+                      {/* Feedback Control */}
+                      <Card className="border-2 border-purple-200">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm flex items-center gap-2">
+                            <MessageSquare className="w-4 h-4 text-purple-600" />
+                            Course Feedback
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm text-gray-600 mb-3">
+                            Allow participants to submit feedback
+                          </p>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant={isAccessEnabled('feedback') ? 'default' : 'outline'}
+                              className={isAccessEnabled('feedback') ? 'bg-green-500 hover:bg-green-600' : ''}
+                              onClick={() => handleToggleAccess('feedback', true)}
+                            >
+                              Enable
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant={!isAccessEnabled('feedback') ? 'default' : 'outline'}
+                              className={!isAccessEnabled('feedback') ? 'bg-red-500 hover:bg-red-600' : ''}
+                              onClick={() => handleToggleAccess('feedback', false)}
+                            >
+                              Disable
+                            </Button>
+                          </div>
+                          <Badge className={`mt-2 ${isAccessEnabled('feedback') ? 'bg-green-500' : 'bg-gray-400'}`}>
+                            {isAccessEnabled('feedback') ? 'Currently Enabled' : 'Currently Disabled'}
+                          </Badge>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Participant List with Access Status */}
+                    <div className="mt-6">
+                      <h4 className="font-semibold mb-3">Participant Access Status ({sessionAccess.length})</h4>
+                      <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                        {sessionAccess.map((access, idx) => (
+                          <div key={access.participant_id || idx} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <span className="font-medium">{access.participant_name || `Participant ${idx + 1}`}</span>
+                            <div className="flex gap-2">
+                              <Badge className={access.can_access_pre_test ? 'bg-blue-500' : 'bg-gray-300'}>
+                                Pre {access.can_access_pre_test ? '✓' : '✗'}
+                              </Badge>
+                              <Badge className={access.can_access_post_test ? 'bg-green-500' : 'bg-gray-300'}>
+                                Post {access.can_access_post_test ? '✓' : '✗'}
+                              </Badge>
+                              <Badge className={access.can_access_feedback ? 'bg-purple-500' : 'bg-gray-300'}>
+                                Feedback {access.can_access_feedback ? '✓' : '✗'}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Programs Tab */}
           <TabsContent value="programs">
             <Card>
