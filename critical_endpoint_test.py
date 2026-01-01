@@ -11,7 +11,7 @@ import json
 from datetime import datetime
 import uuid
 
-BASE_URL = "https://payflow-dash-3.preview.emergentagent.com/api"
+BASE_URL = "https://payables-dashboard.preview.emergentagent.com/api"
 
 # Test credentials
 CREDENTIALS = {
