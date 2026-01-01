@@ -34,18 +34,27 @@ const ParticipantDashboard = ({ user, onLogout, onUserUpdate }) => {
   const [indemnityAccepted, setIndemnityAccepted] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   
+  // Digital signature states for indemnity
+  const [signatureData, setSignatureData] = useState({
+    signed_name: "",
+    signed_ic: "",
+    signed_date: new Date().toISOString().split('T')[0]  // Default to today
+  });
+  
   // Tab restrictions removed - all tabs accessible
 
   useEffect(() => {
-    // Check if first-time login (not verified)
-    if (!user.profile_verified) {
+    // Check if first-time login (not verified) - explicitly check for true
+    if (user.profile_verified === true && user.indemnity_accepted === true) {
+      // Already verified, just load data
+      loadData();
+    } else {
+      // First time login, show verification
       setVerificationData({
         full_name: user.full_name || "",
         id_number: user.id_number || ""
       });
       setShowVerificationDialog(true);
-    } else {
-      loadData();
     }
     
     // Check if returning from feedback submission
