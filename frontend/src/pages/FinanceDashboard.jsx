@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { 
   DollarSign, FileText, CreditCard, TrendingUp, 
   CheckCircle, Clock, AlertCircle, LogOut, RefreshCw,
-  Check, X, Plus, FileX, Receipt
+  Check, X, Plus, FileX, Receipt, Edit, Printer
 } from 'lucide-react';
 
 const FinanceDashboard = ({ user, onLogout }) => {
