@@ -89,6 +89,7 @@ const FinanceDashboard = ({ user, onLogout }) => {
     loadPendingInvoices();
     loadCreditNotes();
     loadPayables();
+    loadCompanySettings();
   }, []);
 
   const loadDashboard = async () => {
