@@ -1358,6 +1358,51 @@ async def update_user(user_id: str, user_data: dict, current_user: User = Depend
     
     return User(**updated_user)
 
+# Update own profile (for participants)
+@api_router.put("/users/profile")
+async def update_own_profile(profile_data: dict, current_user: User = Depends(get_current_user)):
+    """Allow users to update their own profile (limited fields)"""
+    
+    # Update allowed fields based on role
+    update_data = {}
+    
+    # All users can update these
+    if "full_name" in profile_data:
+        update_data["full_name"] = profile_data["full_name"]
+    if "id_number" in profile_data:
+        update_data["id_number"] = profile_data["id_number"]
+    if "phone" in profile_data:
+        update_data["phone"] = profile_data["phone"]
+    if "emergency_contact" in profile_data:
+        update_data["emergency_contact"] = profile_data["emergency_contact"]
+    if "emergency_phone" in profile_data:
+        update_data["emergency_phone"] = profile_data["emergency_phone"]
+    if "blood_type" in profile_data:
+        update_data["blood_type"] = profile_data["blood_type"]
+    if "medical_conditions" in profile_data:
+        update_data["medical_conditions"] = profile_data["medical_conditions"]
+    
+    # Profile verification fields
+    if "profile_verified" in profile_data:
+        update_data["profile_verified"] = profile_data["profile_verified"]
+    if "indemnity_accepted" in profile_data:
+        update_data["indemnity_accepted"] = profile_data["indemnity_accepted"]
+    if "indemnity_accepted_at" in profile_data:
+        update_data["indemnity_accepted_at"] = profile_data["indemnity_accepted_at"]
+    
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No valid fields to update")
+    
+    update_data["updated_at"] = get_malaysia_time().isoformat()
+    
+    # Update user
+    await db.users.update_one({"id": current_user.id}, {"$set": update_data})
+    
+    # Fetch and return updated user
+    updated_user = await db.users.find_one({"id": current_user.id}, {"_id": 0, "password": 0})
+    
+    return updated_user
+
 # Check if user exists
 @api_router.post("/users/check-exists")
 async def check_user_exists(
