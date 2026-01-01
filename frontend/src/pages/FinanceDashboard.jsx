@@ -738,6 +738,10 @@ const FinanceDashboard = ({ user, onLogout }) => {
             <TabsTrigger value="payments">Payments</TabsTrigger>
             <TabsTrigger value="credit-notes">Credit Notes</TabsTrigger>
             <TabsTrigger value="audit">Audit Log</TabsTrigger>
+            <TabsTrigger value="settings">
+              <Settings className="w-4 h-4 mr-1" />
+              Settings
+            </TabsTrigger>
           </TabsList>
 
           {/* Dashboard Tab */}
