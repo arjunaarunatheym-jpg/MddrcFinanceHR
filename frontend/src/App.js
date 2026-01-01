@@ -152,7 +152,7 @@ function App() {
             path="/participant"
             element={
               user && user.role === "participant" ? (
-                <ParticipantDashboard user={user} onLogout={handleLogout} />
+                <ParticipantDashboard user={user} onLogout={handleLogout} onUserUpdate={setUser} />
               ) : (
                 <Navigate to="/login" replace />
               )
