@@ -35,12 +35,44 @@ const TrainerDashboard = ({ user, onLogout }) => {
 
   // Income states
   const [incomeData, setIncomeData] = useState(null);
+  const [coordinatorIncomeData, setCoordinatorIncomeData] = useState(null);
+  const [marketingIncomeData, setMarketingIncomeData] = useState(null);
   const [loadingIncome, setLoadingIncome] = useState(false);
   const [incomeFilter, setIncomeFilter] = useState({
     year: new Date().getFullYear(),
     month: new Date().getMonth() + 1,
     showAll: false
   });
+  
+  // Check if user has additional roles
+  const hasCoordinatorRole = user.additional_roles?.includes('coordinator') || user.role === 'coordinator';
+  const hasMarketingRole = user.additional_roles?.includes('marketing') || user.role === 'marketing';
+
+  // Load all income data
+  const loadAllIncome = async () => {
+    setLoadingIncome(true);
+    try {
+      // Load trainer income
+      const trainerRes = await axiosInstance.get(`/finance/income/trainer/${user.id}`);
+      setIncomeData(trainerRes.data);
+      
+      // Load coordinator income if applicable
+      if (hasCoordinatorRole) {
+        const coordRes = await axiosInstance.get(`/finance/income/coordinator/${user.id}`);
+        setCoordinatorIncomeData(coordRes.data);
+      }
+      
+      // Load marketing income if applicable
+      if (hasMarketingRole) {
+        const mktRes = await axiosInstance.get(`/finance/income/marketing/${user.id}`);
+        setMarketingIncomeData(mktRes.data);
+      }
+    } catch (error) {
+      console.error('Failed to load income:', error);
+    } finally {
+      setLoadingIncome(false);
+    }
+  };
 
 
   useEffect(() => {
