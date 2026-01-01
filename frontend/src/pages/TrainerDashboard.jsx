@@ -479,6 +479,10 @@ const TrainerDashboard = ({ user, onLogout }) => {
               <Calendar className="w-4 h-4 mr-2" />
               <span className="text-sm">My Sessions</span>
             </TabsTrigger>
+            <TabsTrigger value="session-mgmt" data-testid="session-mgmt-tab" className="flex-1 min-w-[140px] md:min-w-0 bg-gradient-to-r from-blue-500 to-indigo-500 text-white">
+              <Settings className="w-4 h-4 mr-2" />
+              <span className="text-sm">Session Mgmt</span>
+            </TabsTrigger>
             <TabsTrigger value="checklists" data-testid="checklists-tab" className="flex-1 min-w-[140px] md:min-w-0">
               <ClipboardCheck className="w-4 h-4 mr-2" />
               <span className="text-sm">Checklists</span>
