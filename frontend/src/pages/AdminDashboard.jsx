@@ -2306,6 +2306,16 @@ const AdminDashboard = ({ user, onLogout }) => {
                                 </span>
                                 <div className="flex gap-2 flex-wrap justify-end">
                                   <Button
+                                    data-testid={`bulk-upload-session-${session.id}`}
+                                    size="sm"
+                                    variant="outline"
+                                    className="bg-purple-50 border-purple-200 hover:bg-purple-100 text-purple-700"
+                                    onClick={() => setBulkUploadSession(session)}
+                                  >
+                                    <Upload className="w-4 h-4 mr-1" />
+                                    Bulk Upload
+                                  </Button>
+                                  <Button
                                     data-testid={`costing-session-${session.id}`}
                                     size="sm"
                                     variant="outline"
