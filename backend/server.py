@@ -161,6 +161,7 @@ class Session(BaseModel):
     participant_ids: List[str] = []
     trainer_assignments: List[dict] = []
     coordinator_id: Optional[str] = None
+    assistant_coordinator_ids: List[str] = []  # Assistant coordinators who can manage this session
     status: str = "active"  # "active" or "inactive"
     completion_status: str = "ongoing"  # "ongoing", "completed", "archived"
     is_archived: bool = False
