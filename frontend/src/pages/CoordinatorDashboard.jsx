@@ -2894,8 +2894,9 @@ const CoordinatorDashboard = ({ user, onLogout }) => {
                       <CardTitle className="flex items-center gap-2">
                         <DollarSign className="w-5 h-5 text-green-600" />
                         My Income
+                        {hasMarketingRole && <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">+ Marketing</span>}
                       </CardTitle>
-                      <CardDescription>View your coordination fees and payment status</CardDescription>
+                      <CardDescription>View your coordination fees{hasMarketingRole ? ' and marketing commissions' : ''}</CardDescription>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <select 
