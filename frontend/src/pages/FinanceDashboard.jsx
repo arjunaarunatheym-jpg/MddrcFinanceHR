@@ -522,7 +522,20 @@ const FinanceDashboard = ({ user, onLogout }) => {
   };
 
   // Print invoice
-  const handlePrintInvoice = (invoice) => {
+  // Print invoice with company settings
+  const handlePrintInvoice = async (invoice) => {
+    // Get company settings for invoice
+    let settings = companySettings;
+    let logoUrl = companySettings.logo_url;
+    
+    // Also try to get app settings logo if not set
+    if (!logoUrl) {
+      try {
+        const appSettings = await axiosInstance.get('/settings');
+        logoUrl = appSettings.data?.logo_url;
+      } catch (e) {}
+    }
+    
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -532,7 +545,8 @@ const FinanceDashboard = ({ user, onLogout }) => {
         <style>
           body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
           .header { text-align: center; margin-bottom: 30px; }
-          .logo { font-size: 24px; font-weight: bold; color: #1a365d; }
+          .logo-img { max-height: 80px; margin-bottom: 10px; }
+          .logo-text { font-size: 24px; font-weight: bold; color: #1a365d; }
           .company-info { font-size: 12px; color: #666; margin-top: 5px; }
           .invoice-title { font-size: 20px; font-weight: bold; margin: 20px 0; text-align: center; }
           .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
@@ -552,11 +566,13 @@ const FinanceDashboard = ({ user, onLogout }) => {
       </head>
       <body>
         <div class="header">
-          <div class="logo">MDDRC SDN BHD</div>
+          ${logoUrl ? `<img src="${logoUrl}" class="logo-img" alt="Logo" />` : ''}
+          <div class="logo-text">${settings.company_name || 'MDDRC SDN BHD'}</div>
           <div class="company-info">
-            (Company No: 1234567-A)<br>
-            123 Jalan Example, 47500 Subang Jaya, Selangor<br>
-            Tel: 03-1234 5678 | Email: info@mddrc.com.my
+            ${settings.company_reg_no ? `(${settings.company_reg_no})` : ''}<br>
+            ${settings.address_line1 || ''} ${settings.address_line2 || ''}<br>
+            ${settings.city || ''} ${settings.postcode || ''} ${settings.state || ''}<br>
+            ${settings.phone ? `Tel: ${settings.phone}` : ''} ${settings.email ? `| Email: ${settings.email}` : ''}
           </div>
         </div>
         
