@@ -1458,6 +1458,45 @@ async def check_user_exists(
     
     return {"exists": False, "user": None}
 
+# Get indemnity records for participants in a session (Admin only)
+@api_router.get("/sessions/{session_id}/indemnity-records")
+async def get_session_indemnity_records(session_id: str, current_user: User = Depends(get_current_user)):
+    """Get indemnity acceptance records for all participants in a session"""
+    if current_user.role not in ["admin", "coordinator", "assistant_admin"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get session
+    session = await db.sessions.find_one({"id": session_id}, {"_id": 0})
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Get participants with indemnity data
+    participant_ids = session.get("participant_ids", [])
+    participants = await db.users.find(
+        {"id": {"$in": participant_ids}},
+        {
+            "_id": 0,
+            "id": 1,
+            "full_name": 1,
+            "id_number": 1,
+            "profile_verified": 1,
+            "indemnity_accepted": 1,
+            "indemnity_accepted_at": 1,
+            "indemnity_signature": 1,
+            "indemnity_signed_name": 1,
+            "indemnity_signed_ic": 1,
+            "indemnity_signed_date": 1
+        }
+    ).to_list(1000)
+    
+    return {
+        "session_id": session_id,
+        "session_name": session.get("name"),
+        "company_name": session.get("company_name"),
+        "total_participants": len(participants),
+        "indemnity_records": participants
+    }
+
 # Session Routes
 @api_router.post("/sessions")
 async def create_session(session_data: SessionCreate, current_user: User = Depends(get_current_user)):
