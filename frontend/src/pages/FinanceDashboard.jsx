@@ -564,6 +564,19 @@ const FinanceDashboard = ({ user, onLogout }) => {
       }
     }
     
+    // Styling variables from settings
+    const primaryColor = settings.primary_color || '#1a365d';
+    const secondaryColor = settings.secondary_color || '#4472C4';
+    const headerFont = settings.header_font || 'Arial';
+    const bodyFont = settings.body_font || 'Arial';
+    const logoWidth = settings.logo_width || 150;
+    const logoPosition = settings.logo_position || 'center';
+    const showWatermark = settings.show_watermark !== false;
+    const watermarkOpacity = settings.watermark_opacity || 0.08;
+    const tagline = settings.tagline || 'Towards a Nation of Safe Drivers';
+    const taglineFont = settings.tagline_font || 'Georgia';
+    const taglineStyle = settings.tagline_style || 'italic';
+    
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -571,25 +584,63 @@ const FinanceDashboard = ({ user, onLogout }) => {
       <head>
         <title>Invoice ${invoice.invoice_number}</title>
         <style>
-          body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
-          .header { text-align: center; margin-bottom: 30px; }
-          .logo-img { max-height: 80px; margin-bottom: 10px; }
-          .logo-text { font-size: 24px; font-weight: bold; color: #1a365d; }
+          body { 
+            font-family: ${bodyFont}, sans-serif; 
+            padding: 40px; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            position: relative;
+          }
+          ${showWatermark && logoUrl ? `
+          body::before {
+            content: '';
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+            height: 400px;
+            background-image: url('${logoUrl}');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: ${watermarkOpacity};
+            z-index: -1;
+            pointer-events: none;
+          }
+          ` : ''}
+          .header { text-align: ${logoPosition}; margin-bottom: 30px; }
+          .logo-img { max-width: ${logoWidth}px; height: auto; margin-bottom: 10px; }
+          .logo-text { font-family: ${headerFont}, sans-serif; font-size: 24px; font-weight: bold; color: ${primaryColor}; }
           .company-info { font-size: 12px; color: #666; margin-top: 5px; }
-          .invoice-title { font-size: 20px; font-weight: bold; margin: 20px 0; text-align: center; }
+          .invoice-title { font-family: ${headerFont}, sans-serif; font-size: 20px; font-weight: bold; margin: 20px 0; text-align: center; color: ${primaryColor}; }
           .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
           .detail-box { padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
           .detail-label { font-weight: bold; font-size: 12px; color: #666; margin-bottom: 5px; }
           .detail-value { font-size: 14px; }
           table { width: 100%; border-collapse: collapse; margin: 20px 0; }
           th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-          th { background-color: #f5f5f5; font-weight: bold; }
+          th { background-color: ${secondaryColor}; color: white; font-weight: bold; }
           .text-right { text-align: right; }
           .totals { margin-top: 20px; }
           .total-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
-          .grand-total { font-size: 18px; font-weight: bold; background-color: #f5f5f5; padding: 15px; margin-top: 10px; }
-          .footer { margin-top: 40px; font-size: 12px; color: #666; }
-          @media print { body { padding: 20px; } }
+          .grand-total { font-size: 18px; font-weight: bold; background-color: ${secondaryColor}; color: white; padding: 15px; margin-top: 10px; border-radius: 5px; }
+          .footer { margin-top: 40px; font-size: 12px; color: #666; border-top: 2px solid ${primaryColor}; padding-top: 20px; }
+          .tagline { 
+            font-family: ${taglineFont}, serif; 
+            font-style: ${taglineStyle === 'italic' ? 'italic' : 'normal'}; 
+            font-weight: ${taglineStyle === 'bold' ? 'bold' : 'normal'};
+            color: ${primaryColor}; 
+            font-size: 14px; 
+            text-align: center; 
+            margin-top: 30px;
+            padding: 15px;
+            border-top: 1px solid #ddd;
+          }
+          @media print { 
+            body { padding: 20px; }
+            body::before { position: absolute; }
+          }
         </style>
       </head>
       <body>
