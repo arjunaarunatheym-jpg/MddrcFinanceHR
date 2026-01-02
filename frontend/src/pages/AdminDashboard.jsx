@@ -1031,6 +1031,41 @@ const AdminDashboard = ({ user, onLogout }) => {
     }
   };
 
+  // View Indemnity Records for a session
+  const handleViewIndemnityRecords = async (session) => {
+    try {
+      const response = await axiosInstance.get(`/sessions/${session.id}/indemnity-records`);
+      setIndemnityRecords(response.data);
+      setIndemnityDialogOpen(true);
+    } catch (error) {
+      toast.error("Failed to load indemnity records");
+    }
+  };
+
+  // Export Indemnity Records
+  const handleExportIndemnityRecords = async () => {
+    if (!indemnityRecords?.session_id) return;
+    
+    try {
+      const response = await axiosInstance.get(
+        `/sessions/${indemnityRecords.session_id}/indemnity-records/export`,
+        { responseType: 'blob' }
+      );
+      
+      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Indemnity_Records_${indemnityRecords.session_name || 'Session'}.xlsx`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success("Indemnity records exported!");
+    } catch (error) {
+      toast.error("Failed to export indemnity records");
+    }
+  };
+
   const toggleUserSelection = (userId) => {
     setSelectedUsers(prev => 
       prev.includes(userId) 
