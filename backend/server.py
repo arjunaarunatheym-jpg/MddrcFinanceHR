@@ -9279,6 +9279,339 @@ async def export_audit_trail(
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
 
+# ============ EXCEL TEMPLATES FOR BULK UPLOAD ============
+
+@api_router.get("/templates/pre-post-assessment")
+async def download_assessment_template(current_user: User = Depends(get_current_user)):
+    """Download Excel template for Pre/Post Assessment bulk upload"""
+    if current_user.role not in ["admin", "trainer", "assistant_admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    import openpyxl
+    from io import BytesIO
+    from fastapi.responses import StreamingResponse
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Pre-Post Assessment"
+    
+    # Headers
+    headers = [
+        "participant_ic",          # Required - IC number to identify participant
+        "participant_name",        # Optional - for reference
+        "test_type",              # Required - "pre" or "post"
+        "correct_answers",        # Required - number of correct answers
+        "total_questions",        # Required - total number of questions
+        "score_percentage",       # Auto-calculated - for reference only
+        "passed",                 # Auto-calculated - for reference only
+        "session_name",           # Optional - for reference
+        "notes"                   # Optional - any additional notes
+    ]
+    ws.append(headers)
+    
+    # Style headers
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col)
+        cell.font = openpyxl.styles.Font(bold=True)
+        cell.fill = openpyxl.styles.PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+        cell.font = openpyxl.styles.Font(bold=True, color="FFFFFF")
+    
+    # Sample data rows
+    sample_data = [
+        ["871128385485", "Ahmad Bin Ali", "pre", 36, 40, "=D2/E2*100", "=IF(F2>=70,\"PASS\",\"FAIL\")", "KONE Training Session", "Morning batch"],
+        ["880215143265", "Siti Binti Hassan", "pre", 28, 40, "=D3/E3*100", "=IF(F3>=70,\"PASS\",\"FAIL\")", "KONE Training Session", ""],
+        ["871128385485", "Ahmad Bin Ali", "post", 38, 40, "=D4/E4*100", "=IF(F4>=70,\"PASS\",\"FAIL\")", "KONE Training Session", "Improved from pre-test"],
+        ["880215143265", "Siti Binti Hassan", "post", 35, 40, "=D5/E5*100", "=IF(F5>=70,\"PASS\",\"FAIL\")", "KONE Training Session", ""],
+    ]
+    
+    for row in sample_data:
+        ws.append(row)
+    
+    # Instructions sheet
+    ws_inst = wb.create_sheet("Instructions")
+    instructions = [
+        ["PRE/POST ASSESSMENT BULK UPLOAD TEMPLATE"],
+        [""],
+        ["REQUIRED COLUMNS:"],
+        ["participant_ic", "IC Number of participant (must exist in system)"],
+        ["test_type", "Either 'pre' or 'post'"],
+        ["correct_answers", "Number of correct answers (e.g., 36)"],
+        ["total_questions", "Total questions in test (e.g., 40)"],
+        [""],
+        ["OPTIONAL COLUMNS:"],
+        ["participant_name", "Name for reference only"],
+        ["score_percentage", "Auto-calculated: (correct/total)*100"],
+        ["passed", "Auto-calculated: PASS if >=70%, FAIL otherwise"],
+        ["session_name", "Session reference"],
+        ["notes", "Any additional notes"],
+        [""],
+        ["NOTES:"],
+        ["- Same participant can have both PRE and POST test entries"],
+        ["- System will calculate percentage and pass/fail automatically"],
+        ["- Passing mark is 70%"],
+        ["- Delete sample rows before uploading your data"],
+    ]
+    for row in instructions:
+        ws_inst.append(row)
+    
+    # Auto-width columns
+    for ws_sheet in [ws, ws_inst]:
+        for column in ws_sheet.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            ws_sheet.column_dimensions[column_letter].width = min(max_length + 2, 50)
+    
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=PrePost_Assessment_Template.xlsx"}
+    )
+
+@api_router.get("/templates/feedback")
+async def download_feedback_template(current_user: User = Depends(get_current_user)):
+    """Download Excel template for Feedback bulk upload"""
+    if current_user.role not in ["admin", "trainer", "assistant_admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    import openpyxl
+    from io import BytesIO
+    from fastapi.responses import StreamingResponse
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Feedback"
+    
+    # Headers - Generic feedback questions
+    headers = [
+        "participant_ic",           # Required
+        "participant_name",         # Optional - for reference
+        "session_name",            # Optional - for reference
+        "q1_course_content",       # Rating 1-5: Course content quality
+        "q2_trainer_knowledge",    # Rating 1-5: Trainer's knowledge
+        "q3_trainer_delivery",     # Rating 1-5: Trainer's delivery style
+        "q4_training_materials",   # Rating 1-5: Training materials quality
+        "q5_practical_sessions",   # Rating 1-5: Practical session effectiveness
+        "q6_facilities",           # Rating 1-5: Training facilities
+        "q7_time_management",      # Rating 1-5: Time management
+        "q8_overall_satisfaction", # Rating 1-5: Overall satisfaction
+        "q9_recommend_others",     # Yes/No: Would recommend to others
+        "q10_comments",            # Text: Additional comments/suggestions
+    ]
+    ws.append(headers)
+    
+    # Style headers
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col)
+        cell.font = openpyxl.styles.Font(bold=True)
+        cell.fill = openpyxl.styles.PatternFill(start_color="70AD47", end_color="70AD47", fill_type="solid")
+        cell.font = openpyxl.styles.Font(bold=True, color="FFFFFF")
+    
+    # Sample data
+    sample_data = [
+        ["871128385485", "Ahmad Bin Ali", "KONE Training", 5, 5, 4, 5, 5, 4, 5, 5, "Yes", "Excellent training program!"],
+        ["880215143265", "Siti Binti Hassan", "KONE Training", 4, 5, 5, 4, 4, 4, 4, 4, "Yes", "More practical sessions would be better."],
+    ]
+    
+    for row in sample_data:
+        ws.append(row)
+    
+    # Instructions sheet
+    ws_inst = wb.create_sheet("Instructions")
+    instructions = [
+        ["FEEDBACK BULK UPLOAD TEMPLATE"],
+        [""],
+        ["REQUIRED COLUMNS:"],
+        ["participant_ic", "IC Number of participant (must exist in system)"],
+        [""],
+        ["RATING COLUMNS (1-5 scale):"],
+        ["q1_course_content", "Rate course content quality (1=Poor, 5=Excellent)"],
+        ["q2_trainer_knowledge", "Rate trainer's subject knowledge"],
+        ["q3_trainer_delivery", "Rate trainer's delivery and presentation"],
+        ["q4_training_materials", "Rate quality of training materials"],
+        ["q5_practical_sessions", "Rate practical/hands-on sessions"],
+        ["q6_facilities", "Rate training facilities"],
+        ["q7_time_management", "Rate time management during training"],
+        ["q8_overall_satisfaction", "Rate overall satisfaction"],
+        [""],
+        ["OTHER COLUMNS:"],
+        ["q9_recommend_others", "Would recommend to others? (Yes/No)"],
+        ["q10_comments", "Additional comments or suggestions (text)"],
+        [""],
+        ["RATING SCALE:"],
+        ["1 = Poor"],
+        ["2 = Fair"],
+        ["3 = Good"],
+        ["4 = Very Good"],
+        ["5 = Excellent"],
+        [""],
+        ["NOTES:"],
+        ["- Delete sample rows before uploading your data"],
+        ["- All rating columns should be numbers 1-5"],
+    ]
+    for row in instructions:
+        ws_inst.append(row)
+    
+    # Auto-width
+    for ws_sheet in [ws, ws_inst]:
+        for column in ws_sheet.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            ws_sheet.column_dimensions[column_letter].width = min(max_length + 2, 50)
+    
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=Feedback_Template.xlsx"}
+    )
+
+@api_router.get("/templates/checklist")
+async def download_checklist_template(current_user: User = Depends(get_current_user)):
+    """Download Excel template for Vehicle Checklist bulk upload"""
+    if current_user.role not in ["admin", "trainer", "assistant_admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    import openpyxl
+    from io import BytesIO
+    from fastapi.responses import StreamingResponse
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Vehicle Checklist"
+    
+    # Headers - Standard vehicle checklist items
+    headers = [
+        "participant_ic",          # Required
+        "participant_name",        # Optional
+        "session_name",           # Optional
+        "vehicle_model",          # Vehicle details
+        "registration_number",
+        "roadtax_expiry",         # YYYY-MM-DD format
+        # Checklist items with status (good/satisfactory/needs_repair)
+        "tyres_condition",
+        "tyres_comments",
+        "brakes_condition",
+        "brakes_comments",
+        "lights_condition",
+        "lights_comments",
+        "horn_condition",
+        "horn_comments",
+        "mirrors_condition",
+        "mirrors_comments",
+        "steering_condition",
+        "steering_comments",
+        "windscreen_condition",
+        "windscreen_comments",
+        "wipers_condition",
+        "wipers_comments",
+        "seatbelt_condition",
+        "seatbelt_comments",
+        "engine_condition",
+        "engine_comments",
+        "overall_remarks",
+    ]
+    ws.append(headers)
+    
+    # Style headers
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col)
+        cell.font = openpyxl.styles.Font(bold=True)
+        cell.fill = openpyxl.styles.PatternFill(start_color="ED7D31", end_color="ED7D31", fill_type="solid")
+        cell.font = openpyxl.styles.Font(bold=True, color="FFFFFF")
+    
+    # Sample data
+    sample_data = [
+        ["871128385485", "Ahmad Bin Ali", "KONE Training", "Honda City", "WMY1234", "2026-06-30",
+         "good", "", "good", "", "good", "", "good", "", "good", "", 
+         "good", "", "satisfactory", "Minor scratch", "good", "", "good", "", "good", "", "Vehicle in good condition"],
+        ["880215143265", "Siti Binti Hassan", "KONE Training", "Toyota Vios", "BKA5678", "2026-08-15",
+         "good", "", "needs_repair", "Brake pads worn", "good", "", "good", "", "good", "",
+         "good", "", "good", "", "good", "", "good", "", "satisfactory", "Minor noise", "Needs brake service"],
+    ]
+    
+    for row in sample_data:
+        ws.append(row)
+    
+    # Instructions sheet
+    ws_inst = wb.create_sheet("Instructions")
+    instructions = [
+        ["VEHICLE CHECKLIST BULK UPLOAD TEMPLATE"],
+        [""],
+        ["REQUIRED COLUMNS:"],
+        ["participant_ic", "IC Number of participant (must exist in system)"],
+        [""],
+        ["VEHICLE DETAILS:"],
+        ["vehicle_model", "Vehicle make and model (e.g., Honda City)"],
+        ["registration_number", "Vehicle registration number"],
+        ["roadtax_expiry", "Road tax expiry date (YYYY-MM-DD format)"],
+        [""],
+        ["CHECKLIST ITEM STATUS VALUES:"],
+        ["good", "Item is in good working condition"],
+        ["satisfactory", "Item is acceptable but may need attention"],
+        ["needs_repair", "Item requires repair/replacement"],
+        [""],
+        ["CHECKLIST ITEMS:"],
+        ["tyres_condition/comments", "Tyre condition and any comments"],
+        ["brakes_condition/comments", "Brake system condition"],
+        ["lights_condition/comments", "All lights (head, tail, signal)"],
+        ["horn_condition/comments", "Horn functionality"],
+        ["mirrors_condition/comments", "Side and rear mirrors"],
+        ["steering_condition/comments", "Steering system"],
+        ["windscreen_condition/comments", "Windscreen condition"],
+        ["wipers_condition/comments", "Windscreen wipers"],
+        ["seatbelt_condition/comments", "Seatbelt functionality"],
+        ["engine_condition/comments", "Engine performance"],
+        [""],
+        ["NOTES:"],
+        ["- Delete sample rows before uploading your data"],
+        ["- Comments are required for 'needs_repair' status"],
+        ["- Date format must be YYYY-MM-DD"],
+    ]
+    for row in instructions:
+        ws_inst.append(row)
+    
+    # Auto-width
+    for ws_sheet in [ws, ws_inst]:
+        for column in ws_sheet.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            ws_sheet.column_dimensions[column_letter].width = min(max_length + 2, 50)
+    
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=Vehicle_Checklist_Template.xlsx"}
+    )
+
 # Override Validation - Edit invoice without amount checks
 class OverrideValidationRequest(BaseModel):
     total_amount: float
