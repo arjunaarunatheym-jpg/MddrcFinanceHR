@@ -705,6 +705,8 @@ const SuperAdminPanel = () => {
                                 } else {
                                   setTestForm({ score: "" });
                                 }
+                                // Clear score calculator
+                                setScoreCalculator({ correct: "", total: "" });
                               }}
                               className={`flex items-center gap-2 ${
                                 participant.postTest ? 'bg-green-100 hover:bg-green-200 border-green-400' : 'bg-red-100 hover:bg-red-200 border-red-400'
