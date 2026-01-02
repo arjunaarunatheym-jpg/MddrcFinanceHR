@@ -12,17 +12,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Search, Edit, Trash2, Eye, Filter, Database, History } from "lucide-react";
+import { Search, Edit, Trash2, Filter, Database, History, FileText, CreditCard, Settings, Download, Ban, Calendar, Hash, RefreshCw } from "lucide-react";
 import SuperAdminPanel from "./SuperAdminPanel";
 
 const DataManagement = ({ user }) => {
-  // Show Super Admin Panel ONLY for arjuna@mddrc.com.my
-  if (user && user.email === "arjuna@mddrc.com.my") {
-    return <SuperAdminPanel />;
-  }
+  const [activeMainTab, setActiveMainTab] = useState("sessions-data");
   
-  // Original Data Management component for other admins
-  // Filter state
+  // Show Super Admin Panel for arjuna@mddrc.com.my
+  const isSuperAdmin = user && user.email === "arjuna@mddrc.com.my";
+  const isFinance = user && user.role === "finance";
+  const hasFinanceAccess = isSuperAdmin || isFinance || user?.role === "admin";
+
+  // Filter state for Sessions Data
   const [sessions, setSessions] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [programs, setPrograms] = useState([]);
@@ -48,9 +49,49 @@ const DataManagement = ({ user }) => {
   const [deleteDialog, setDeleteDialog] = useState({ open: false, type: null, id: null });
   const [auditDialog, setAuditDialog] = useState({ open: false, type: null, id: null, logs: [] });
 
+  // Invoice Management State
+  const [invoices, setInvoices] = useState([]);
+  const [invoiceSearch, setInvoiceSearch] = useState("");
+  const [invoiceStatusFilter, setInvoiceStatusFilter] = useState("all");
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [editNumberDialog, setEditNumberDialog] = useState({ open: false, invoice: null });
+  const [voidDialog, setVoidDialog] = useState({ open: false, invoice: null });
+  const [backdateDialog, setBackdateDialog] = useState({ open: false, invoice: null });
+  const [overrideDialog, setOverrideDialog] = useState({ open: false, invoice: null });
+  const [editPaidDialog, setEditPaidDialog] = useState({ open: false, invoice: null });
+
+  // Payment Management State
+  const [payments, setPayments] = useState([]);
+  const [deletePaymentDialog, setDeletePaymentDialog] = useState({ open: false, payment: null });
+
+  // Settings State
+  const [sequenceForm, setSequenceForm] = useState({ year: new Date().getFullYear(), month: new Date().getMonth() + 1, sequence: 1, reason: "" });
+
+  // Audit Trail State
+  const [auditTrail, setAuditTrail] = useState([]);
+  const [auditFilters, setAuditFilters] = useState({ entityType: "all", startDate: "", endDate: "" });
+
+  // Form states
+  const [editNumberForm, setEditNumberForm] = useState({ year: 2026, month: 1, sequence: 1, reason: "" });
+  const [voidForm, setVoidForm] = useState({ reason: "" });
+  const [backdateForm, setBackdateForm] = useState({ newDate: "", reason: "" });
+  const [overrideForm, setOverrideForm] = useState({ totalAmount: 0, reason: "" });
+  const [editPaidForm, setEditPaidForm] = useState({ billToName: "", billToAddress: "", totalAmount: 0, reason: "" });
+  const [deletePaymentForm, setDeletePaymentForm] = useState({ reason: "" });
+
   useEffect(() => {
     loadFiltersData();
   }, []);
+
+  useEffect(() => {
+    if (activeMainTab === "invoice-management" && hasFinanceAccess) {
+      loadInvoices();
+    } else if (activeMainTab === "payment-management" && hasFinanceAccess) {
+      loadPayments();
+    } else if (activeMainTab === "audit-trail" && hasFinanceAccess) {
+      loadAuditTrail();
+    }
+  }, [activeMainTab]);
 
   const loadFiltersData = async () => {
     try {
@@ -67,6 +108,188 @@ const DataManagement = ({ user }) => {
     }
   };
 
+  const loadInvoices = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (invoiceStatusFilter && invoiceStatusFilter !== "all") params.append("status", invoiceStatusFilter);
+      if (invoiceSearch) params.append("search", invoiceSearch);
+      
+      const response = await axiosInstance.get(`/finance/admin/invoices?${params}`);
+      setInvoices(response.data);
+    } catch (error) {
+      toast.error("Failed to load invoices");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadPayments = async () => {
+    setLoading(true);
+    try {
+      const response = await axiosInstance.get("/finance/admin/payments");
+      setPayments(response.data);
+    } catch (error) {
+      toast.error("Failed to load payments");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadAuditTrail = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (auditFilters.entityType && auditFilters.entityType !== "all") params.append("entity_type", auditFilters.entityType);
+      if (auditFilters.startDate) params.append("start_date", auditFilters.startDate);
+      if (auditFilters.endDate) params.append("end_date", auditFilters.endDate);
+      
+      const response = await axiosInstance.get(`/finance/admin/audit-trail?${params}`);
+      setAuditTrail(response.data);
+    } catch (error) {
+      toast.error("Failed to load audit trail");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Invoice Management Actions
+  const handleEditInvoiceNumber = async () => {
+    try {
+      await axiosInstance.put(`/finance/admin/invoices/${editNumberDialog.invoice.id}/number`, {
+        year: parseInt(editNumberForm.year),
+        month: parseInt(editNumberForm.month),
+        sequence: parseInt(editNumberForm.sequence),
+        reason: editNumberForm.reason
+      });
+      toast.success("Invoice number updated successfully");
+      setEditNumberDialog({ open: false, invoice: null });
+      setEditNumberForm({ year: 2026, month: 1, sequence: 1, reason: "" });
+      loadInvoices();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Failed to update invoice number");
+    }
+  };
+
+  const handleVoidInvoice = async () => {
+    try {
+      await axiosInstance.post(`/finance/admin/invoices/${voidDialog.invoice.id}/void`, {
+        reason: voidForm.reason
+      });
+      toast.success("Invoice voided successfully");
+      setVoidDialog({ open: false, invoice: null });
+      setVoidForm({ reason: "" });
+      loadInvoices();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Failed to void invoice");
+    }
+  };
+
+  const handleBackdateInvoice = async () => {
+    try {
+      await axiosInstance.put(`/finance/admin/invoices/${backdateDialog.invoice.id}/backdate`, {
+        new_date: backdateForm.newDate,
+        reason: backdateForm.reason
+      });
+      toast.success("Invoice backdated successfully");
+      setBackdateDialog({ open: false, invoice: null });
+      setBackdateForm({ newDate: "", reason: "" });
+      loadInvoices();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Failed to backdate invoice");
+    }
+  };
+
+  const handleOverrideValidation = async () => {
+    try {
+      await axiosInstance.put(`/finance/admin/invoices/${overrideDialog.invoice.id}/override`, {
+        total_amount: parseFloat(overrideForm.totalAmount),
+        reason: overrideForm.reason,
+        skip_validation: true
+      });
+      toast.success("Invoice amount overridden successfully");
+      setOverrideDialog({ open: false, invoice: null });
+      setOverrideForm({ totalAmount: 0, reason: "" });
+      loadInvoices();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Failed to override invoice");
+    }
+  };
+
+  const handleEditPaidInvoice = async () => {
+    try {
+      await axiosInstance.put(`/finance/admin/invoices/${editPaidDialog.invoice.id}/edit-paid`, {
+        bill_to_name: editPaidForm.billToName || null,
+        bill_to_address: editPaidForm.billToAddress || null,
+        total_amount: editPaidForm.totalAmount ? parseFloat(editPaidForm.totalAmount) : null,
+        reason: editPaidForm.reason
+      });
+      toast.success("Paid invoice updated successfully");
+      setEditPaidDialog({ open: false, invoice: null });
+      setEditPaidForm({ billToName: "", billToAddress: "", totalAmount: 0, reason: "" });
+      loadInvoices();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Failed to update paid invoice");
+    }
+  };
+
+  // Payment Management Actions
+  const handleDeletePayment = async () => {
+    try {
+      await axiosInstance.delete(`/finance/admin/payments/${deletePaymentDialog.payment.id}`, {
+        data: { reason: deletePaymentForm.reason }
+      });
+      toast.success("Payment deleted successfully");
+      setDeletePaymentDialog({ open: false, payment: null });
+      setDeletePaymentForm({ reason: "" });
+      loadPayments();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Failed to delete payment");
+    }
+  };
+
+  // Settings Actions
+  const handleResetSequence = async () => {
+    try {
+      await axiosInstance.post("/finance/admin/sequence/reset", {
+        year: parseInt(sequenceForm.year),
+        month: parseInt(sequenceForm.month),
+        new_sequence: parseInt(sequenceForm.sequence),
+        reason: sequenceForm.reason
+      });
+      toast.success("Sequence reset successfully");
+      setSequenceForm({ year: new Date().getFullYear(), month: new Date().getMonth() + 1, sequence: 1, reason: "" });
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Failed to reset sequence");
+    }
+  };
+
+  // Audit Trail Export
+  const handleExportAuditTrail = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (auditFilters.startDate) params.append("start_date", auditFilters.startDate);
+      if (auditFilters.endDate) params.append("end_date", auditFilters.endDate);
+      
+      const response = await axiosInstance.get(`/finance/admin/audit-trail/export?${params}`, {
+        responseType: 'blob'
+      });
+      
+      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Audit_Trail_${new Date().toISOString().slice(0,10)}.xlsx`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success("Audit trail exported!");
+    } catch (error) {
+      toast.error("Failed to export audit trail");
+    }
+  };
+
+  // Sessions Data Management Functions (existing)
   const buildQueryString = () => {
     const params = new URLSearchParams();
     if (filters.sessionId && filters.sessionId !== "all") params.append("session_id", filters.sessionId);
@@ -144,7 +367,6 @@ const DataManagement = ({ user }) => {
       toast.success(`${type} deleted successfully`);
       setDeleteDialog({ open: false, type: null, id: null });
       
-      // Reload data
       if (type === "test-results") loadTestResults();
       else if (type === "feedback") loadFeedback();
       else if (type === "attendance") loadAttendance();
@@ -178,7 +400,6 @@ const DataManagement = ({ user }) => {
       toast.success(`${type} updated successfully`);
       setEditDialog({ open: false, type: null, data: null });
 
-      // Reload data
       if (type === "test-results") loadTestResults();
       else if (type === "feedback") loadFeedback();
       else if (type === "attendance") loadAttendance();
@@ -195,6 +416,19 @@ const DataManagement = ({ user }) => {
     } catch (error) {
       toast.error("Failed to load audit logs");
     }
+  };
+
+  const getInvoiceStatusBadge = (status) => {
+    const statusColors = {
+      auto_draft: "bg-gray-500",
+      finance_review: "bg-yellow-500",
+      approved: "bg-blue-500",
+      issued: "bg-purple-500",
+      paid: "bg-green-500",
+      cancelled: "bg-red-500",
+      voided: "bg-red-700"
+    };
+    return <Badge className={statusColors[status] || "bg-gray-400"}>{status?.toUpperCase() || "UNKNOWN"}</Badge>;
   };
 
   const FilterSection = () => (
@@ -281,18 +515,11 @@ const DataManagement = ({ user }) => {
     </Card>
   );
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-          <Database className="h-6 w-6" />
-          Data Management
-        </h2>
-        <p className="text-muted-foreground">Edit and manage all training data with full audit trail</p>
-      </div>
-
+  // Sessions Data Management Tab (existing functionality)
+  const SessionsDataTab = () => (
+    <div className="space-y-4">
       <FilterSection />
-
+      
       <Tabs defaultValue="test-results" className="space-y-4">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="test-results">Test Scores</TabsTrigger>
@@ -480,8 +707,8 @@ const DataManagement = ({ user }) => {
                           </div>
                         </TableCell>
                         <TableCell>{record.session_name}</TableCell>
-                        <TableCell className="text-sm">{record.clock_in ? new Date(record.clock_in).toLocaleString() : "N/A"}</TableCell>
-                        <TableCell className="text-sm">{record.clock_out ? new Date(record.clock_out).toLocaleString() : "N/A"}</TableCell>
+                        <TableCell className="text-sm">{record.clock_in || "N/A"}</TableCell>
+                        <TableCell className="text-sm">{record.clock_out || "N/A"}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
                             <Button size="sm" variant="ghost" onClick={() => viewAuditLog("attendance", record.id)}>
@@ -568,8 +795,676 @@ const DataManagement = ({ user }) => {
           </Card>
         </TabsContent>
       </Tabs>
+    </div>
+  );
 
-      {/* Edit Dialog */}
+  // Invoice Management Tab
+  const InvoiceManagementTab = () => (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center flex-wrap gap-4">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Invoice Management
+              </CardTitle>
+              <CardDescription>Edit invoice numbers, void invoices, backdate, and override validation</CardDescription>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <Input
+                placeholder="Search invoices..."
+                value={invoiceSearch}
+                onChange={(e) => setInvoiceSearch(e.target.value)}
+                className="w-48"
+              />
+              <Select value={invoiceStatusFilter} onValueChange={setInvoiceStatusFilter}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="auto_draft">Draft</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="issued">Issued</SelectItem>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="voided">Voided</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button onClick={loadInvoices} disabled={loading}>
+                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+                Refresh
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {invoices.length === 0 ? (
+            <p className="text-center py-8 text-muted-foreground">No invoices found.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Invoice #</TableHead>
+                  <TableHead>Company</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {invoices.map((invoice) => (
+                  <TableRow key={invoice.id}>
+                    <TableCell className="font-mono text-sm">{invoice.invoice_number}</TableCell>
+                    <TableCell>{invoice.company_name}</TableCell>
+                    <TableCell className="font-semibold">RM {invoice.total_amount?.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</TableCell>
+                    <TableCell>{getInvoiceStatusBadge(invoice.status)}</TableCell>
+                    <TableCell className="text-sm">{invoice.created_at ? new Date(invoice.created_at).toLocaleDateString() : "N/A"}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1 flex-wrap">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          title="Edit Invoice Number"
+                          onClick={() => {
+                            const parts = invoice.invoice_number?.split("/") || [];
+                            setEditNumberForm({
+                              year: parseInt(parts[2]) || new Date().getFullYear(),
+                              month: parseInt(parts[3]) || new Date().getMonth() + 1,
+                              sequence: parseInt(parts[4]) || 1,
+                              reason: ""
+                            });
+                            setEditNumberDialog({ open: true, invoice });
+                          }}
+                        >
+                          <Hash className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          title="Backdate Invoice"
+                          onClick={() => {
+                            setBackdateForm({ newDate: "", reason: "" });
+                            setBackdateDialog({ open: true, invoice });
+                          }}
+                        >
+                          <Calendar className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          title="Override Amount"
+                          onClick={() => {
+                            setOverrideForm({ totalAmount: invoice.total_amount, reason: "" });
+                            setOverrideDialog({ open: true, invoice });
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        {invoice.status === "paid" && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            title="Edit Paid Invoice"
+                            onClick={() => {
+                              setEditPaidForm({
+                                billToName: invoice.bill_to_name || "",
+                                billToAddress: invoice.bill_to_address || "",
+                                totalAmount: invoice.total_amount,
+                                reason: ""
+                              });
+                              setEditPaidDialog({ open: true, invoice });
+                            }}
+                          >
+                            <FileText className="h-4 w-4 text-blue-500" />
+                          </Button>
+                        )}
+                        {invoice.status !== "voided" && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            title="Void Invoice"
+                            onClick={() => {
+                              setVoidForm({ reason: "" });
+                              setVoidDialog({ open: true, invoice });
+                            }}
+                          >
+                            <Ban className="h-4 w-4 text-destructive" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  // Payment Management Tab
+  const PaymentManagementTab = () => (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                Payment Management
+              </CardTitle>
+              <CardDescription>View and delete payment records</CardDescription>
+            </div>
+            <Button onClick={loadPayments} disabled={loading}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {payments.length === 0 ? (
+            <p className="text-center py-8 text-muted-foreground">No payments found.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Invoice #</TableHead>
+                  <TableHead>Company</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Method</TableHead>
+                  <TableHead>Reference</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {payments.map((payment) => (
+                  <TableRow key={payment.id}>
+                    <TableCell className="font-mono text-sm">{payment.invoice_number}</TableCell>
+                    <TableCell>{payment.company_name}</TableCell>
+                    <TableCell className="font-semibold">RM {payment.amount?.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{payment.payment_method}</Badge>
+                    </TableCell>
+                    <TableCell className="text-sm">{payment.reference_number || "N/A"}</TableCell>
+                    <TableCell className="text-sm">{payment.payment_date}</TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setDeletePaymentForm({ reason: "" });
+                          setDeletePaymentDialog({ open: true, payment });
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  // Settings Tab
+  const SettingsTab = () => (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            Invoice Sequence Settings
+          </CardTitle>
+          <CardDescription>Reset invoice sequence counter for a specific month/year</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <Label>Year</Label>
+              <Input
+                type="number"
+                value={sequenceForm.year}
+                onChange={(e) => setSequenceForm({ ...sequenceForm, year: e.target.value })}
+                min="2020"
+                max="2100"
+              />
+            </div>
+            <div>
+              <Label>Month</Label>
+              <Select value={String(sequenceForm.month)} onValueChange={(v) => setSequenceForm({ ...sequenceForm, month: parseInt(v) })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[...Array(12)].map((_, i) => (
+                    <SelectItem key={i+1} value={String(i+1)}>
+                      {new Date(2000, i, 1).toLocaleString('default', { month: 'long' })}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>New Sequence Number</Label>
+              <Input
+                type="number"
+                value={sequenceForm.sequence}
+                onChange={(e) => setSequenceForm({ ...sequenceForm, sequence: e.target.value })}
+                min="1"
+              />
+            </div>
+          </div>
+          <div>
+            <Label>Reason for Reset *</Label>
+            <Textarea
+              placeholder="Explain why the sequence needs to be reset..."
+              value={sequenceForm.reason}
+              onChange={(e) => setSequenceForm({ ...sequenceForm, reason: e.target.value })}
+            />
+          </div>
+          <Button onClick={handleResetSequence} disabled={!sequenceForm.reason}>
+            Reset Sequence Counter
+          </Button>
+          <p className="text-sm text-muted-foreground">
+            Next invoice for {sequenceForm.year}/{String(sequenceForm.month).padStart(2, '0')} will be: 
+            <span className="font-mono ml-2">INV/MDDRC/{sequenceForm.year}/{String(sequenceForm.month).padStart(2, '0')}/{String(sequenceForm.sequence).padStart(4, '0')}</span>
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  // Audit Trail Tab
+  const AuditTrailTab = () => (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center flex-wrap gap-4">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <History className="h-5 w-5" />
+                Finance Audit Trail
+              </CardTitle>
+              <CardDescription>Complete history of all financial changes</CardDescription>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <Select value={auditFilters.entityType} onValueChange={(v) => setAuditFilters({ ...auditFilters, entityType: v })}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="invoice">Invoice</SelectItem>
+                  <SelectItem value="payment">Payment</SelectItem>
+                  <SelectItem value="sequence">Sequence</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input
+                type="date"
+                value={auditFilters.startDate}
+                onChange={(e) => setAuditFilters({ ...auditFilters, startDate: e.target.value })}
+                className="w-36"
+              />
+              <Input
+                type="date"
+                value={auditFilters.endDate}
+                onChange={(e) => setAuditFilters({ ...auditFilters, endDate: e.target.value })}
+                className="w-36"
+              />
+              <Button onClick={loadAuditTrail} disabled={loading}>
+                <Search className="h-4 w-4 mr-2" />
+                Search
+              </Button>
+              <Button onClick={handleExportAuditTrail} variant="outline">
+                <Download className="h-4 w-4 mr-2" />
+                Export Excel
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {auditTrail.length === 0 ? (
+            <p className="text-center py-8 text-muted-foreground">No audit trail entries found.</p>
+          ) : (
+            <div className="space-y-3">
+              {auditTrail.map((log) => (
+                <Card key={log.id} className="p-4">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Badge variant={log.action?.includes("Void") ? "destructive" : log.action?.includes("Delete") ? "destructive" : "default"}>
+                          {log.action}
+                        </Badge>
+                        <span className="font-medium">{log.record_reference}</span>
+                      </div>
+                      {log.field_changed && (
+                        <p className="text-sm text-muted-foreground">
+                          <span className="font-medium">Field:</span> {log.field_changed}
+                          {log.from_value && log.to_value && (
+                            <span> • <span className="text-red-500">{log.from_value}</span> → <span className="text-green-500">{log.to_value}</span></span>
+                          )}
+                        </p>
+                      )}
+                      <p className="text-sm">
+                        <span className="font-medium">By:</span> {log.changed_by_name} ({log.changed_by_email})
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        <span className="font-medium">Reason:</span> {log.reason}
+                      </p>
+                    </div>
+                    <p className="text-sm text-muted-foreground whitespace-nowrap">
+                      {log.timestamp ? new Date(log.timestamp).toLocaleString() : "N/A"}
+                    </p>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          <Database className="h-6 w-6" />
+          Data Management
+        </h2>
+        <p className="text-muted-foreground">Manage all training and finance data with full audit trail</p>
+      </div>
+
+      {/* Main Tab Navigation */}
+      <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="space-y-4">
+        <TabsList className={`grid w-full ${hasFinanceAccess ? "grid-cols-5" : "grid-cols-1"}`}>
+          <TabsTrigger value="sessions-data" className="flex items-center gap-2">
+            <Database className="h-4 w-4" />
+            Sessions Data Management
+          </TabsTrigger>
+          {hasFinanceAccess && (
+            <>
+              <TabsTrigger value="invoice-management" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Invoice Management
+              </TabsTrigger>
+              <TabsTrigger value="payment-management" className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4" />
+                Payment Management
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Settings
+              </TabsTrigger>
+              <TabsTrigger value="audit-trail" className="flex items-center gap-2">
+                <History className="h-4 w-4" />
+                Audit Trail
+              </TabsTrigger>
+            </>
+          )}
+        </TabsList>
+
+        <TabsContent value="sessions-data">
+          {isSuperAdmin ? <SuperAdminPanel /> : <SessionsDataTab />}
+        </TabsContent>
+
+        {hasFinanceAccess && (
+          <>
+            <TabsContent value="invoice-management">
+              <InvoiceManagementTab />
+            </TabsContent>
+            <TabsContent value="payment-management">
+              <PaymentManagementTab />
+            </TabsContent>
+            <TabsContent value="settings">
+              <SettingsTab />
+            </TabsContent>
+            <TabsContent value="audit-trail">
+              <AuditTrailTab />
+            </TabsContent>
+          </>
+        )}
+      </Tabs>
+
+      {/* Edit Invoice Number Dialog */}
+      <Dialog open={editNumberDialog.open} onOpenChange={(open) => setEditNumberDialog({ ...editNumberDialog, open })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Invoice Number</DialogTitle>
+            <DialogDescription>
+              Change the invoice number for: {editNumberDialog.invoice?.invoice_number}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label>Year</Label>
+                <Input
+                  type="number"
+                  value={editNumberForm.year}
+                  onChange={(e) => setEditNumberForm({ ...editNumberForm, year: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Month</Label>
+                <Input
+                  type="number"
+                  value={editNumberForm.month}
+                  onChange={(e) => setEditNumberForm({ ...editNumberForm, month: e.target.value })}
+                  min="1"
+                  max="12"
+                />
+              </div>
+              <div>
+                <Label>Sequence</Label>
+                <Input
+                  type="number"
+                  value={editNumberForm.sequence}
+                  onChange={(e) => setEditNumberForm({ ...editNumberForm, sequence: e.target.value })}
+                  min="1"
+                />
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              New number: <span className="font-mono">INV/MDDRC/{editNumberForm.year}/{String(editNumberForm.month).padStart(2, '0')}/{String(editNumberForm.sequence).padStart(4, '0')}</span>
+            </p>
+            <div>
+              <Label>Reason for Change *</Label>
+              <Textarea
+                placeholder="Explain why the invoice number needs to be changed..."
+                value={editNumberForm.reason}
+                onChange={(e) => setEditNumberForm({ ...editNumberForm, reason: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditNumberDialog({ open: false, invoice: null })}>Cancel</Button>
+            <Button onClick={handleEditInvoiceNumber} disabled={!editNumberForm.reason}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Void Invoice Dialog */}
+      <Dialog open={voidDialog.open} onOpenChange={(open) => setVoidDialog({ ...voidDialog, open })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Void Invoice</DialogTitle>
+            <DialogDescription>
+              This will void invoice: {voidDialog.invoice?.invoice_number}. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div>
+            <Label>Reason for Voiding *</Label>
+            <Textarea
+              placeholder="Explain why this invoice needs to be voided..."
+              value={voidForm.reason}
+              onChange={(e) => setVoidForm({ reason: e.target.value })}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setVoidDialog({ open: false, invoice: null })}>Cancel</Button>
+            <Button variant="destructive" onClick={handleVoidInvoice} disabled={!voidForm.reason}>Void Invoice</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Backdate Invoice Dialog */}
+      <Dialog open={backdateDialog.open} onOpenChange={(open) => setBackdateDialog({ ...backdateDialog, open })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Backdate Invoice</DialogTitle>
+            <DialogDescription>
+              Change the date for invoice: {backdateDialog.invoice?.invoice_number}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>New Invoice Date</Label>
+              <Input
+                type="date"
+                value={backdateForm.newDate}
+                onChange={(e) => setBackdateForm({ ...backdateForm, newDate: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>Reason for Backdating *</Label>
+              <Textarea
+                placeholder="Explain why this invoice needs to be backdated..."
+                value={backdateForm.reason}
+                onChange={(e) => setBackdateForm({ ...backdateForm, reason: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBackdateDialog({ open: false, invoice: null })}>Cancel</Button>
+            <Button onClick={handleBackdateInvoice} disabled={!backdateForm.newDate || !backdateForm.reason}>Backdate Invoice</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Override Validation Dialog */}
+      <Dialog open={overrideDialog.open} onOpenChange={(open) => setOverrideDialog({ ...overrideDialog, open })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Override Invoice Amount</DialogTitle>
+            <DialogDescription>
+              Override the amount for invoice: {overrideDialog.invoice?.invoice_number} (skips validation)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>New Total Amount (RM)</Label>
+              <Input
+                type="number"
+                value={overrideForm.totalAmount}
+                onChange={(e) => setOverrideForm({ ...overrideForm, totalAmount: e.target.value })}
+                step="0.01"
+              />
+            </div>
+            <div>
+              <Label>Reason for Override *</Label>
+              <Textarea
+                placeholder="Explain why the amount needs to be overridden..."
+                value={overrideForm.reason}
+                onChange={(e) => setOverrideForm({ ...overrideForm, reason: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOverrideDialog({ open: false, invoice: null })}>Cancel</Button>
+            <Button onClick={handleOverrideValidation} disabled={!overrideForm.reason}>Override Amount</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Paid Invoice Dialog */}
+      <Dialog open={editPaidDialog.open} onOpenChange={(open) => setEditPaidDialog({ ...editPaidDialog, open })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Paid Invoice</DialogTitle>
+            <DialogDescription>
+              Modify details of paid invoice: {editPaidDialog.invoice?.invoice_number}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Bill To Name</Label>
+              <Input
+                value={editPaidForm.billToName}
+                onChange={(e) => setEditPaidForm({ ...editPaidForm, billToName: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>Bill To Address</Label>
+              <Textarea
+                value={editPaidForm.billToAddress}
+                onChange={(e) => setEditPaidForm({ ...editPaidForm, billToAddress: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>Total Amount (RM)</Label>
+              <Input
+                type="number"
+                value={editPaidForm.totalAmount}
+                onChange={(e) => setEditPaidForm({ ...editPaidForm, totalAmount: e.target.value })}
+                step="0.01"
+              />
+            </div>
+            <div>
+              <Label>Reason for Edit *</Label>
+              <Textarea
+                placeholder="Explain why this paid invoice needs to be edited..."
+                value={editPaidForm.reason}
+                onChange={(e) => setEditPaidForm({ ...editPaidForm, reason: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditPaidDialog({ open: false, invoice: null })}>Cancel</Button>
+            <Button onClick={handleEditPaidInvoice} disabled={!editPaidForm.reason}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Payment Dialog */}
+      <AlertDialog open={deletePaymentDialog.open} onOpenChange={(open) => setDeletePaymentDialog({ ...deletePaymentDialog, open })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Payment Record?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this payment record for RM {deletePaymentDialog.payment?.amount?.toLocaleString('en-MY', { minimumFractionDigits: 2 })}.
+              The invoice status may be updated as a result.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Label>Reason for Deletion *</Label>
+            <Textarea
+              placeholder="Explain why this payment needs to be deleted..."
+              value={deletePaymentForm.reason}
+              onChange={(e) => setDeletePaymentForm({ reason: e.target.value })}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeletePayment} 
+              disabled={!deletePaymentForm.reason}
+              className="bg-destructive text-destructive-foreground"
+            >
+              Delete Payment
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Existing Edit Dialog */}
       <Dialog open={editDialog.open} onOpenChange={(open) => setEditDialog({ ...editDialog, open })}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
