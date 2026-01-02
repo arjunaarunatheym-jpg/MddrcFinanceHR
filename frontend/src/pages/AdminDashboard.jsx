@@ -2436,6 +2436,16 @@ const AdminDashboard = ({ user, onLogout }) => {
                                     Costing
                                   </Button>
                                   <Button
+                                    data-testid={`indemnity-session-${session.id}`}
+                                    size="sm"
+                                    variant="outline"
+                                    className="bg-purple-50 border-purple-200 hover:bg-purple-100 text-purple-700"
+                                    onClick={() => handleViewIndemnityRecords(session)}
+                                  >
+                                    <FileText className="w-4 h-4 mr-1" />
+                                    Indemnity
+                                  </Button>
+                                  <Button
                                     data-testid={`edit-session-${session.id}`}
                                     size="sm"
                                     variant="outline"
