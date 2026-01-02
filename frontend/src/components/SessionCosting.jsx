@@ -20,6 +20,7 @@ const SessionCosting = ({ session, onClose, onUpdate }) => {
   const [expenseCategories, setExpenseCategories] = useState([]);
   const [invoiceId, setInvoiceId] = useState(null);
   const [creditNotes, setCreditNotes] = useState([]);
+  const [showClaimForm, setShowClaimForm] = useState(false);
   
   // Form states
   const [invoiceData, setInvoiceData] = useState({
