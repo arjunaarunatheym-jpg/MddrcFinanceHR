@@ -19,13 +19,21 @@ A comprehensive training management platform for MDDRC (Malaysian Defensive Driv
 
 ## What's Been Implemented
 
-### January 2, 2026 - HR Module Started
-- **HR & Staff Management Module** (P1)
-  - New component: `frontend/src/components/HRModule.jsx`
-  - Backend APIs: `/api/hr/staff` (CRUD), `/api/hr/available-users`
-  - Features: Staff list, add/edit staff with salary & allowances, EPF/SOCSO/EIS info
-  - Database collection: `hr_staff`
-  - Integrated into Finance Dashboard as "HR & Payroll" tab
+### January 2, 2026 - HR & Payroll System Complete
+- **HR Module with Full Payroll Features**:
+  - **Staff Management**: Add/Edit staff with salary, allowances, bank details, statutory info
+  - **Payroll Period Management**: Open/Close monthly periods (closed = read-only)
+  - **Payslip Generation**: Auto-calculates EPF, SOCSO, EIS with age-based rules
+  - **Pay Advice**: For session workers (trainers/coordinators)
+  - **YTD Tracking**: Year-to-date totals on payslips
+
+- **Statutory Calculation Rules**:
+  - **EPF**: 11% employee / 13% employer (below 60); 0% / 4% (60+)
+  - **SOCSO**: 0.5% employee / 1.75% employer (below 60); 0% / 1.25% (60+)
+  - **EIS**: 0.2% each (below 60); 0% (60+)
+  - Wage ceiling: RM6,000 for SOCSO/EIS
+
+- **Period Close Feature**: Once closed, payslips become read-only (is_locked = true)
 
 - **Claim Form UI Improvements**
   - Fixed header layout (single company name, centered with logo)
