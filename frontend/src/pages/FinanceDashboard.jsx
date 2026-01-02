@@ -719,6 +719,8 @@ const FinanceDashboard = ({ user, onLogout }) => {
           <p>${settings.invoice_footer_note || 'Thank you for your business!'}</p>
         </div>
         
+        <div class="tagline">"${tagline}"</div>
+        
         <script>window.onload = function() { window.print(); }</script>
       </body>
       </html>
