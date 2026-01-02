@@ -1860,6 +1860,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                         {/* Assign Coordinator */}
                         <div className="space-y-4 border-t pt-4">
                           <h3 className="font-semibold text-lg">Assign Coordinator (Optional)</h3>
+                          <p className="text-sm text-gray-500">Any staff member can be assigned as coordinator for this session</p>
                           <Select
                             value={sessionForm.coordinator_id}
                             onValueChange={(value) => setSessionForm({ ...sessionForm, coordinator_id: value })}
@@ -1868,9 +1869,9 @@ const AdminDashboard = ({ user, onLogout }) => {
                               <SelectValue placeholder="Select coordinator" />
                             </SelectTrigger>
                             <SelectContent>
-                              {coordinators.map((coordinator) => (
-                                <SelectItem key={coordinator.id} value={coordinator.id}>
-                                  {coordinator.full_name}
+                              {allStaffForCoordinator.map((staff) => (
+                                <SelectItem key={staff.id} value={staff.id}>
+                                  {staff.full_name} ({staff.role.replace('_', ' ')})
                                 </SelectItem>
                               ))}
                             </SelectContent>
