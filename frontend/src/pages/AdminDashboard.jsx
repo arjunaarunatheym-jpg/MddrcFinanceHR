@@ -858,6 +858,11 @@ const AdminDashboard = ({ user, onLogout }) => {
   const trainers = users.filter((u) => u.role === "trainer");
   const coordinators = users.filter((u) => u.role === "coordinator");
   const assistantAdmins = users.filter((u) => u.role === "assistant_admin");
+  
+  // All staff who can be assigned as session coordinator (includes coordinators, assistant admins, trainers)
+  const allStaffForCoordinator = users.filter((u) => 
+    ["coordinator", "assistant_admin", "trainer", "admin"].includes(u.role)
+  );
 
   const getTrainerName = (trainerId) => {
     const trainer = trainers.find(t => t.id === trainerId);
@@ -865,8 +870,9 @@ const AdminDashboard = ({ user, onLogout }) => {
   };
 
   const getCoordinatorName = (coordinatorId) => {
-    const coordinator = coordinators.find(c => c.id === coordinatorId);
-    return coordinator ? coordinator.full_name : "Unknown";
+    // Search in all users, not just coordinators
+    const user = users.find(u => u.id === coordinatorId);
+    return user ? user.full_name : "Unknown";
   };
 
   // Edit/Delete handlers
