@@ -817,7 +817,7 @@ const SuperAdminPanel = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Test Dialog */}
+      {/* Test Dialog - Score Calculator with Auto-Percentage */}
       <Dialog open={testDialog.open} onOpenChange={(open) => !open && setTestDialog({ open: false, participant: null, sessionId: null, testType: null })}>
         <DialogContent>
           <DialogHeader>
@@ -825,23 +825,115 @@ const SuperAdminPanel = () => {
               {testDialog.testType === 'pre' ? 'Pre' : 'Post'}-Test - {testDialog.participant?.full_name}
             </DialogTitle>
             <DialogDescription>
-              Enter score. Badge will update automatically. Dialog stays open.
+              Enter exact score (correct answers out of total) or percentage directly.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            {/* Score Calculator */}
+            <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+              <Label className="font-semibold">Score Calculator</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm text-gray-600">Correct Answers</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={scoreCalculator.correct}
+                    onChange={(e) => {
+                      const correct = e.target.value;
+                      setScoreCalculator(prev => ({ ...prev, correct }));
+                      // Auto-calculate percentage if both values exist
+                      if (correct && scoreCalculator.total && parseInt(scoreCalculator.total) > 0) {
+                        const percentage = (parseInt(correct) / parseInt(scoreCalculator.total)) * 100;
+                        setTestForm({ score: percentage.toFixed(1) });
+                      }
+                    }}
+                    placeholder="36"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm text-gray-600">Total Questions</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={scoreCalculator.total}
+                    onChange={(e) => {
+                      const total = e.target.value;
+                      setScoreCalculator(prev => ({ ...prev, total }));
+                      // Auto-calculate percentage if both values exist
+                      if (scoreCalculator.correct && total && parseInt(total) > 0) {
+                        const percentage = (parseInt(scoreCalculator.correct) / parseInt(total)) * 100;
+                        setTestForm({ score: percentage.toFixed(1) });
+                      }
+                    }}
+                    placeholder="40"
+                  />
+                </div>
+              </div>
+              
+              {/* Result Display */}
+              {scoreCalculator.correct && scoreCalculator.total && parseInt(scoreCalculator.total) > 0 && (
+                <div className={`text-center p-3 rounded-lg ${
+                  (parseInt(scoreCalculator.correct) / parseInt(scoreCalculator.total)) * 100 >= 70 
+                    ? 'bg-green-100 border-2 border-green-400' 
+                    : 'bg-red-100 border-2 border-red-400'
+                }`}>
+                  <p className={`text-2xl font-bold ${
+                    (parseInt(scoreCalculator.correct) / parseInt(scoreCalculator.total)) * 100 >= 70 
+                      ? 'text-green-700' 
+                      : 'text-red-700'
+                  }`}>
+                    {((parseInt(scoreCalculator.correct) / parseInt(scoreCalculator.total)) * 100).toFixed(1)}%
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {scoreCalculator.correct} / {scoreCalculator.total} correct answers
+                  </p>
+                  <p className={`text-xs font-semibold mt-1 ${
+                    (parseInt(scoreCalculator.correct) / parseInt(scoreCalculator.total)) * 100 >= 70 
+                      ? 'text-green-600' 
+                      : 'text-red-600'
+                  }`}>
+                    {(parseInt(scoreCalculator.correct) / parseInt(scoreCalculator.total)) * 100 >= 70 ? '✓ PASS' : '✗ FAIL'}
+                  </p>
+                </div>
+              )}
+            </div>
+            
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-muted-foreground">Or enter percentage directly</span>
+              </div>
+            </div>
+            
             <div>
               <Label>Score (%)</Label>
               <Input
                 type="number"
                 min="0"
                 max="100"
+                step="0.1"
                 value={testForm.score}
-                onChange={(e) => setTestForm({ score: e.target.value })}
+                onChange={(e) => {
+                  setTestForm({ score: e.target.value });
+                  // Clear calculator when manually entering percentage
+                  setScoreCalculator({ correct: "", total: "" });
+                }}
                 placeholder="85"
+                className={`text-lg font-semibold ${
+                  testForm.score && parseFloat(testForm.score) >= 70 ? 'border-green-400 bg-green-50' : 
+                  testForm.score && parseFloat(testForm.score) < 70 ? 'border-red-400 bg-red-50' : ''
+                }`}
               />
-              <p className="text-xs text-gray-500 mt-1">
-                System will automatically mark questions as correct/wrong to match this score
-              </p>
+              {testForm.score && (
+                <p className={`text-sm font-semibold mt-1 ${
+                  parseFloat(testForm.score) >= 70 ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {parseFloat(testForm.score) >= 70 ? '✓ PASS (≥70%)' : '✗ FAIL (<70%)'}
+                </p>
+              )}
             </div>
             <Button onClick={handleTestSubmit} className="w-full">
               Submit Test (Badge Updates)
