@@ -835,7 +835,7 @@ const AdminDashboard = ({ user, onLogout }) => {
         }
       }
 
-      // Update session
+      // Update session with ALL fields including assistant coordinators
       await axiosInstance.put(`/sessions/${editingSession.id}`, {
         location: editingSession.location,
         start_date: editingSession.start_date,
@@ -843,6 +843,7 @@ const AdminDashboard = ({ user, onLogout }) => {
         participant_ids: [...editingSession.participant_ids, ...newParticipantIds],
         trainer_assignments: editingSession.trainer_assignments || [],
         coordinator_id: editingSession.coordinator_id || null,
+        assistant_coordinator_ids: editingSession.assistant_coordinator_ids || [],
       });
 
       toast.success("Session updated successfully");
