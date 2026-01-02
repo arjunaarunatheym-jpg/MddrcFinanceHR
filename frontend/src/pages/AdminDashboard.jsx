@@ -4596,6 +4596,73 @@ const AdminDashboard = ({ user, onLogout }) => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Indemnity Records Dialog */}
+      <Dialog open={indemnityDialogOpen} onOpenChange={setIndemnityDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-purple-600" />
+              Indemnity Records
+            </DialogTitle>
+            <DialogDescription>
+              {indemnityRecords?.session_name} - {indemnityRecords?.company_name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {indemnityRecords && (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-gray-600">
+                  Total: {indemnityRecords.total_participants} participants | 
+                  Signed: {indemnityRecords.indemnity_records?.filter(r => r.indemnity_accepted).length || 0}
+                </p>
+                <Button onClick={handleExportIndemnityRecords} variant="outline" size="sm">
+                  <Download className="w-4 h-4 mr-2" />
+                  Export Excel
+                </Button>
+              </div>
+              
+              <div className="border rounded-lg overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-purple-100">
+                    <tr>
+                      <th className="px-3 py-2 text-left">No</th>
+                      <th className="px-3 py-2 text-left">Name</th>
+                      <th className="px-3 py-2 text-left">IC Number</th>
+                      <th className="px-3 py-2 text-center">Status</th>
+                      <th className="px-3 py-2 text-left">Signed Name</th>
+                      <th className="px-3 py-2 text-left">Signed Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(indemnityRecords.indemnity_records || []).map((record, idx) => (
+                      <tr key={record.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        <td className="px-3 py-2">{idx + 1}</td>
+                        <td className="px-3 py-2 font-medium">{record.full_name}</td>
+                        <td className="px-3 py-2">{record.id_number}</td>
+                        <td className="px-3 py-2 text-center">
+                          {record.indemnity_accepted ? (
+                            <span className="inline-flex items-center px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
+                              ✓ Signed
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs">
+                              ✗ Not Signed
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2">{record.indemnity_signed_name || '-'}</td>
+                        <td className="px-3 py-2">{record.indemnity_signed_date || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
