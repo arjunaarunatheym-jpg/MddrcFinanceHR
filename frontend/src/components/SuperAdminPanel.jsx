@@ -570,46 +570,101 @@ const SuperAdminPanel = () => {
             Download Excel Templates (Master Files)
           </CardTitle>
           <CardDescription>
-            Download blank templates for bulk data upload. Save these to your local drive for future use.
+            Save these templates locally. Use as reference to quickly restore your data after redeployment.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <Button 
-              variant="outline" 
-              className="h-auto py-4 flex flex-col items-center gap-2 hover:bg-blue-50 hover:border-blue-400"
-              onClick={() => downloadTemplate('pre-post-assessment')}
-            >
-              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                <FileText className="w-5 h-5 text-blue-600" />
-              </div>
-              <span className="font-semibold">Pre/Post Assessment</span>
-              <span className="text-xs text-gray-500">Test scores template</span>
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              className="h-auto py-4 flex flex-col items-center gap-2 hover:bg-green-50 hover:border-green-400"
-              onClick={() => downloadTemplate('feedback')}
-            >
-              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                <MessageSquare className="w-5 h-5 text-green-600" />
-              </div>
-              <span className="font-semibold">Feedback</span>
-              <span className="text-xs text-gray-500">Course feedback template</span>
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              className="h-auto py-4 flex flex-col items-center gap-2 hover:bg-orange-50 hover:border-orange-400"
-              onClick={() => downloadTemplate('checklist')}
-            >
-              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-                <ClipboardList className="w-5 h-5 text-orange-600" />
-              </div>
-              <span className="font-semibold">Vehicle Checklist</span>
-              <span className="text-xs text-gray-500">Inspection template</span>
-            </Button>
+        <CardContent className="space-y-4">
+          {/* Program Configuration Templates */}
+          <div>
+            <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              📋 Program Configuration (Questions & Items)
+            </h4>
+            <p className="text-xs text-gray-500 mb-3">
+              Templates for program setup - test questions, feedback questions, checklist items
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <Button 
+                variant="outline" 
+                className="h-auto py-3 flex flex-col items-center gap-1 hover:bg-blue-50 hover:border-blue-400"
+                onClick={() => downloadTemplate('program-test-questions')}
+              >
+                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                  <FileText className="w-4 h-4 text-blue-600" />
+                </div>
+                <span className="font-semibold text-sm">Test Questions</span>
+                <span className="text-xs text-gray-500">Pre/Post test setup</span>
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                className="h-auto py-3 flex flex-col items-center gap-1 hover:bg-green-50 hover:border-green-400"
+                onClick={() => downloadTemplate('program-feedback-questions')}
+              >
+                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                  <MessageSquare className="w-4 h-4 text-green-600" />
+                </div>
+                <span className="font-semibold text-sm">Feedback Questions</span>
+                <span className="text-xs text-gray-500">Feedback form setup</span>
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                className="h-auto py-3 flex flex-col items-center gap-1 hover:bg-orange-50 hover:border-orange-400"
+                onClick={() => downloadTemplate('program-checklist-items')}
+              >
+                <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
+                  <ClipboardList className="w-4 h-4 text-orange-600" />
+                </div>
+                <span className="font-semibold text-sm">Checklist Items</span>
+                <span className="text-xs text-gray-500">Vehicle inspection setup</span>
+              </Button>
+            </div>
+          </div>
+
+          <div className="border-t pt-4">
+            <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              👥 Participant Data Templates
+            </h4>
+            <p className="text-xs text-gray-500 mb-3">
+              Templates for participant records - scores, feedback responses, inspection results
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <Button 
+                variant="outline" 
+                className="h-auto py-3 flex flex-col items-center gap-1 hover:bg-blue-50 hover:border-blue-400"
+                onClick={() => downloadTemplate('pre-post-assessment')}
+              >
+                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                  <FileText className="w-4 h-4 text-blue-600" />
+                </div>
+                <span className="font-semibold text-sm">Assessment Scores</span>
+                <span className="text-xs text-gray-500">Participant test results</span>
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                className="h-auto py-3 flex flex-col items-center gap-1 hover:bg-green-50 hover:border-green-400"
+                onClick={() => downloadTemplate('feedback')}
+              >
+                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                  <MessageSquare className="w-4 h-4 text-green-600" />
+                </div>
+                <span className="font-semibold text-sm">Feedback Responses</span>
+                <span className="text-xs text-gray-500">Participant feedback</span>
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                className="h-auto py-3 flex flex-col items-center gap-1 hover:bg-orange-50 hover:border-orange-400"
+                onClick={() => downloadTemplate('checklist')}
+              >
+                <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
+                  <ClipboardList className="w-4 h-4 text-orange-600" />
+                </div>
+                <span className="font-semibold text-sm">Checklist Results</span>
+                <span className="text-xs text-gray-500">Inspection records</span>
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
