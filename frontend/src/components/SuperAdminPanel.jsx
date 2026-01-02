@@ -521,6 +521,34 @@ const SuperAdminPanel = () => {
     return <Badge variant="outline"><Clock className="w-3 h-3 mr-1" /> Pending</Badge>;
   };
 
+  // Download template functions
+  const downloadTemplate = async (type) => {
+    try {
+      const response = await axiosInstance.get(`/templates/${type}`, {
+        responseType: 'blob'
+      });
+      
+      const filename = {
+        'pre-post-assessment': 'PrePost_Assessment_Template.xlsx',
+        'feedback': 'Feedback_Template.xlsx',
+        'checklist': 'Vehicle_Checklist_Template.xlsx'
+      }[type];
+      
+      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.click();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success(`${filename} downloaded!`);
+    } catch (error) {
+      toast.error("Failed to download template");
+      console.error(error);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <Card>
@@ -532,6 +560,58 @@ const SuperAdminPanel = () => {
             Fill in participant data exactly as they would. Dialogs stay open so you can continue working. Click refresh icon to update status.
           </CardDescription>
         </CardHeader>
+      </Card>
+
+      {/* Excel Templates Download Section */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <FileText className="w-5 h-5" />
+            Download Excel Templates (Master Files)
+          </CardTitle>
+          <CardDescription>
+            Download blank templates for bulk data upload. Save these to your local drive for future use.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <Button 
+              variant="outline" 
+              className="h-auto py-4 flex flex-col items-center gap-2 hover:bg-blue-50 hover:border-blue-400"
+              onClick={() => downloadTemplate('pre-post-assessment')}
+            >
+              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <FileText className="w-5 h-5 text-blue-600" />
+              </div>
+              <span className="font-semibold">Pre/Post Assessment</span>
+              <span className="text-xs text-gray-500">Test scores template</span>
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="h-auto py-4 flex flex-col items-center gap-2 hover:bg-green-50 hover:border-green-400"
+              onClick={() => downloadTemplate('feedback')}
+            >
+              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                <MessageSquare className="w-5 h-5 text-green-600" />
+              </div>
+              <span className="font-semibold">Feedback</span>
+              <span className="text-xs text-gray-500">Course feedback template</span>
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="h-auto py-4 flex flex-col items-center gap-2 hover:bg-orange-50 hover:border-orange-400"
+              onClick={() => downloadTemplate('checklist')}
+            >
+              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                <ClipboardList className="w-5 h-5 text-orange-600" />
+              </div>
+              <span className="font-semibold">Vehicle Checklist</span>
+              <span className="text-xs text-gray-500">Inspection template</span>
+            </Button>
+          </div>
+        </CardContent>
       </Card>
 
       {loading ? (
