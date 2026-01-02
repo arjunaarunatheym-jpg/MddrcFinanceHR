@@ -973,6 +973,58 @@ const AdminDashboard = ({ user, onLogout }) => {
     }
   };
 
+  // Bulk delete users
+  const handleBulkDeleteUsers = async () => {
+    if (selectedUsers.length === 0) return;
+    
+    try {
+      let successCount = 0;
+      let failCount = 0;
+      
+      for (const userId of selectedUsers) {
+        try {
+          await axiosInstance.delete(`/users/${userId}`);
+          successCount++;
+        } catch (error) {
+          failCount++;
+          console.error(`Failed to delete user ${userId}:`, error);
+        }
+      }
+      
+      if (successCount > 0) {
+        toast.success(`Successfully deleted ${successCount} user(s)`);
+      }
+      if (failCount > 0) {
+        toast.error(`Failed to delete ${failCount} user(s)`);
+      }
+      
+      setSelectedUsers([]);
+      setBulkDeleteDialogOpen(false);
+      loadData();
+    } catch (error) {
+      toast.error("Failed to delete users");
+    }
+  };
+
+  const toggleUserSelection = (userId) => {
+    setSelectedUsers(prev => 
+      prev.includes(userId) 
+        ? prev.filter(id => id !== userId) 
+        : [...prev, userId]
+    );
+  };
+
+  const toggleAllUsers = (userList) => {
+    const userIds = userList.map(u => u.id);
+    const allSelected = userIds.every(id => selectedUsers.includes(id));
+    
+    if (allSelected) {
+      setSelectedUsers(prev => prev.filter(id => !userIds.includes(id)));
+    } else {
+      setSelectedUsers(prev => [...new Set([...prev, ...userIds])]);
+    }
+  };
+
   const handleEditStaff = (staff) => {
     setEditingStaff(staff);
     setEditStaffForm({
