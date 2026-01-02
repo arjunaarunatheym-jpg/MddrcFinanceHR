@@ -10205,6 +10205,142 @@ async def get_admin_payments(
     
     return payments
 
+# =====================================================
+# HR & PAYROLL MODULE
+# =====================================================
+
+# Staff Management
+@api_router.get("/hr/staff")
+async def get_staff(current_user: User = Depends(get_current_user)):
+    """Get all staff records with user details"""
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    staff_records = await db.hr_staff.find({}, {"_id": 0}).to_list(500)
+    
+    # Enrich with user data
+    for staff in staff_records:
+        if staff.get("user_id"):
+            user = await db.users.find_one({"id": staff["user_id"]}, {"_id": 0, "full_name": 1, "email": 1, "id_number": 1})
+            if user:
+                staff["full_name"] = user.get("full_name")
+                staff["email"] = user.get("email")
+                staff["ic_number"] = user.get("id_number")
+    
+    return staff_records
+
+@api_router.post("/hr/staff")
+async def create_staff(data: dict, current_user: User = Depends(get_current_user)):
+    """Create a new staff record"""
+    if current_user.role not in ["admin"]:
+        raise HTTPException(status_code=403, detail="Only Admin can manage staff")
+    
+    staff_id = str(uuid.uuid4())
+    
+    # Get user info if user_id provided
+    full_name = None
+    if data.get("user_id"):
+        user = await db.users.find_one({"id": data["user_id"]}, {"_id": 0, "full_name": 1})
+        full_name = user.get("full_name") if user else None
+    
+    staff_record = {
+        "id": staff_id,
+        "user_id": data.get("user_id"),
+        "employee_id": data.get("employee_id"),
+        "full_name": full_name or data.get("full_name", ""),
+        "designation": data.get("designation", ""),
+        "department": data.get("department", ""),
+        "date_joined": data.get("date_joined"),
+        "bank_name": data.get("bank_name", ""),
+        "bank_account": data.get("bank_account", ""),
+        "basic_salary": float(data.get("basic_salary", 0)),
+        "housing_allowance": float(data.get("housing_allowance", 0)),
+        "transport_allowance": float(data.get("transport_allowance", 0)),
+        "meal_allowance": float(data.get("meal_allowance", 0)),
+        "phone_allowance": float(data.get("phone_allowance", 0)),
+        "other_allowance": float(data.get("other_allowance", 0)),
+        "epf_number": data.get("epf_number", ""),
+        "socso_number": data.get("socso_number", ""),
+        "tax_number": data.get("tax_number", ""),
+        "employee_epf_rate": float(data.get("employee_epf_rate", 11)),
+        "employer_epf_rate": float(data.get("employer_epf_rate", 13)),
+        "is_active": data.get("is_active", True),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.hr_staff.insert_one(staff_record)
+    return {"id": staff_id, "message": "Staff created successfully"}
+
+@api_router.put("/hr/staff/{staff_id}")
+async def update_staff(staff_id: str, data: dict, current_user: User = Depends(get_current_user)):
+    """Update a staff record"""
+    if current_user.role not in ["admin"]:
+        raise HTTPException(status_code=403, detail="Only Admin can manage staff")
+    
+    existing = await db.hr_staff.find_one({"id": staff_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Staff not found")
+    
+    update_data = {
+        "employee_id": data.get("employee_id", existing.get("employee_id")),
+        "designation": data.get("designation", existing.get("designation")),
+        "department": data.get("department", existing.get("department")),
+        "date_joined": data.get("date_joined", existing.get("date_joined")),
+        "bank_name": data.get("bank_name", existing.get("bank_name")),
+        "bank_account": data.get("bank_account", existing.get("bank_account")),
+        "basic_salary": float(data.get("basic_salary", existing.get("basic_salary", 0))),
+        "housing_allowance": float(data.get("housing_allowance", existing.get("housing_allowance", 0))),
+        "transport_allowance": float(data.get("transport_allowance", existing.get("transport_allowance", 0))),
+        "meal_allowance": float(data.get("meal_allowance", existing.get("meal_allowance", 0))),
+        "phone_allowance": float(data.get("phone_allowance", existing.get("phone_allowance", 0))),
+        "other_allowance": float(data.get("other_allowance", existing.get("other_allowance", 0))),
+        "epf_number": data.get("epf_number", existing.get("epf_number")),
+        "socso_number": data.get("socso_number", existing.get("socso_number")),
+        "tax_number": data.get("tax_number", existing.get("tax_number")),
+        "employee_epf_rate": float(data.get("employee_epf_rate", existing.get("employee_epf_rate", 11))),
+        "employer_epf_rate": float(data.get("employer_epf_rate", existing.get("employer_epf_rate", 13))),
+        "is_active": data.get("is_active", existing.get("is_active", True)),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.hr_staff.update_one({"id": staff_id}, {"$set": update_data})
+    return {"message": "Staff updated successfully"}
+
+@api_router.delete("/hr/staff/{staff_id}")
+async def delete_staff(staff_id: str, current_user: User = Depends(get_current_user)):
+    """Delete a staff record"""
+    if current_user.role not in ["admin"]:
+        raise HTTPException(status_code=403, detail="Only Admin can manage staff")
+    
+    result = await db.hr_staff.delete_one({"id": staff_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Staff not found")
+    
+    return {"message": "Staff deleted successfully"}
+
+# Get users available to link as staff
+@api_router.get("/hr/available-users")
+async def get_available_users(current_user: User = Depends(get_current_user)):
+    """Get users that can be linked as staff (coordinators, trainers, admin)"""
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get existing staff user IDs
+    existing_staff = await db.hr_staff.find({}, {"user_id": 1}).to_list(500)
+    existing_user_ids = [s.get("user_id") for s in existing_staff if s.get("user_id")]
+    
+    # Get eligible users not yet linked
+    users = await db.users.find(
+        {
+            "role": {"$in": ["trainer", "coordinator", "assistant_admin", "admin"]},
+            "id": {"$nin": existing_user_ids}
+        },
+        {"_id": 0, "id": 1, "full_name": 1, "email": 1, "role": 1, "id_number": 1}
+    ).to_list(200)
+    
+    return users
+
 # Include router (after all routes are defined)
 app.include_router(api_router)
 
