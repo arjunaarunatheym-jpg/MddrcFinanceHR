@@ -4020,6 +4020,33 @@ const AdminDashboard = ({ user, onLogout }) => {
                 </div>
               </div>
 
+              {/* Change Coordinator */}
+              <div>
+                <Label>Session Coordinator</Label>
+                <p className="text-xs text-gray-500 mb-2">Change the primary coordinator for this session</p>
+                <Select
+                  value={editingSession.coordinator_id || ""}
+                  onValueChange={(value) => setEditingSession({ ...editingSession, coordinator_id: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select coordinator" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No Coordinator</SelectItem>
+                    {allStaffForCoordinator.map((staff) => (
+                      <SelectItem key={staff.id} value={staff.id}>
+                        {staff.full_name} ({staff.role.replace('_', ' ')})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {editingSession.coordinator_id && (
+                  <p className="text-xs text-green-600 mt-1">
+                    Current: {allStaffForCoordinator.find(s => s.id === editingSession.coordinator_id)?.full_name || 'Unknown'}
+                  </p>
+                )}
+              </div>
+
               {/* Assistant Coordinators */}
               <div>
                 <Label>Assistant Coordinators (can manage session if coordinator unavailable)</Label>
