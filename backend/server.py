@@ -8717,6 +8717,665 @@ async def get_expense_categories(current_user: User = Depends(get_current_user))
         {"id": "other", "name": "Other Expenses", "type": "fixed", "rate": 0, "description": "Fixed amount"}
     ]
 
+# ============ SUPER ADMIN FINANCE FEATURES ============
+
+# Model for audit trail entries with detailed format
+class AuditTrailEntry(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    action: str  # Invoice Number Changed, Invoice Voided, Payment Deleted, etc.
+    record_reference: str  # e.g., "KONE ELEVATORS - RM 8,000"
+    entity_type: str  # invoice, payment
+    entity_id: str
+    field_changed: Optional[str] = None  # e.g., "invoice_number"
+    from_value: Optional[str] = None
+    to_value: Optional[str] = None
+    changed_by_name: str
+    changed_by_email: str
+    reason: str  # Required reason for the change
+    timestamp: datetime = Field(default_factory=get_malaysia_time)
+
+async def create_audit_trail_entry(
+    action: str,
+    record_reference: str,
+    entity_type: str,
+    entity_id: str,
+    changed_by: User,
+    reason: str,
+    field_changed: str = None,
+    from_value: str = None,
+    to_value: str = None
+):
+    """Create a detailed audit trail entry"""
+    entry = {
+        "id": str(uuid.uuid4()),
+        "action": action,
+        "record_reference": record_reference,
+        "entity_type": entity_type,
+        "entity_id": entity_id,
+        "field_changed": field_changed,
+        "from_value": from_value,
+        "to_value": to_value,
+        "changed_by_name": changed_by.full_name,
+        "changed_by_email": changed_by.email,
+        "reason": reason,
+        "timestamp": get_malaysia_time().isoformat()
+    }
+    await db.audit_trail.insert_one(entry)
+    return entry
+
+# Edit Invoice Number
+class InvoiceNumberEditRequest(BaseModel):
+    year: int
+    month: int
+    sequence: int
+    reason: str
+
+@api_router.put("/finance/admin/invoices/{invoice_id}/number")
+async def edit_invoice_number(
+    invoice_id: str,
+    request: InvoiceNumberEditRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Edit invoice number (year/month/sequence) - Super Admin/Finance only"""
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Only Admin and Finance can edit invoice numbers")
+    
+    if not request.reason or len(request.reason.strip()) < 5:
+        raise HTTPException(status_code=400, detail="Reason is required (minimum 5 characters)")
+    
+    # Get the invoice
+    invoice = await db.invoices.find_one({"id": invoice_id}, {"_id": 0})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    
+    old_invoice_number = invoice["invoice_number"]
+    
+    # Build new invoice number: INV/MDDRC/YYYY/MM/NNNN
+    new_invoice_number = f"INV/MDDRC/{request.year}/{request.month:02d}/{request.sequence:04d}"
+    
+    # Check if new invoice number already exists (excluding current invoice)
+    existing = await db.invoices.find_one({
+        "invoice_number": new_invoice_number,
+        "id": {"$ne": invoice_id}
+    })
+    if existing:
+        raise HTTPException(status_code=400, detail=f"Invoice number {new_invoice_number} already exists")
+    
+    # Get company name for record reference
+    company_name = invoice.get("company_name", "Unknown")
+    total_amount = invoice.get("total_amount", 0)
+    record_ref = f"{company_name} - RM {total_amount:,.2f}"
+    
+    # Create audit trail entry
+    await create_audit_trail_entry(
+        action="Invoice Number Changed",
+        record_reference=record_ref,
+        entity_type="invoice",
+        entity_id=invoice_id,
+        changed_by=current_user,
+        reason=request.reason,
+        field_changed="invoice_number",
+        from_value=old_invoice_number,
+        to_value=new_invoice_number
+    )
+    
+    # Update the invoice
+    await db.invoices.update_one(
+        {"id": invoice_id},
+        {"$set": {
+            "invoice_number": new_invoice_number,
+            "updated_at": get_malaysia_time().isoformat()
+        }}
+    )
+    
+    return {
+        "message": "Invoice number updated successfully",
+        "old_number": old_invoice_number,
+        "new_number": new_invoice_number
+    }
+
+# Void Invoice
+class VoidInvoiceRequest(BaseModel):
+    reason: str
+
+@api_router.post("/finance/admin/invoices/{invoice_id}/void")
+async def void_invoice(
+    invoice_id: str,
+    request: VoidInvoiceRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Void an invoice - Super Admin/Finance only"""
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Only Admin and Finance can void invoices")
+    
+    if not request.reason or len(request.reason.strip()) < 5:
+        raise HTTPException(status_code=400, detail="Reason is required (minimum 5 characters)")
+    
+    # Get the invoice
+    invoice = await db.invoices.find_one({"id": invoice_id}, {"_id": 0})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    
+    if invoice.get("status") == "voided":
+        raise HTTPException(status_code=400, detail="Invoice is already voided")
+    
+    old_status = invoice.get("status")
+    company_name = invoice.get("company_name", "Unknown")
+    total_amount = invoice.get("total_amount", 0)
+    record_ref = f"{company_name} - RM {total_amount:,.2f}"
+    
+    # Create audit trail entry
+    await create_audit_trail_entry(
+        action="Invoice Voided",
+        record_reference=record_ref,
+        entity_type="invoice",
+        entity_id=invoice_id,
+        changed_by=current_user,
+        reason=request.reason,
+        field_changed="status",
+        from_value=old_status,
+        to_value="voided"
+    )
+    
+    # Update the invoice status to voided
+    await db.invoices.update_one(
+        {"id": invoice_id},
+        {"$set": {
+            "status": "voided",
+            "voided_by": current_user.id,
+            "voided_at": get_malaysia_time().isoformat(),
+            "void_reason": request.reason,
+            "updated_at": get_malaysia_time().isoformat()
+        }}
+    )
+    
+    return {"message": "Invoice voided successfully", "invoice_number": invoice.get("invoice_number")}
+
+# Edit Paid Invoice
+class EditPaidInvoiceRequest(BaseModel):
+    bill_to_name: Optional[str] = None
+    bill_to_address: Optional[str] = None
+    total_amount: Optional[float] = None
+    reason: str
+
+@api_router.put("/finance/admin/invoices/{invoice_id}/edit-paid")
+async def edit_paid_invoice(
+    invoice_id: str,
+    request: EditPaidInvoiceRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Edit a paid invoice - Super Admin/Finance only"""
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Only Admin and Finance can edit paid invoices")
+    
+    if not request.reason or len(request.reason.strip()) < 5:
+        raise HTTPException(status_code=400, detail="Reason is required (minimum 5 characters)")
+    
+    # Get the invoice
+    invoice = await db.invoices.find_one({"id": invoice_id}, {"_id": 0})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    
+    company_name = invoice.get("company_name", "Unknown")
+    total_amount = invoice.get("total_amount", 0)
+    record_ref = f"{company_name} - RM {total_amount:,.2f}"
+    
+    # Build update data
+    update_data = {"updated_at": get_malaysia_time().isoformat()}
+    changes = []
+    
+    if request.bill_to_name is not None and request.bill_to_name != invoice.get("bill_to_name"):
+        changes.append(f"Bill To: {invoice.get('bill_to_name')} → {request.bill_to_name}")
+        update_data["bill_to_name"] = request.bill_to_name
+    
+    if request.bill_to_address is not None and request.bill_to_address != invoice.get("bill_to_address"):
+        changes.append(f"Address changed")
+        update_data["bill_to_address"] = request.bill_to_address
+    
+    if request.total_amount is not None and request.total_amount != invoice.get("total_amount"):
+        changes.append(f"Amount: RM {invoice.get('total_amount'):,.2f} → RM {request.total_amount:,.2f}")
+        update_data["total_amount"] = request.total_amount
+    
+    if not changes:
+        return {"message": "No changes detected"}
+    
+    # Create audit trail entry
+    await create_audit_trail_entry(
+        action="Paid Invoice Edited",
+        record_reference=record_ref,
+        entity_type="invoice",
+        entity_id=invoice_id,
+        changed_by=current_user,
+        reason=request.reason,
+        field_changed="multiple",
+        from_value="; ".join([c.split(" → ")[0] if " → " in c else c for c in changes]),
+        to_value="; ".join([c.split(" → ")[1] if " → " in c else c for c in changes])
+    )
+    
+    # Update the invoice
+    await db.invoices.update_one({"id": invoice_id}, {"$set": update_data})
+    
+    return {"message": "Paid invoice updated successfully", "changes": changes}
+
+# Delete Payment Record
+class DeletePaymentRequest(BaseModel):
+    reason: str
+
+@api_router.delete("/finance/admin/payments/{payment_id}")
+async def delete_payment(
+    payment_id: str,
+    request: DeletePaymentRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a payment record - Super Admin/Finance only"""
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Only Admin and Finance can delete payments")
+    
+    if not request.reason or len(request.reason.strip()) < 5:
+        raise HTTPException(status_code=400, detail="Reason is required (minimum 5 characters)")
+    
+    # Get the payment
+    payment = await db.payments.find_one({"id": payment_id}, {"_id": 0})
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    # Get related invoice for reference
+    invoice = await db.invoices.find_one({"id": payment.get("invoice_id")}, {"_id": 0})
+    company_name = invoice.get("company_name", "Unknown") if invoice else "Unknown"
+    
+    record_ref = f"{company_name} - RM {payment.get('amount', 0):,.2f} ({payment.get('payment_method', 'Unknown')})"
+    
+    # Create audit trail entry
+    await create_audit_trail_entry(
+        action="Payment Deleted",
+        record_reference=record_ref,
+        entity_type="payment",
+        entity_id=payment_id,
+        changed_by=current_user,
+        reason=request.reason,
+        field_changed="deleted",
+        from_value=f"RM {payment.get('amount', 0):,.2f}",
+        to_value="Deleted"
+    )
+    
+    # Delete the payment
+    await db.payments.delete_one({"id": payment_id})
+    
+    # Update invoice status if it was paid
+    if invoice and invoice.get("status") == "paid":
+        # Check if there are other payments for this invoice
+        remaining_payments = await db.payments.count_documents({"invoice_id": invoice["id"]})
+        if remaining_payments == 0:
+            await db.invoices.update_one(
+                {"id": invoice["id"]},
+                {"$set": {"status": "issued", "updated_at": get_malaysia_time().isoformat()}}
+            )
+    
+    return {"message": "Payment deleted successfully"}
+
+# Backdate Invoice
+class BackdateInvoiceRequest(BaseModel):
+    new_date: str  # YYYY-MM-DD format
+    reason: str
+
+@api_router.put("/finance/admin/invoices/{invoice_id}/backdate")
+async def backdate_invoice(
+    invoice_id: str,
+    request: BackdateInvoiceRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Backdate an invoice - Super Admin/Finance only"""
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Only Admin and Finance can backdate invoices")
+    
+    if not request.reason or len(request.reason.strip()) < 5:
+        raise HTTPException(status_code=400, detail="Reason is required (minimum 5 characters)")
+    
+    # Get the invoice
+    invoice = await db.invoices.find_one({"id": invoice_id}, {"_id": 0})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    
+    company_name = invoice.get("company_name", "Unknown")
+    total_amount = invoice.get("total_amount", 0)
+    record_ref = f"{company_name} - RM {total_amount:,.2f}"
+    
+    # Get old date
+    old_created_at = invoice.get("created_at")
+    if isinstance(old_created_at, datetime):
+        old_date = old_created_at.strftime("%Y-%m-%d")
+    elif isinstance(old_created_at, str):
+        old_date = old_created_at[:10]
+    else:
+        old_date = "Unknown"
+    
+    # Parse new date
+    try:
+        new_datetime = datetime.strptime(request.new_date, "%Y-%m-%d")
+        new_datetime = new_datetime.replace(tzinfo=MALAYSIA_TZ)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+    
+    # Create audit trail entry
+    await create_audit_trail_entry(
+        action="Invoice Backdated",
+        record_reference=record_ref,
+        entity_type="invoice",
+        entity_id=invoice_id,
+        changed_by=current_user,
+        reason=request.reason,
+        field_changed="created_at",
+        from_value=old_date,
+        to_value=request.new_date
+    )
+    
+    # Update the invoice date
+    await db.invoices.update_one(
+        {"id": invoice_id},
+        {"$set": {
+            "created_at": new_datetime.isoformat(),
+            "invoice_date": request.new_date,
+            "updated_at": get_malaysia_time().isoformat()
+        }}
+    )
+    
+    return {"message": "Invoice backdated successfully", "old_date": old_date, "new_date": request.new_date}
+
+# Reset Sequence Counter
+class ResetSequenceRequest(BaseModel):
+    year: int
+    month: int
+    new_sequence: int
+    reason: str
+
+@api_router.post("/finance/admin/sequence/reset")
+async def reset_invoice_sequence(
+    request: ResetSequenceRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Reset invoice sequence counter - Super Admin/Finance only"""
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Only Admin and Finance can reset sequence")
+    
+    if not request.reason or len(request.reason.strip()) < 5:
+        raise HTTPException(status_code=400, detail="Reason is required (minimum 5 characters)")
+    
+    if request.new_sequence < 1:
+        raise HTTPException(status_code=400, detail="Sequence must be at least 1")
+    
+    # Get current highest sequence for the month
+    prefix = f"INV/MDDRC/{request.year}/{request.month:02d}/"
+    last_invoice = await db.invoices.find_one(
+        {"invoice_number": {"$regex": f"^{prefix}"}},
+        sort=[("invoice_number", -1)]
+    )
+    
+    current_sequence = 0
+    if last_invoice:
+        current_sequence = int(last_invoice["invoice_number"].split("/")[-1])
+    
+    # Store the sequence override in a settings collection
+    await db.invoice_sequence_settings.update_one(
+        {"year": request.year, "month": request.month},
+        {
+            "$set": {
+                "next_sequence": request.new_sequence,
+                "reset_by": current_user.id,
+                "reset_at": get_malaysia_time().isoformat(),
+                "reset_reason": request.reason
+            }
+        },
+        upsert=True
+    )
+    
+    # Create audit trail entry
+    await create_audit_trail_entry(
+        action="Invoice Sequence Reset",
+        record_reference=f"Sequence for {request.year}/{request.month:02d}",
+        entity_type="sequence",
+        entity_id=f"{request.year}-{request.month:02d}",
+        changed_by=current_user,
+        reason=request.reason,
+        field_changed="next_sequence",
+        from_value=str(current_sequence),
+        to_value=str(request.new_sequence)
+    )
+    
+    return {
+        "message": "Sequence reset successfully",
+        "year": request.year,
+        "month": request.month,
+        "old_sequence": current_sequence,
+        "new_sequence": request.new_sequence
+    }
+
+# Get Audit Trail with filters
+@api_router.get("/finance/admin/audit-trail")
+async def get_admin_audit_trail(
+    entity_type: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    limit: int = 100,
+    current_user: User = Depends(get_current_user)
+):
+    """Get detailed audit trail - Super Admin/Finance only"""
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Only Admin and Finance can view audit trail")
+    
+    query = {}
+    if entity_type:
+        query["entity_type"] = entity_type
+    if start_date:
+        query["timestamp"] = {"$gte": start_date}
+    if end_date:
+        if "timestamp" in query:
+            query["timestamp"]["$lte"] = end_date + "T23:59:59"
+        else:
+            query["timestamp"] = {"$lte": end_date + "T23:59:59"}
+    
+    logs = await db.audit_trail.find(query, {"_id": 0}).sort("timestamp", -1).to_list(limit)
+    
+    return logs
+
+# Export Audit Trail as Excel
+@api_router.get("/finance/admin/audit-trail/export")
+async def export_audit_trail(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Export audit trail as Excel - Super Admin/Finance only"""
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Only Admin and Finance can export audit trail")
+    
+    import openpyxl
+    from io import BytesIO
+    from fastapi.responses import StreamingResponse
+    
+    query = {}
+    if start_date:
+        query["timestamp"] = {"$gte": start_date}
+    if end_date:
+        if "timestamp" in query:
+            query["timestamp"]["$lte"] = end_date + "T23:59:59"
+        else:
+            query["timestamp"] = {"$lte": end_date + "T23:59:59"}
+    
+    logs = await db.audit_trail.find(query, {"_id": 0}).sort("timestamp", -1).to_list(5000)
+    
+    # Create Excel workbook
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Audit Trail"
+    
+    # Headers
+    headers = ["Date/Time", "Action", "Record", "Field Changed", "From", "To", "Changed By", "Email", "Reason"]
+    ws.append(headers)
+    
+    # Style headers
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col)
+        cell.font = openpyxl.styles.Font(bold=True)
+        cell.fill = openpyxl.styles.PatternFill(start_color="E0E0E0", end_color="E0E0E0", fill_type="solid")
+    
+    # Data rows
+    for log in logs:
+        timestamp = log.get("timestamp", "")
+        if isinstance(timestamp, str):
+            # Format: DD MMM YYYY, HH:MM:SS
+            try:
+                dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+                timestamp = dt.strftime("%d %b %Y, %H:%M:%S")
+            except:
+                pass
+        
+        ws.append([
+            timestamp,
+            log.get("action", ""),
+            log.get("record_reference", ""),
+            log.get("field_changed", ""),
+            log.get("from_value", ""),
+            log.get("to_value", ""),
+            log.get("changed_by_name", ""),
+            log.get("changed_by_email", ""),
+            log.get("reason", "")
+        ])
+    
+    # Auto-width columns
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[column_letter].width = adjusted_width
+    
+    # Save to bytes
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    filename = f"Audit_Trail_{get_malaysia_time().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+# Override Validation - Edit invoice without amount checks
+class OverrideValidationRequest(BaseModel):
+    total_amount: float
+    reason: str
+    skip_validation: bool = True
+
+@api_router.put("/finance/admin/invoices/{invoice_id}/override")
+async def override_invoice_validation(
+    invoice_id: str,
+    request: OverrideValidationRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Override invoice amount without validation - Super Admin/Finance only"""
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Only Admin and Finance can override validation")
+    
+    if not request.reason or len(request.reason.strip()) < 5:
+        raise HTTPException(status_code=400, detail="Reason is required (minimum 5 characters)")
+    
+    # Get the invoice
+    invoice = await db.invoices.find_one({"id": invoice_id}, {"_id": 0})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    
+    company_name = invoice.get("company_name", "Unknown")
+    old_amount = invoice.get("total_amount", 0)
+    record_ref = f"{company_name} - RM {old_amount:,.2f}"
+    
+    # Create audit trail entry
+    await create_audit_trail_entry(
+        action="Invoice Amount Override",
+        record_reference=record_ref,
+        entity_type="invoice",
+        entity_id=invoice_id,
+        changed_by=current_user,
+        reason=request.reason,
+        field_changed="total_amount",
+        from_value=f"RM {old_amount:,.2f}",
+        to_value=f"RM {request.total_amount:,.2f}"
+    )
+    
+    # Update the invoice amount directly
+    await db.invoices.update_one(
+        {"id": invoice_id},
+        {"$set": {
+            "total_amount": request.total_amount,
+            "validation_overridden": True,
+            "override_reason": request.reason,
+            "overridden_by": current_user.id,
+            "overridden_at": get_malaysia_time().isoformat(),
+            "updated_at": get_malaysia_time().isoformat()
+        }}
+    )
+    
+    return {
+        "message": "Invoice amount overridden successfully",
+        "old_amount": old_amount,
+        "new_amount": request.total_amount
+    }
+
+# Get all invoices for admin management
+@api_router.get("/finance/admin/invoices")
+async def get_admin_invoices(
+    status: Optional[str] = None,
+    search: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all invoices for admin management"""
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Only Admin and Finance can access")
+    
+    query = {}
+    if status and status != "all":
+        query["status"] = status
+    if search:
+        query["$or"] = [
+            {"invoice_number": {"$regex": search, "$options": "i"}},
+            {"company_name": {"$regex": search, "$options": "i"}}
+        ]
+    
+    invoices = await db.invoices.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return invoices
+
+# Get all payments for admin management
+@api_router.get("/finance/admin/payments")
+async def get_admin_payments(
+    invoice_id: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all payments for admin management"""
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Only Admin and Finance can access")
+    
+    query = {}
+    if invoice_id:
+        query["invoice_id"] = invoice_id
+    
+    payments = await db.payments.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
+    
+    # Enrich with invoice data
+    for payment in payments:
+        invoice = await db.invoices.find_one({"id": payment.get("invoice_id")}, {"_id": 0})
+        if invoice:
+            payment["invoice_number"] = invoice.get("invoice_number")
+            payment["company_name"] = invoice.get("company_name")
+    
+    return payments
+
 # Include router (after all routes are defined)
 app.include_router(api_router)
 
