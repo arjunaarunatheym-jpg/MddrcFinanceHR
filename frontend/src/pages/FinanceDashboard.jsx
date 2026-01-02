@@ -1701,6 +1701,195 @@ const FinanceDashboard = ({ user, onLogout }) => {
                   </div>
                 </div>
 
+                {/* Document Styling Settings */}
+                <div className="p-4 bg-orange-50 rounded-lg space-y-4">
+                  <h3 className="font-semibold text-orange-900">📄 Document Styling (Invoice, Payslip, Pay Advice)</h3>
+                  <p className="text-sm text-orange-700">Customize the look of all printed documents</p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Logo Settings */}
+                    <div>
+                      <Label>Logo Width (px)</Label>
+                      <Input
+                        type="number"
+                        min="50"
+                        max="300"
+                        value={companySettings.logo_width || 150}
+                        onChange={(e) => setCompanySettings({...companySettings, logo_width: parseInt(e.target.value) || 150})}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Default: 150px. Max: 300px</p>
+                    </div>
+                    <div>
+                      <Label>Logo Position</Label>
+                      <Select 
+                        value={companySettings.logo_position || 'center'} 
+                        onValueChange={(v) => setCompanySettings({...companySettings, logo_position: v})}
+                      >
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="left">Left</SelectItem>
+                          <SelectItem value="center">Center</SelectItem>
+                          <SelectItem value="right">Right</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center gap-2 pt-6">
+                      <input
+                        type="checkbox"
+                        id="show_watermark"
+                        checked={companySettings.show_watermark !== false}
+                        onChange={(e) => setCompanySettings({...companySettings, show_watermark: e.target.checked})}
+                        className="h-4 w-4"
+                      />
+                      <Label htmlFor="show_watermark" className="cursor-pointer">Show Logo Watermark</Label>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Colors */}
+                    <div>
+                      <Label>Primary Color (Headers)</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          type="color"
+                          value={companySettings.primary_color || '#1a365d'}
+                          onChange={(e) => setCompanySettings({...companySettings, primary_color: e.target.value})}
+                          className="w-12 h-10 p-1 cursor-pointer"
+                        />
+                        <Input
+                          value={companySettings.primary_color || '#1a365d'}
+                          onChange={(e) => setCompanySettings({...companySettings, primary_color: e.target.value})}
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Secondary Color (Accents)</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          type="color"
+                          value={companySettings.secondary_color || '#4472C4'}
+                          onChange={(e) => setCompanySettings({...companySettings, secondary_color: e.target.value})}
+                          className="w-12 h-10 p-1 cursor-pointer"
+                        />
+                        <Input
+                          value={companySettings.secondary_color || '#4472C4'}
+                          onChange={(e) => setCompanySettings({...companySettings, secondary_color: e.target.value})}
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Watermark Opacity</Label>
+                      <Input
+                        type="range"
+                        min="0.02"
+                        max="0.2"
+                        step="0.01"
+                        value={companySettings.watermark_opacity || 0.08}
+                        onChange={(e) => setCompanySettings({...companySettings, watermark_opacity: parseFloat(e.target.value)})}
+                        className="mt-2"
+                      />
+                      <p className="text-xs text-gray-500">{((companySettings.watermark_opacity || 0.08) * 100).toFixed(0)}% opacity</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Fonts */}
+                    <div>
+                      <Label>Header Font</Label>
+                      <Select 
+                        value={companySettings.header_font || 'Arial'} 
+                        onValueChange={(v) => setCompanySettings({...companySettings, header_font: v})}
+                      >
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Arial">Arial</SelectItem>
+                          <SelectItem value="Helvetica">Helvetica</SelectItem>
+                          <SelectItem value="Times New Roman">Times New Roman</SelectItem>
+                          <SelectItem value="Georgia">Georgia</SelectItem>
+                          <SelectItem value="Verdana">Verdana</SelectItem>
+                          <SelectItem value="Tahoma">Tahoma</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Body Font</Label>
+                      <Select 
+                        value={companySettings.body_font || 'Arial'} 
+                        onValueChange={(v) => setCompanySettings({...companySettings, body_font: v})}
+                      >
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Arial">Arial</SelectItem>
+                          <SelectItem value="Helvetica">Helvetica</SelectItem>
+                          <SelectItem value="Times New Roman">Times New Roman</SelectItem>
+                          <SelectItem value="Georgia">Georgia</SelectItem>
+                          <SelectItem value="Verdana">Verdana</SelectItem>
+                          <SelectItem value="Tahoma">Tahoma</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Tagline */}
+                  <div className="border-t pt-4">
+                    <h4 className="font-medium mb-2">Footer Tagline</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="md:col-span-1">
+                        <Label>Tagline Text</Label>
+                        <Input
+                          value={companySettings.tagline || 'Towards a Nation of Safe Drivers'}
+                          onChange={(e) => setCompanySettings({...companySettings, tagline: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <Label>Tagline Font</Label>
+                        <Select 
+                          value={companySettings.tagline_font || 'Georgia'} 
+                          onValueChange={(v) => setCompanySettings({...companySettings, tagline_font: v})}
+                        >
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Georgia">Georgia (Elegant)</SelectItem>
+                            <SelectItem value="Times New Roman">Times New Roman</SelectItem>
+                            <SelectItem value="Palatino">Palatino</SelectItem>
+                            <SelectItem value="Garamond">Garamond</SelectItem>
+                            <SelectItem value="Arial">Arial</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Tagline Style</Label>
+                        <Select 
+                          value={companySettings.tagline_style || 'italic'} 
+                          onValueChange={(v) => setCompanySettings({...companySettings, tagline_style: v})}
+                        >
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="normal">Normal</SelectItem>
+                            <SelectItem value="italic">Italic</SelectItem>
+                            <SelectItem value="bold">Bold</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    {/* Preview */}
+                    <div className="mt-3 p-3 bg-white border rounded text-center">
+                      <p className="text-xs text-gray-500 mb-1">Preview:</p>
+                      <p style={{
+                        fontFamily: companySettings.tagline_font || 'Georgia',
+                        fontStyle: companySettings.tagline_style === 'italic' ? 'italic' : 'normal',
+                        fontWeight: companySettings.tagline_style === 'bold' ? 'bold' : 'normal',
+                        color: companySettings.primary_color || '#1a365d',
+                        fontSize: '14px'
+                      }}>
+                        "{companySettings.tagline || 'Towards a Nation of Safe Drivers'}"
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="flex justify-end">
                   <Button onClick={handleSaveSettings} disabled={settingsLoading}>
                     {settingsLoading ? 'Saving...' : 'Save Settings'}
