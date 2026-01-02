@@ -7375,27 +7375,52 @@ async def export_invoices(
     
     invoices = await db.invoices.find(query, {"_id": 0}).sort("created_at", -1).to_list(10000)
     
-    # Format for Excel export
+    # Get all payments for payment status
+    payments = await db.payments.find({}, {"_id": 0}).to_list(10000)
+    payment_by_invoice = {p.get("invoice_id"): p for p in payments}
+    
+    # Get all credit notes
+    credit_notes = await db.credit_notes.find({}, {"_id": 0}).to_list(10000)
+    cn_by_invoice = {}
+    for cn in credit_notes:
+        inv_id = cn.get("invoice_id")
+        if inv_id:
+            if inv_id not in cn_by_invoice:
+                cn_by_invoice[inv_id] = []
+            cn_by_invoice[inv_id].append(cn)
+    
+    # Format for Excel export with user's requested headers
     export_data = []
+    bil = 1
     for inv in invoices:
+        # Get payment status
+        payment = payment_by_invoice.get(inv.get("id"))
+        payment_status = "Paid" if payment else "Unpaid"
+        
+        # Get credit notes
+        inv_credit_notes = cn_by_invoice.get(inv.get("id"), [])
+        cn_info = ""
+        if inv_credit_notes:
+            cn_parts = []
+            for cn in inv_credit_notes:
+                cn_parts.append(f"{cn.get('cn_number', 'CN')}: RM{cn.get('amount', 0)}")
+            cn_info = "; ".join(cn_parts)
+        
         export_data.append({
-            "Invoice No": inv.get("invoice_number", ""),
+            "Bil": bil,
             "Date": str(inv.get("created_at", ""))[:10] if inv.get("created_at") else "",
+            "Invoice Number": inv.get("invoice_number", ""),
             "Bill To": inv.get("bill_to_name") or inv.get("company_name", ""),
-            "Company": inv.get("company_name", ""),
-            "Program": inv.get("programme_name", ""),
-            "Training Dates": inv.get("training_dates", ""),
+            "Programme": inv.get("programme_name", ""),
+            "Company Name": inv.get("company_name", ""),
             "Venue": inv.get("venue", ""),
-            "Pax": inv.get("pax", 0),
-            "Subtotal (RM)": inv.get("subtotal", 0),
-            "Mobilisation Fee (RM)": inv.get("mobilisation_fee", 0),
-            "Tax (RM)": inv.get("tax_amount", 0),
-            "Discount (RM)": inv.get("discount", 0),
-            "Total Amount (RM)": inv.get("total_amount", 0),
-            "Status": inv.get("status", ""),
-            "Issued Date": str(inv.get("issued_at", ""))[:10] if inv.get("issued_at") else "",
-            "Your Reference": inv.get("your_reference", "")
+            "No of Participants": inv.get("pax", 0),
+            "Invoice Value (RM)": inv.get("total_amount", 0),
+            "Invoice Status": inv.get("status", "").replace("_", " ").title(),
+            "Payment Status": payment_status,
+            "Credit Note No & Value": cn_info
         })
+        bil += 1
     
     return export_data
 
