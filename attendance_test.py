@@ -8,7 +8,7 @@ import requests
 import json
 from datetime import datetime
 
-BASE_URL = "https://payables-dashboard.preview.emergentagent.com/api"
+BASE_URL = "https://train-track-pro.preview.emergentagent.com/api"
 
 class AttendanceDisplayTester:
     def __init__(self):

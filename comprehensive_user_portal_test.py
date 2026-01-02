@@ -25,7 +25,7 @@ from datetime import datetime, timedelta
 import uuid
 
 # Configuration
-BASE_URL = "https://payables-dashboard.preview.emergentagent.com/api"
+BASE_URL = "https://train-track-pro.preview.emergentagent.com/api"
 
 # Test Credentials
 TEST_CREDENTIALS = {

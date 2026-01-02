@@ -14,7 +14,7 @@ import sys
 from datetime import datetime, date, timedelta
 
 # Configuration
-BASE_URL = "https://payables-dashboard.preview.emergentagent.com/api"
+BASE_URL = "https://train-track-pro.preview.emergentagent.com/api"
 ADMIN_EMAIL = "arjuna@mddrc.com.my"
 ADMIN_PASSWORD = "Dana102229"
 

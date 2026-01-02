@@ -23,7 +23,7 @@ import pymongo
 import os
 
 # Configuration
-BASE_URL = "https://payables-dashboard.preview.emergentagent.com/api"
+BASE_URL = "https://train-track-pro.preview.emergentagent.com/api"
 
 # Test Credentials from review request
 ADMIN_EMAIL = "arjuna@mddrc.com.my"
