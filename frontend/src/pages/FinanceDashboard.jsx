@@ -1571,6 +1571,11 @@ const FinanceDashboard = ({ user, onLogout }) => {
             </Card>
           </TabsContent>
 
+          {/* HR & Payroll Tab */}
+          <TabsContent value="hr">
+            <HRModule />
+          </TabsContent>
+
           {/* Audit Log Tab */}
           <TabsContent value="audit">
             <Card>
