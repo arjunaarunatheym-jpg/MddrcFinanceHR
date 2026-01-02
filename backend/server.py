@@ -9612,6 +9612,336 @@ async def download_checklist_template(current_user: User = Depends(get_current_u
         headers={"Content-Disposition": "attachment; filename=Vehicle_Checklist_Template.xlsx"}
     )
 
+# ============ PROGRAM CONFIGURATION TEMPLATES (Master Files) ============
+
+@api_router.get("/templates/program-test-questions")
+async def download_test_questions_template(current_user: User = Depends(get_current_user)):
+    """Download Excel template for Pre/Post Test Questions (Program Configuration)"""
+    if current_user.role not in ["admin", "trainer", "assistant_admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    import openpyxl
+    from io import BytesIO
+    from fastapi.responses import StreamingResponse
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Test Questions"
+    
+    # Headers for test questions
+    headers = [
+        "program_name",           # For reference
+        "test_type",              # "pre" or "post" (same questions usually)
+        "question_number",        # 1, 2, 3...
+        "question_text",          # The actual question
+        "option_1",               # First answer option
+        "option_2",               # Second answer option
+        "option_3",               # Third answer option
+        "option_4",               # Fourth answer option
+        "correct_answer",         # 1, 2, 3, or 4 (which option is correct)
+    ]
+    ws.append(headers)
+    
+    # Style headers
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col)
+        cell.font = openpyxl.styles.Font(bold=True)
+        cell.fill = openpyxl.styles.PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+        cell.font = openpyxl.styles.Font(bold=True, color="FFFFFF")
+    
+    # Sample data - Defensive Driving questions
+    sample_data = [
+        ["Defensive Driving", "pre", 1, "What is the safest following distance in normal conditions?", "1 second", "2 seconds", "3 seconds", "4 seconds", 3],
+        ["Defensive Driving", "pre", 2, "When should you use your hazard lights?", "When parking illegally", "When your vehicle breaks down", "When driving slowly", "When it's raining", 2],
+        ["Defensive Driving", "pre", 3, "What does a yellow traffic light mean?", "Speed up", "Stop if safe to do so", "Continue at same speed", "Honk your horn", 2],
+        ["Defensive Driving", "pre", 4, "What is the first thing to check before changing lanes?", "Speedometer", "Mirrors and blind spots", "Radio", "Air conditioning", 2],
+        ["Defensive Driving", "pre", 5, "In wet conditions, you should:", "Drive faster to clear water", "Maintain normal speed", "Reduce speed and increase following distance", "Use high beam lights", 3],
+    ]
+    
+    for row in sample_data:
+        ws.append(row)
+    
+    # Instructions sheet
+    ws_inst = wb.create_sheet("Instructions")
+    instructions = [
+        ["PRE/POST TEST QUESTIONS TEMPLATE (PROGRAM CONFIGURATION)"],
+        [""],
+        ["PURPOSE:"],
+        ["This template is for creating/restoring TEST QUESTIONS for a program."],
+        ["Use this to quickly re-upload your test questions after redeployment."],
+        [""],
+        ["COLUMNS:"],
+        ["program_name", "Name of the program (for your reference)"],
+        ["test_type", "'pre' or 'post' - typically same questions for both"],
+        ["question_number", "Question sequence number (1, 2, 3...)"],
+        ["question_text", "The full question text"],
+        ["option_1 to option_4", "Four answer options"],
+        ["correct_answer", "Number 1-4 indicating which option is correct"],
+        [""],
+        ["HOW TO USE:"],
+        ["1. Fill in your questions following the sample format"],
+        ["2. Save this file locally as your master copy"],
+        ["3. After redeployment, go to Programs tab → Edit Program → Tests"],
+        ["4. Add questions manually using this file as reference"],
+        ["   (or use bulk upload if available)"],
+        [""],
+        ["TIPS:"],
+        ["- Keep questions clear and concise"],
+        ["- Ensure only ONE correct answer per question"],
+        ["- Use consistent formatting for all options"],
+        ["- Recommended: 20-40 questions per program"],
+        ["- Delete sample rows and add your own questions"],
+    ]
+    for row in instructions:
+        ws_inst.append(row)
+    
+    # Auto-width
+    for ws_sheet in [ws, ws_inst]:
+        for column in ws_sheet.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            ws_sheet.column_dimensions[column_letter].width = min(max_length + 2, 60)
+    
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=Program_Test_Questions_Template.xlsx"}
+    )
+
+@api_router.get("/templates/program-feedback-questions")
+async def download_feedback_questions_template(current_user: User = Depends(get_current_user)):
+    """Download Excel template for Feedback Questions (Program Configuration)"""
+    if current_user.role not in ["admin", "trainer", "assistant_admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    import openpyxl
+    from io import BytesIO
+    from fastapi.responses import StreamingResponse
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Feedback Questions"
+    
+    # Headers
+    headers = [
+        "program_name",           # For reference
+        "question_number",        # 1, 2, 3...
+        "question_text",          # The feedback question
+        "question_type",          # "rating" (1-5 scale) or "text" (free text)
+        "required",               # "yes" or "no"
+    ]
+    ws.append(headers)
+    
+    # Style headers
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col)
+        cell.font = openpyxl.styles.Font(bold=True)
+        cell.fill = openpyxl.styles.PatternFill(start_color="70AD47", end_color="70AD47", fill_type="solid")
+        cell.font = openpyxl.styles.Font(bold=True, color="FFFFFF")
+    
+    # Sample data - Standard feedback questions
+    sample_data = [
+        ["Defensive Driving", 1, "How would you rate the overall quality of the training program?", "rating", "yes"],
+        ["Defensive Driving", 2, "How knowledgeable was the trainer on the subject matter?", "rating", "yes"],
+        ["Defensive Driving", 3, "How effective was the trainer's delivery and presentation style?", "rating", "yes"],
+        ["Defensive Driving", 4, "How useful were the training materials provided?", "rating", "yes"],
+        ["Defensive Driving", 5, "How effective were the practical/hands-on sessions?", "rating", "yes"],
+        ["Defensive Driving", 6, "How would you rate the training facilities and environment?", "rating", "yes"],
+        ["Defensive Driving", 7, "How well was the training time managed?", "rating", "yes"],
+        ["Defensive Driving", 8, "How likely are you to recommend this training to others?", "rating", "yes"],
+        ["Defensive Driving", 9, "What did you find most valuable about this training?", "text", "no"],
+        ["Defensive Driving", 10, "What suggestions do you have for improving this training?", "text", "no"],
+    ]
+    
+    for row in sample_data:
+        ws.append(row)
+    
+    # Instructions sheet
+    ws_inst = wb.create_sheet("Instructions")
+    instructions = [
+        ["FEEDBACK QUESTIONS TEMPLATE (PROGRAM CONFIGURATION)"],
+        [""],
+        ["PURPOSE:"],
+        ["This template is for creating/restoring FEEDBACK QUESTIONS for a program."],
+        ["Use this to quickly re-create your feedback form after redeployment."],
+        [""],
+        ["COLUMNS:"],
+        ["program_name", "Name of the program (for your reference)"],
+        ["question_number", "Question sequence (1, 2, 3...)"],
+        ["question_text", "The feedback question text"],
+        ["question_type", "'rating' = 1-5 scale, 'text' = free text answer"],
+        ["required", "'yes' = must answer, 'no' = optional"],
+        [""],
+        ["QUESTION TYPES:"],
+        ["rating", "Participant selects 1-5 (1=Poor, 5=Excellent)"],
+        ["text", "Participant types free-form answer"],
+        [""],
+        ["HOW TO USE:"],
+        ["1. Customize questions for your program"],
+        ["2. Save this file locally as your master copy"],
+        ["3. After redeployment, go to Feedback tab → Create Template"],
+        ["4. Add questions using this file as reference"],
+        [""],
+        ["RECOMMENDED STRUCTURE:"],
+        ["- 6-8 rating questions covering key aspects"],
+        ["- 1-2 text questions for open feedback"],
+        ["- Keep questions clear and specific"],
+        ["- Delete sample rows and add your own questions"],
+    ]
+    for row in instructions:
+        ws_inst.append(row)
+    
+    # Auto-width
+    for ws_sheet in [ws, ws_inst]:
+        for column in ws_sheet.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            ws_sheet.column_dimensions[column_letter].width = min(max_length + 2, 60)
+    
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=Program_Feedback_Questions_Template.xlsx"}
+    )
+
+@api_router.get("/templates/program-checklist-items")
+async def download_checklist_items_template(current_user: User = Depends(get_current_user)):
+    """Download Excel template for Checklist Items (Program Configuration)"""
+    if current_user.role not in ["admin", "trainer", "assistant_admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    import openpyxl
+    from io import BytesIO
+    from fastapi.responses import StreamingResponse
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Checklist Items"
+    
+    # Headers
+    headers = [
+        "program_name",           # For reference
+        "item_number",            # 1, 2, 3...
+        "checklist_item",         # The item to check
+        "category",               # Optional: group items by category
+    ]
+    ws.append(headers)
+    
+    # Style headers
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col)
+        cell.font = openpyxl.styles.Font(bold=True)
+        cell.fill = openpyxl.styles.PatternFill(start_color="ED7D31", end_color="ED7D31", fill_type="solid")
+        cell.font = openpyxl.styles.Font(bold=True, color="FFFFFF")
+    
+    # Sample data - Vehicle checklist items
+    sample_data = [
+        ["Defensive Driving", 1, "Tyres - Check tread depth and pressure", "Exterior"],
+        ["Defensive Driving", 2, "Tyres - Check for damage or bulges", "Exterior"],
+        ["Defensive Driving", 3, "Brakes - Test brake pedal feel", "Safety"],
+        ["Defensive Driving", 4, "Brakes - Check handbrake operation", "Safety"],
+        ["Defensive Driving", 5, "Lights - Headlights (low and high beam)", "Lights"],
+        ["Defensive Driving", 6, "Lights - Tail lights and brake lights", "Lights"],
+        ["Defensive Driving", 7, "Lights - Turn signals (front and rear)", "Lights"],
+        ["Defensive Driving", 8, "Lights - Hazard lights", "Lights"],
+        ["Defensive Driving", 9, "Horn - Test horn functionality", "Safety"],
+        ["Defensive Driving", 10, "Mirrors - Side mirrors condition and adjustment", "Visibility"],
+        ["Defensive Driving", 11, "Mirrors - Rear view mirror condition", "Visibility"],
+        ["Defensive Driving", 12, "Windscreen - Check for cracks or chips", "Visibility"],
+        ["Defensive Driving", 13, "Wipers - Front wiper operation", "Visibility"],
+        ["Defensive Driving", 14, "Wipers - Rear wiper operation (if equipped)", "Visibility"],
+        ["Defensive Driving", 15, "Seatbelts - Driver seatbelt condition", "Safety"],
+        ["Defensive Driving", 16, "Seatbelts - Passenger seatbelts", "Safety"],
+        ["Defensive Driving", 17, "Steering - Check for play or stiffness", "Controls"],
+        ["Defensive Driving", 18, "Engine - Check for unusual sounds", "Engine"],
+        ["Defensive Driving", 19, "Engine - Oil level", "Engine"],
+        ["Defensive Driving", 20, "Coolant - Check coolant level", "Engine"],
+    ]
+    
+    for row in sample_data:
+        ws.append(row)
+    
+    # Instructions sheet
+    ws_inst = wb.create_sheet("Instructions")
+    instructions = [
+        ["CHECKLIST ITEMS TEMPLATE (PROGRAM CONFIGURATION)"],
+        [""],
+        ["PURPOSE:"],
+        ["This template is for creating/restoring CHECKLIST ITEMS for a program."],
+        ["Use this to quickly re-create your vehicle inspection checklist after redeployment."],
+        [""],
+        ["COLUMNS:"],
+        ["program_name", "Name of the program (for your reference)"],
+        ["item_number", "Item sequence (1, 2, 3...)"],
+        ["checklist_item", "The item to be inspected"],
+        ["category", "Optional grouping (Exterior, Safety, Lights, etc.)"],
+        [""],
+        ["HOW TO USE:"],
+        ["1. List all inspection items for your program"],
+        ["2. Save this file locally as your master copy"],
+        ["3. After redeployment, go to Checklist Templates tab → Create"],
+        ["4. Add items using this file as reference"],
+        [""],
+        ["RECOMMENDED CATEGORIES:"],
+        ["Exterior", "Body, tyres, paint"],
+        ["Safety", "Brakes, seatbelts, horn"],
+        ["Lights", "All vehicle lights"],
+        ["Visibility", "Mirrors, windscreen, wipers"],
+        ["Controls", "Steering, pedals, gear"],
+        ["Engine", "Oil, coolant, sounds"],
+        [""],
+        ["TIPS:"],
+        ["- Be specific about what to check"],
+        ["- Group related items together"],
+        ["- 15-25 items is typical for vehicle inspection"],
+        ["- Delete sample rows and add your own items"],
+    ]
+    for row in instructions:
+        ws_inst.append(row)
+    
+    # Auto-width
+    for ws_sheet in [ws, ws_inst]:
+        for column in ws_sheet.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            ws_sheet.column_dimensions[column_letter].width = min(max_length + 2, 60)
+    
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=Program_Checklist_Items_Template.xlsx"}
+    )
+
 # Override Validation - Edit invoice without amount checks
 class OverrideValidationRequest(BaseModel):
     total_amount: float
