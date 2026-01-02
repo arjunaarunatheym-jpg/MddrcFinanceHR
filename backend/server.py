@@ -1531,7 +1531,7 @@ async def check_user_exists(
 @api_router.get("/sessions/{session_id}/indemnity-records")
 async def get_session_indemnity_records(session_id: str, current_user: User = Depends(get_current_user)):
     """Get indemnity acceptance records for all participants in a session"""
-    if current_user.role not in ["admin", "coordinator", "assistant_admin"]:
+    if current_user.role not in ["admin", "coordinator", "assistant_admin", "finance"]:
         raise HTTPException(status_code=403, detail="Access denied")
     
     # Get session
@@ -1565,6 +1565,72 @@ async def get_session_indemnity_records(session_id: str, current_user: User = De
         "total_participants": len(participants),
         "indemnity_records": participants
     }
+
+# Export indemnity records as Excel
+@api_router.get("/sessions/{session_id}/indemnity-records/export")
+async def export_session_indemnity_records(session_id: str, current_user: User = Depends(get_current_user)):
+    """Export indemnity records as Excel file"""
+    if current_user.role not in ["admin", "coordinator", "assistant_admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    import openpyxl
+    from io import BytesIO
+    from fastapi.responses import StreamingResponse
+    
+    # Get session
+    session = await db.sessions.find_one({"id": session_id}, {"_id": 0})
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Get participants
+    participant_ids = session.get("participant_ids", [])
+    participants = await db.users.find(
+        {"id": {"$in": participant_ids}},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Indemnity Records"
+    
+    # Headers
+    headers = ["No", "Full Name", "IC Number", "Indemnity Accepted", "Signed Name", "Signed IC", "Signed Date", "Accepted At"]
+    ws.append(headers)
+    
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col)
+        cell.font = openpyxl.styles.Font(bold=True)
+        cell.fill = openpyxl.styles.PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+        cell.font = openpyxl.styles.Font(bold=True, color="FFFFFF")
+    
+    for idx, p in enumerate(participants, 1):
+        ws.append([
+            idx,
+            p.get("full_name", ""),
+            p.get("id_number", ""),
+            "Yes" if p.get("indemnity_accepted") else "No",
+            p.get("indemnity_signed_name", ""),
+            p.get("indemnity_signed_ic", ""),
+            p.get("indemnity_signed_date", ""),
+            p.get("indemnity_accepted_at", "")
+        ])
+    
+    for column in ws.columns:
+        max_length = max(len(str(cell.value or "")) for cell in column)
+        ws.column_dimensions[column[0].column_letter].width = min(max_length + 2, 40)
+    
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    session_name = session.get("name", "Session").replace(" ", "_")
+    filename = f"Indemnity_Records_{session_name}.xlsx"
+    
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
 
 # Session Routes
 @api_router.post("/sessions")
