@@ -427,17 +427,29 @@ const FinanceDashboard = ({ user, onLogout }) => {
     }
   };
 
-  // Open edit dialog for an invoice
-  const handleEditInvoice = (invoice) => {
+  // Open edit dialog for an invoice - auto-populate from session
+  const handleEditInvoice = async (invoice) => {
+    // Try to get session details for auto-population
+    let sessionData = null;
+    if (invoice.session_id) {
+      try {
+        const response = await axiosInstance.get(`/sessions/${invoice.session_id}`);
+        sessionData = response.data;
+      } catch (e) {
+        // Session might not exist, continue with invoice data
+      }
+    }
+    
     setEditForm({
       bill_to_name: invoice.bill_to_name || invoice.company_name || '',
       bill_to_address: invoice.bill_to_address || '',
       bill_to_reg_no: invoice.bill_to_reg_no || '',
       your_reference: invoice.your_reference || '',
-      programme_name: invoice.programme_name || '',
-      training_dates: invoice.training_dates || '',
-      venue: invoice.venue || '',
-      pax: invoice.pax || 0,
+      // Auto-populate from session if available, otherwise use invoice data
+      programme_name: invoice.programme_name || sessionData?.program_name || sessionData?.name || '',
+      training_dates: invoice.training_dates || (sessionData ? `${sessionData.start_date}${sessionData.end_date && sessionData.end_date !== sessionData.start_date ? ' - ' + sessionData.end_date : ''}` : ''),
+      venue: invoice.venue || sessionData?.venue || '',
+      pax: invoice.pax || sessionData?.participant_ids?.length || sessionData?.pax || 0,
       line_items: invoice.line_items || [{description: '', quantity: 1, unit_price: 0, amount: 0}],
       subtotal: invoice.subtotal || 0,
       mobilisation_fee: invoice.mobilisation_fee || 0,
