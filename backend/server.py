@@ -7239,18 +7239,29 @@ async def get_supervisor_session_attendance(session_id: str, current_user: User 
 # Invoice number generation
 async def generate_invoice_number():
     """Generate unique invoice number: INV/MDDRC/YYYY/MM/0001
-    Resets sequence each month"""
+    Resets sequence each month. Respects sequence overrides from admin."""
     now = get_malaysia_time()
     year = now.year
     month = now.month
     prefix = f"INV/MDDRC/{year}/{month:02d}/"
+    
+    # Check for sequence override
+    sequence_override = await db.invoice_sequence_settings.find_one(
+        {"year": year, "month": month},
+        {"_id": 0}
+    )
     
     last_invoice = await db.invoices.find_one(
         {"invoice_number": {"$regex": f"^INV/MDDRC/{year}/{month:02d}/"}},
         sort=[("invoice_number", -1)]
     )
     
-    if last_invoice:
+    if sequence_override and sequence_override.get("next_sequence"):
+        # Use the override sequence
+        new_num = sequence_override["next_sequence"]
+        # Clear the override after use
+        await db.invoice_sequence_settings.delete_one({"year": year, "month": month})
+    elif last_invoice:
         # Extract last number from invoice number like INV/MDDRC/2025/12/0001
         last_num = int(last_invoice["invoice_number"].split("/")[-1])
         new_num = last_num + 1
