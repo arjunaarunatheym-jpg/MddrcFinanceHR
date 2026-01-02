@@ -5766,12 +5766,49 @@ async def get_assigned_participants(session_id: str, current_user: User = Depend
     if not trainers:
         return []
     
-    # Auto-assign participants to trainers
-    participant_ids = session.get('participant_ids', [])
+    # Get all participant IDs
+    all_participant_ids = session.get('participant_ids', [])
+    
+    # ===== FILTER OUT ABSENT PARTICIPANTS =====
+    # Get attendance records (clock-in) for all participants in this session
+    attendance_records = await db.attendance.find(
+        {"session_id": session_id, "clock_in": {"$exists": True, "$ne": None}},
+        {"_id": 0, "participant_id": 1}
+    ).to_list(1000)
+    clocked_in_ids = set(record["participant_id"] for record in attendance_records)
+    
+    # Get coordinator-marked attendance status
+    coordinator_attendance = await db.participant_attendance.find(
+        {"session_id": session_id},
+        {"_id": 0, "participant_id": 1, "status": 1}
+    ).to_list(1000)
+    absent_by_coordinator = set(
+        record["participant_id"] for record in coordinator_attendance 
+        if record.get("status") == "absent"
+    )
+    
+    # Filter participants: Keep only those who:
+    # 1. Have clocked in OR not marked as absent by coordinator
+    # If coordinator marks absent, always exclude
+    # If no clock-in and no coordinator mark, include (might not have started yet)
+    filtered_participant_ids = []
+    for pid in all_participant_ids:
+        # If coordinator explicitly marked as absent, exclude
+        if pid in absent_by_coordinator:
+            continue
+        # If we have attendance records for this session and participant didn't clock in, exclude
+        # But only if at least some participants have clocked in (training has started)
+        if len(clocked_in_ids) > 0 and pid not in clocked_in_ids:
+            continue
+        filtered_participant_ids.append(pid)
+    
+    participant_ids = filtered_participant_ids
+    # ===== END FILTER =====
+    
     total_participants = len(participant_ids)
     total_trainers = len(trainers)
     
-    if total_trainers == 0:
+    if total_trainers == 0 or total_participants == 0:
         return []
     
     # EQUAL DISTRIBUTION: All trainers (chief and regular) get equal number of participants
@@ -5780,7 +5817,10 @@ async def get_assigned_participants(session_id: str, current_user: User = Depend
     remainder = total_participants % total_trainers
     
     # Find current trainer's index in the list
-    current_trainer_index = trainers.index(current_user.id)
+    try:
+        current_trainer_index = trainers.index(current_user.id)
+    except ValueError:
+        return []
     
     # Calculate start index and count for this trainer
     start_index = current_trainer_index * participants_per_trainer
@@ -5789,6 +5829,9 @@ async def get_assigned_participants(session_id: str, current_user: User = Depend
     # Distribute remainder evenly (first N trainers get +1 participant)
     if current_trainer_index < remainder:
         assigned_count += 1
+    
+    # Adjust start index based on remainder distribution
+    start_index += min(current_trainer_index, remainder)
     
     end_index = start_index + assigned_count
     assigned_participant_ids = participant_ids[start_index:end_index]
