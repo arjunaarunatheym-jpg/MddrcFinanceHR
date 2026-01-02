@@ -169,17 +169,7 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus:
-    - "GET /api/finance/admin/invoices"
-    - "PUT /api/finance/admin/invoices/{invoice_id}/number"
-    - "POST /api/finance/admin/invoices/{invoice_id}/void"
-    - "PUT /api/finance/admin/invoices/{invoice_id}/backdate"
-    - "PUT /api/finance/admin/invoices/{invoice_id}/override"
-    - "GET /api/finance/admin/payments"
-    - "DELETE /api/finance/admin/payments/{payment_id}"
-    - "POST /api/finance/admin/sequence/reset"
-    - "GET /api/finance/admin/audit-trail"
-    - "Finance Access Control"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
