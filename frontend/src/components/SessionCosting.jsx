@@ -409,6 +409,15 @@ const SessionCosting = ({ session, onClose, onUpdate }) => {
             <p className="text-sm text-gray-500">{session.name}</p>
           </div>
           <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowClaimForm(true)}
+              className="bg-blue-50 border-blue-200 hover:bg-blue-100 text-blue-700"
+              data-testid="print-claim-form-btn"
+            >
+              <Printer className="w-4 h-4 mr-2" />
+              Print Claim Form
+            </Button>
             <Button variant="outline" onClick={onClose}>Cancel</Button>
             <Button onClick={saveAll} disabled={saving} className="bg-green-600 hover:bg-green-700">
               <Save className="w-4 h-4 mr-2" />
