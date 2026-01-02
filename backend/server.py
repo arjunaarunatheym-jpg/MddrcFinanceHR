@@ -10341,6 +10341,561 @@ async def get_available_users(current_user: User = Depends(get_current_user)):
     
     return users
 
+# =====================================================
+# PAYROLL PERIOD MANAGEMENT
+# =====================================================
+
+@api_router.get("/hr/payroll-periods")
+async def get_payroll_periods(year: Optional[int] = None, current_user: User = Depends(get_current_user)):
+    """Get all payroll periods"""
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    query = {}
+    if year:
+        query["year"] = year
+    
+    periods = await db.payroll_periods.find(query, {"_id": 0}).sort([("year", -1), ("month", -1)]).to_list(100)
+    return periods
+
+@api_router.post("/hr/payroll-periods")
+async def create_payroll_period(data: dict, current_user: User = Depends(get_current_user)):
+    """Create or open a payroll period for a month"""
+    if current_user.role not in ["admin"]:
+        raise HTTPException(status_code=403, detail="Only Admin can manage payroll periods")
+    
+    year = data.get("year")
+    month = data.get("month")
+    
+    if not year or not month:
+        raise HTTPException(status_code=400, detail="Year and month required")
+    
+    # Check if period already exists
+    existing = await db.payroll_periods.find_one({"year": year, "month": month})
+    if existing:
+        raise HTTPException(status_code=400, detail="Payroll period already exists")
+    
+    period = {
+        "id": str(uuid.uuid4()),
+        "year": year,
+        "month": month,
+        "period_name": f"{year}-{str(month).zfill(2)}",
+        "status": "open",  # open, closed
+        "opened_at": datetime.now(timezone.utc).isoformat(),
+        "opened_by": current_user.email,
+        "closed_at": None,
+        "closed_by": None
+    }
+    
+    await db.payroll_periods.insert_one(period)
+    return {"id": period["id"], "message": "Payroll period created"}
+
+@api_router.put("/hr/payroll-periods/{period_id}/close")
+async def close_payroll_period(period_id: str, current_user: User = Depends(get_current_user)):
+    """Close a payroll period - makes all payslips read-only"""
+    if current_user.role not in ["admin"]:
+        raise HTTPException(status_code=403, detail="Only Admin can close payroll periods")
+    
+    period = await db.payroll_periods.find_one({"id": period_id})
+    if not period:
+        raise HTTPException(status_code=404, detail="Payroll period not found")
+    
+    if period.get("status") == "closed":
+        raise HTTPException(status_code=400, detail="Period already closed")
+    
+    await db.payroll_periods.update_one(
+        {"id": period_id},
+        {"$set": {
+            "status": "closed",
+            "closed_at": datetime.now(timezone.utc).isoformat(),
+            "closed_by": current_user.email
+        }}
+    )
+    
+    # Also lock all payslips for this period
+    await db.payslips.update_many(
+        {"period_id": period_id},
+        {"$set": {"is_locked": True}}
+    )
+    
+    return {"message": "Payroll period closed successfully"}
+
+# =====================================================
+# STATUTORY CONTRIBUTION CALCULATOR
+# =====================================================
+
+def calculate_epf(basic_salary: float, age: int, custom_employee_rate: float = None, custom_employer_rate: float = None):
+    """Calculate EPF contributions based on salary and age"""
+    # Age 60 and above: Employer 4%, Employee 0% (voluntary)
+    if age >= 60:
+        employer_rate = 4.0
+        employee_rate = 0.0
+    else:
+        # Below 60: Standard rates
+        # Employer: 13% if salary <= 5000, 12% if > 5000
+        employer_rate = custom_employer_rate if custom_employer_rate else (13.0 if basic_salary <= 5000 else 12.0)
+        employee_rate = custom_employee_rate if custom_employee_rate else 11.0
+    
+    employee_amount = round(basic_salary * employee_rate / 100, 2)
+    employer_amount = round(basic_salary * employer_rate / 100, 2)
+    
+    return {
+        "employee_rate": employee_rate,
+        "employer_rate": employer_rate,
+        "employee_amount": employee_amount,
+        "employer_amount": employer_amount
+    }
+
+def calculate_socso(wages: float, age: int):
+    """Calculate SOCSO contributions based on wages and age
+    Uses SOCSO contribution table (Act 4) - wage ceiling RM6,000
+    """
+    # Cap wages at RM6,000
+    capped_wages = min(wages, 6000)
+    
+    # Simplified SOCSO rates (approximate based on tables)
+    # Full rates from PERKESO tables would be used in production
+    if age >= 60:
+        # Second Category: Only employer contributes (Invalidity Scheme only)
+        employer_rate = 1.25
+        employee_rate = 0.0
+    else:
+        # First Category: Both contribute
+        employer_rate = 1.75  # Approximate
+        employee_rate = 0.5   # Approximate
+    
+    employee_amount = round(capped_wages * employee_rate / 100, 2)
+    employer_amount = round(capped_wages * employer_rate / 100, 2)
+    
+    return {
+        "employee_rate": employee_rate,
+        "employer_rate": employer_rate,
+        "employee_amount": employee_amount,
+        "employer_amount": employer_amount,
+        "capped_wages": capped_wages
+    }
+
+def calculate_eis(wages: float, age: int):
+    """Calculate EIS contributions
+    Rate: 0.2% each for employer and employee
+    Wage ceiling: RM6,000
+    Age 60+: No contribution
+    """
+    if age >= 60:
+        return {
+            "employee_rate": 0.0,
+            "employer_rate": 0.0,
+            "employee_amount": 0.0,
+            "employer_amount": 0.0,
+            "capped_wages": 0
+        }
+    
+    # Cap wages at RM6,000
+    capped_wages = min(wages, 6000)
+    
+    employee_rate = 0.2
+    employer_rate = 0.2
+    
+    employee_amount = round(capped_wages * employee_rate / 100, 2)
+    employer_amount = round(capped_wages * employer_rate / 100, 2)
+    
+    return {
+        "employee_rate": employee_rate,
+        "employer_rate": employer_rate,
+        "employee_amount": employee_amount,
+        "employer_amount": employer_amount,
+        "capped_wages": capped_wages
+    }
+
+def calculate_age(date_of_birth: str, reference_date: str = None) -> int:
+    """Calculate age from date of birth"""
+    if not date_of_birth:
+        return 30  # Default assumption
+    
+    try:
+        dob = datetime.fromisoformat(date_of_birth.replace('Z', '+00:00'))
+        ref = datetime.fromisoformat(reference_date) if reference_date else datetime.now()
+        age = ref.year - dob.year - ((ref.month, ref.day) < (dob.month, dob.day))
+        return age
+    except:
+        return 30
+
+# =====================================================
+# PAYSLIP GENERATION
+# =====================================================
+
+@api_router.get("/hr/payslips")
+async def get_payslips(
+    staff_id: Optional[str] = None,
+    period_id: Optional[str] = None,
+    year: Optional[int] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get payslips with optional filters"""
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    query = {}
+    if staff_id:
+        query["staff_id"] = staff_id
+    if period_id:
+        query["period_id"] = period_id
+    if year:
+        query["year"] = year
+    
+    payslips = await db.payslips.find(query, {"_id": 0}).sort([("year", -1), ("month", -1)]).to_list(500)
+    return payslips
+
+@api_router.post("/hr/payslips/generate")
+async def generate_payslip(data: dict, current_user: User = Depends(get_current_user)):
+    """Generate a payslip for a staff member"""
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    staff_id = data.get("staff_id")
+    period_id = data.get("period_id")
+    year = data.get("year")
+    month = data.get("month")
+    
+    # Get staff details
+    staff = await db.hr_staff.find_one({"id": staff_id}, {"_id": 0})
+    if not staff:
+        raise HTTPException(status_code=404, detail="Staff not found")
+    
+    # Check if period exists and is open
+    period = None
+    if period_id:
+        period = await db.payroll_periods.find_one({"id": period_id}, {"_id": 0})
+    elif year and month:
+        period = await db.payroll_periods.find_one({"year": year, "month": month}, {"_id": 0})
+    
+    if period and period.get("status") == "closed":
+        raise HTTPException(status_code=400, detail="Cannot generate payslip for closed period")
+    
+    # Check if payslip already exists
+    existing = await db.payslips.find_one({
+        "staff_id": staff_id,
+        "year": year or period.get("year"),
+        "month": month or period.get("month")
+    })
+    if existing:
+        raise HTTPException(status_code=400, detail="Payslip already exists for this period. Delete it first to regenerate.")
+    
+    # Calculate age for statutory deductions
+    age = calculate_age(staff.get("date_of_birth"), f"{year}-{month}-01")
+    
+    # Calculate earnings
+    basic_salary = staff.get("basic_salary", 0)
+    total_allowances = (
+        staff.get("housing_allowance", 0) +
+        staff.get("transport_allowance", 0) +
+        staff.get("meal_allowance", 0) +
+        staff.get("phone_allowance", 0) +
+        staff.get("other_allowance", 0)
+    )
+    overtime = data.get("overtime", 0)
+    bonus = data.get("bonus", 0)
+    commission = data.get("commission", 0)
+    other_earnings = data.get("other_earnings", 0)
+    
+    gross_salary = basic_salary + total_allowances + overtime + bonus + commission + other_earnings
+    
+    # Calculate statutory deductions
+    epf = calculate_epf(basic_salary, age, staff.get("employee_epf_rate"), staff.get("employer_epf_rate"))
+    socso = calculate_socso(gross_salary, age)
+    eis = calculate_eis(gross_salary, age)
+    
+    # Other deductions
+    pcb = data.get("pcb", 0)  # Income tax
+    loan_deduction = data.get("loan_deduction", 0)
+    other_deductions = data.get("other_deductions", 0)
+    
+    total_deductions = epf["employee_amount"] + socso["employee_amount"] + eis["employee_amount"] + pcb + loan_deduction + other_deductions
+    nett_pay = gross_salary - total_deductions
+    
+    # Get YTD data
+    ytd_data = await db.payslips.aggregate([
+        {"$match": {"staff_id": staff_id, "year": year, "month": {"$lt": month}}},
+        {"$group": {
+            "_id": None,
+            "ytd_basic": {"$sum": "$basic_salary"},
+            "ytd_allowances": {"$sum": "$total_allowances"},
+            "ytd_overtime": {"$sum": "$overtime"},
+            "ytd_bonus": {"$sum": "$bonus"},
+            "ytd_gross": {"$sum": "$gross_salary"},
+            "ytd_epf_employee": {"$sum": "$epf_employee"},
+            "ytd_epf_employer": {"$sum": "$epf_employer"},
+            "ytd_socso_employee": {"$sum": "$socso_employee"},
+            "ytd_socso_employer": {"$sum": "$socso_employer"},
+            "ytd_eis_employee": {"$sum": "$eis_employee"},
+            "ytd_eis_employer": {"$sum": "$eis_employer"},
+            "ytd_pcb": {"$sum": "$pcb"},
+            "ytd_nett": {"$sum": "$nett_pay"}
+        }}
+    ]).to_list(1)
+    
+    ytd = ytd_data[0] if ytd_data else {}
+    
+    payslip = {
+        "id": str(uuid.uuid4()),
+        "staff_id": staff_id,
+        "period_id": period["id"] if period else None,
+        "year": year or period.get("year"),
+        "month": month or period.get("month"),
+        "period_name": f"{year}-{str(month).zfill(2)}",
+        
+        # Staff info snapshot
+        "employee_id": staff.get("employee_id"),
+        "full_name": staff.get("full_name"),
+        "designation": staff.get("designation"),
+        "department": staff.get("department"),
+        "epf_number": staff.get("epf_number"),
+        "socso_number": staff.get("socso_number"),
+        "tax_number": staff.get("tax_number"),
+        "bank_name": staff.get("bank_name"),
+        "bank_account": staff.get("bank_account"),
+        "age": age,
+        
+        # Earnings
+        "basic_salary": basic_salary,
+        "housing_allowance": staff.get("housing_allowance", 0),
+        "transport_allowance": staff.get("transport_allowance", 0),
+        "meal_allowance": staff.get("meal_allowance", 0),
+        "phone_allowance": staff.get("phone_allowance", 0),
+        "other_allowance": staff.get("other_allowance", 0),
+        "total_allowances": total_allowances,
+        "overtime": overtime,
+        "bonus": bonus,
+        "commission": commission,
+        "other_earnings": other_earnings,
+        "gross_salary": gross_salary,
+        
+        # Deductions
+        "epf_employee": epf["employee_amount"],
+        "epf_employer": epf["employer_amount"],
+        "epf_employee_rate": epf["employee_rate"],
+        "epf_employer_rate": epf["employer_rate"],
+        "socso_employee": socso["employee_amount"],
+        "socso_employer": socso["employer_amount"],
+        "eis_employee": eis["employee_amount"],
+        "eis_employer": eis["employer_amount"],
+        "pcb": pcb,
+        "loan_deduction": loan_deduction,
+        "other_deductions": other_deductions,
+        "total_deductions": total_deductions,
+        
+        "nett_pay": nett_pay,
+        
+        # YTD (including current month)
+        "ytd_basic": ytd.get("ytd_basic", 0) + basic_salary,
+        "ytd_allowances": ytd.get("ytd_allowances", 0) + total_allowances,
+        "ytd_overtime": ytd.get("ytd_overtime", 0) + overtime,
+        "ytd_bonus": ytd.get("ytd_bonus", 0) + bonus,
+        "ytd_gross": ytd.get("ytd_gross", 0) + gross_salary,
+        "ytd_epf_employee": ytd.get("ytd_epf_employee", 0) + epf["employee_amount"],
+        "ytd_epf_employer": ytd.get("ytd_epf_employer", 0) + epf["employer_amount"],
+        "ytd_socso_employee": ytd.get("ytd_socso_employee", 0) + socso["employee_amount"],
+        "ytd_socso_employer": ytd.get("ytd_socso_employer", 0) + socso["employer_amount"],
+        "ytd_eis_employee": ytd.get("ytd_eis_employee", 0) + eis["employee_amount"],
+        "ytd_eis_employer": ytd.get("ytd_eis_employer", 0) + eis["employer_amount"],
+        "ytd_pcb": ytd.get("ytd_pcb", 0) + pcb,
+        "ytd_nett": ytd.get("ytd_nett", 0) + nett_pay,
+        
+        "is_locked": False,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": current_user.email
+    }
+    
+    await db.payslips.insert_one(payslip)
+    return {"id": payslip["id"], "message": "Payslip generated successfully", "nett_pay": nett_pay}
+
+@api_router.delete("/hr/payslips/{payslip_id}")
+async def delete_payslip(payslip_id: str, current_user: User = Depends(get_current_user)):
+    """Delete a payslip (only if period is open)"""
+    if current_user.role not in ["admin"]:
+        raise HTTPException(status_code=403, detail="Only Admin can delete payslips")
+    
+    payslip = await db.payslips.find_one({"id": payslip_id})
+    if not payslip:
+        raise HTTPException(status_code=404, detail="Payslip not found")
+    
+    if payslip.get("is_locked"):
+        raise HTTPException(status_code=400, detail="Cannot delete locked payslip. Period is closed.")
+    
+    await db.payslips.delete_one({"id": payslip_id})
+    return {"message": "Payslip deleted"}
+
+@api_router.get("/hr/payslips/{payslip_id}")
+async def get_payslip(payslip_id: str, current_user: User = Depends(get_current_user)):
+    """Get a single payslip with full details"""
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    payslip = await db.payslips.find_one({"id": payslip_id}, {"_id": 0})
+    if not payslip:
+        raise HTTPException(status_code=404, detail="Payslip not found")
+    
+    return payslip
+
+# =====================================================
+# PAY ADVICE (For Session Workers)
+# =====================================================
+
+@api_router.get("/hr/pay-advice")
+async def get_pay_advice_list(
+    period_id: Optional[str] = None,
+    year: Optional[int] = None,
+    month: Optional[int] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all pay advice records"""
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    query = {}
+    if period_id:
+        query["period_id"] = period_id
+    if year:
+        query["year"] = year
+    if month:
+        query["month"] = month
+    
+    advice_list = await db.pay_advice.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return advice_list
+
+@api_router.post("/hr/pay-advice/generate")
+async def generate_pay_advice(data: dict, current_user: User = Depends(get_current_user)):
+    """Generate pay advice for a person based on their session work"""
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    user_id = data.get("user_id")
+    year = data.get("year")
+    month = data.get("month")
+    
+    if not user_id or not year or not month:
+        raise HTTPException(status_code=400, detail="user_id, year, and month are required")
+    
+    # Check period status
+    period = await db.payroll_periods.find_one({"year": year, "month": month})
+    if period and period.get("status") == "closed":
+        raise HTTPException(status_code=400, detail="Cannot generate pay advice for closed period")
+    
+    # Get user details
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Find all sessions in this month where user worked as trainer/coordinator
+    month_start = f"{year}-{str(month).zfill(2)}-01"
+    month_end = f"{year}-{str(month).zfill(2)}-31"
+    
+    # Get trainer fees for this user in this period
+    trainer_fees = await db.trainer_fees.find({
+        "trainer_id": user_id,
+        "created_at": {"$gte": month_start, "$lte": month_end + "T23:59:59"}
+    }, {"_id": 0}).to_list(100)
+    
+    # Get coordinator fees for this user
+    coord_fees = await db.coordinator_fees.find({
+        "coordinator_id": user_id,
+        "created_at": {"$gte": month_start, "$lte": month_end + "T23:59:59"}
+    }, {"_id": 0}).to_list(100)
+    
+    # Build session details
+    session_details = []
+    total_amount = 0
+    
+    for fee in trainer_fees:
+        session = await db.sessions.find_one({"id": fee.get("session_id")}, {"_id": 0, "name": 1, "start_date": 1, "company_id": 1})
+        company = await db.companies.find_one({"id": session.get("company_id")}, {"_id": 0, "name": 1}) if session else None
+        
+        session_details.append({
+            "session_id": fee.get("session_id"),
+            "session_name": session.get("name") if session else "Unknown",
+            "company_name": company.get("name") if company else "Unknown",
+            "session_date": session.get("start_date") if session else None,
+            "role": fee.get("role", "trainer"),
+            "amount": fee.get("fee_amount", 0),
+            "remark": fee.get("remark", "")
+        })
+        total_amount += fee.get("fee_amount", 0)
+    
+    for fee in coord_fees:
+        session = await db.sessions.find_one({"id": fee.get("session_id")}, {"_id": 0, "name": 1, "start_date": 1, "company_id": 1})
+        company = await db.companies.find_one({"id": session.get("company_id")}, {"_id": 0, "name": 1}) if session else None
+        
+        session_details.append({
+            "session_id": fee.get("session_id"),
+            "session_name": session.get("name") if session else "Unknown",
+            "company_name": company.get("name") if company else "Unknown",
+            "session_date": session.get("start_date") if session else None,
+            "role": "coordinator",
+            "amount": fee.get("total_fee", 0),
+            "remark": f"{fee.get('num_days', 1)} day(s) @ RM{fee.get('daily_rate', 50)}/day"
+        })
+        total_amount += fee.get("total_fee", 0)
+    
+    # Create pay advice
+    pay_advice = {
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "period_id": period["id"] if period else None,
+        "year": year,
+        "month": month,
+        "period_name": f"{year}-{str(month).zfill(2)}",
+        
+        # User info
+        "full_name": user.get("full_name"),
+        "id_number": user.get("id_number"),
+        "email": user.get("email"),
+        "phone": user.get("phone_number"),
+        "bank_name": user.get("bank_name"),
+        "bank_account": user.get("bank_account"),
+        
+        # Session details
+        "session_details": session_details,
+        "total_sessions": len(session_details),
+        "gross_amount": total_amount,
+        "deductions": 0,  # Can add deductions if needed
+        "nett_amount": total_amount,
+        
+        "is_locked": False,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": current_user.email
+    }
+    
+    await db.pay_advice.insert_one(pay_advice)
+    return {"id": pay_advice["id"], "message": "Pay advice generated", "total_amount": total_amount}
+
+@api_router.get("/hr/pay-advice/{advice_id}")
+async def get_pay_advice(advice_id: str, current_user: User = Depends(get_current_user)):
+    """Get a single pay advice"""
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    advice = await db.pay_advice.find_one({"id": advice_id}, {"_id": 0})
+    if not advice:
+        raise HTTPException(status_code=404, detail="Pay advice not found")
+    
+    return advice
+
+@api_router.delete("/hr/pay-advice/{advice_id}")
+async def delete_pay_advice(advice_id: str, current_user: User = Depends(get_current_user)):
+    """Delete a pay advice (only if not locked)"""
+    if current_user.role not in ["admin"]:
+        raise HTTPException(status_code=403, detail="Only Admin can delete pay advice")
+    
+    advice = await db.pay_advice.find_one({"id": advice_id})
+    if not advice:
+        raise HTTPException(status_code=404, detail="Pay advice not found")
+    
+    if advice.get("is_locked"):
+        raise HTTPException(status_code=400, detail="Cannot delete locked pay advice. Period is closed.")
+    
+    await db.pay_advice.delete_one({"id": advice_id})
+    return {"message": "Pay advice deleted"}
+
 # Include router (after all routes are defined)
 app.include_router(api_router)
 
