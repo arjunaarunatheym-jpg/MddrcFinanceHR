@@ -3589,8 +3589,22 @@ const AdminDashboard = ({ user, onLogout }) => {
           <TabsContent value="users">
             <Card>
               <CardHeader>
-                <CardTitle>All Users</CardTitle>
-                <CardDescription>View all system users grouped by company</CardDescription>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>All Users</CardTitle>
+                    <CardDescription>View all system users grouped by company. Select users to bulk delete.</CardDescription>
+                  </div>
+                  {selectedUsers.length > 0 && (
+                    <Button 
+                      variant="destructive" 
+                      onClick={() => setBulkDeleteDialogOpen(true)}
+                      className="flex items-center gap-2"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Delete Selected ({selectedUsers.length})
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 {users.length === 0 ? (
@@ -3600,27 +3614,45 @@ const AdminDashboard = ({ user, onLogout }) => {
                     {/* Admin, Trainers, Coordinators (No Company) */}
                     {users.filter(u => !u.company_id).length > 0 && (
                       <div>
-                        <h3 className="text-lg font-semibold mb-3 text-gray-700">System Users (No Company)</h3>
+                        <div className="flex items-center gap-3 mb-3">
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-gray-300"
+                            checked={users.filter(u => !u.company_id).every(u => selectedUsers.includes(u.id))}
+                            onChange={() => toggleAllUsers(users.filter(u => !u.company_id))}
+                          />
+                          <h3 className="text-lg font-semibold text-gray-700">System Users (No Company)</h3>
+                        </div>
                         <div className="space-y-2">
                           {users.filter(u => !u.company_id).map((u) => (
                             <div
                               key={u.id}
                               data-testid={`user-item-${u.id}`}
-                              className="p-4 bg-gray-50 rounded-lg flex justify-between items-center hover:bg-gray-100 transition-colors"
+                              className={`p-4 rounded-lg flex justify-between items-center hover:bg-gray-100 transition-colors ${
+                                selectedUsers.includes(u.id) ? 'bg-red-50 border-2 border-red-200' : 'bg-gray-50'
+                              }`}
                             >
-                              <div>
-                                <h3 className="font-semibold text-gray-900">{u.full_name}</h3>
-                                <p className="text-sm text-gray-600">{u.email}</p>
-                                <div className="flex gap-2 mt-1">
-                                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded capitalize">
-                                    {u.role.replace('_', ' ')}
-                                  </span>
-                                  <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">
-                                    ID: {u.id_number}
-                                  </span>
-                                  <span className={`text-xs px-2 py-1 rounded ${u.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                    {u.is_active ? 'Active' : 'Inactive'}
-                                  </span>
+                              <div className="flex items-center gap-3">
+                                <input
+                                  type="checkbox"
+                                  className="h-4 w-4 rounded border-gray-300"
+                                  checked={selectedUsers.includes(u.id)}
+                                  onChange={() => toggleUserSelection(u.id)}
+                                />
+                                <div>
+                                  <h3 className="font-semibold text-gray-900">{u.full_name}</h3>
+                                  <p className="text-sm text-gray-600">{u.email}</p>
+                                  <div className="flex gap-2 mt-1">
+                                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded capitalize">
+                                      {u.role.replace('_', ' ')}
+                                    </span>
+                                    <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">
+                                      ID: {u.id_number}
+                                    </span>
+                                    <span className={`text-xs px-2 py-1 rounded ${u.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                      {u.is_active ? 'Active' : 'Inactive'}
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
                               <div className="flex gap-2">
@@ -3666,27 +3698,45 @@ const AdminDashboard = ({ user, onLogout }) => {
                       
                       return (
                         <div key={company.id}>
-                          <h3 className="text-lg font-semibold mb-3 text-gray-700">{company.name} ({companyUsers.length} users)</h3>
+                          <div className="flex items-center gap-3 mb-3">
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4 rounded border-gray-300"
+                              checked={companyUsers.every(u => selectedUsers.includes(u.id))}
+                              onChange={() => toggleAllUsers(companyUsers)}
+                            />
+                            <h3 className="text-lg font-semibold text-gray-700">{company.name} ({companyUsers.length} users)</h3>
+                          </div>
                           <div className="space-y-2">
                             {companyUsers.map((u) => (
                               <div
                                 key={u.id}
                                 data-testid={`user-item-${u.id}`}
-                                className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg flex justify-between items-center hover:shadow-md transition-shadow"
+                                className={`p-4 rounded-lg flex justify-between items-center hover:shadow-md transition-shadow ${
+                                  selectedUsers.includes(u.id) ? 'bg-red-50 border-2 border-red-200' : 'bg-gradient-to-r from-blue-50 to-indigo-50'
+                                }`}
                               >
-                                <div>
-                                  <h3 className="font-semibold text-gray-900">{u.full_name}</h3>
-                                  <p className="text-sm text-gray-600">{u.email}</p>
-                                  <div className="flex gap-2 mt-1">
-                                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded capitalize">
-                                      {u.role.replace('_', ' ')}
-                                    </span>
-                                    <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">
-                                      ID: {u.id_number}
-                                    </span>
-                                    <span className={`text-xs px-2 py-1 rounded ${u.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                      {u.is_active ? 'Active' : 'Inactive'}
-                                    </span>
+                                <div className="flex items-center gap-3">
+                                  <input
+                                    type="checkbox"
+                                    className="h-4 w-4 rounded border-gray-300"
+                                    checked={selectedUsers.includes(u.id)}
+                                    onChange={() => toggleUserSelection(u.id)}
+                                  />
+                                  <div>
+                                    <h3 className="font-semibold text-gray-900">{u.full_name}</h3>
+                                    <p className="text-sm text-gray-600">{u.email}</p>
+                                    <div className="flex gap-2 mt-1">
+                                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded capitalize">
+                                        {u.role.replace('_', ' ')}
+                                      </span>
+                                      <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">
+                                        ID: {u.id_number}
+                                      </span>
+                                      <span className={`text-xs px-2 py-1 rounded ${u.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                        {u.is_active ? 'Active' : 'Inactive'}
+                                      </span>
+                                    </div>
                                   </div>
                                 </div>
                                 <div className="flex gap-2">
