@@ -1943,6 +1943,591 @@ const FinanceDashboard = ({ user, onLogout }) => {
                   </div>
                 </div>
 
+                {/* Dynamic Custom Fields for Documents */}
+                <div className="p-4 bg-indigo-50 rounded-lg space-y-4">
+                  <h3 className="font-semibold text-indigo-900">🔧 Custom Fields (Add to Documents)</h3>
+                  <p className="text-sm text-indigo-700">Add extra fields to any document type without coding. These will appear in the respective documents.</p>
+                  
+                  <Tabs defaultValue="invoice_fields" className="w-full">
+                    <TabsList className="grid w-full grid-cols-4">
+                      <TabsTrigger value="invoice_fields">Invoice</TabsTrigger>
+                      <TabsTrigger value="indemnity_fields">Indemnity</TabsTrigger>
+                      <TabsTrigger value="payslip_fields">Payslip</TabsTrigger>
+                      <TabsTrigger value="payadvice_fields">Pay Advice</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="invoice_fields" className="mt-4">
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <Label>Invoice Custom Fields</Label>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => {
+                              const fields = companySettings.invoice_custom_fields || [];
+                              setCompanySettings({
+                                ...companySettings, 
+                                invoice_custom_fields: [...fields, { label: '', value: '', position: 'footer' }]
+                              });
+                            }}
+                          >
+                            + Add Field
+                          </Button>
+                        </div>
+                        {(companySettings.invoice_custom_fields || []).map((field, idx) => (
+                          <div key={idx} className="flex gap-2 items-center bg-white p-2 rounded border">
+                            <Input
+                              placeholder="Label (e.g., GST No.)"
+                              value={field.label}
+                              onChange={(e) => {
+                                const fields = [...(companySettings.invoice_custom_fields || [])];
+                                fields[idx].label = e.target.value;
+                                setCompanySettings({...companySettings, invoice_custom_fields: fields});
+                              }}
+                              className="flex-1"
+                            />
+                            <Input
+                              placeholder="Value"
+                              value={field.value}
+                              onChange={(e) => {
+                                const fields = [...(companySettings.invoice_custom_fields || [])];
+                                fields[idx].value = e.target.value;
+                                setCompanySettings({...companySettings, invoice_custom_fields: fields});
+                              }}
+                              className="flex-1"
+                            />
+                            <Select 
+                              value={field.position || 'footer'}
+                              onValueChange={(v) => {
+                                const fields = [...(companySettings.invoice_custom_fields || [])];
+                                fields[idx].position = v;
+                                setCompanySettings({...companySettings, invoice_custom_fields: fields});
+                              }}
+                            >
+                              <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="header">Header</SelectItem>
+                                <SelectItem value="details">Details</SelectItem>
+                                <SelectItem value="footer">Footer</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => {
+                                const fields = (companySettings.invoice_custom_fields || []).filter((_, i) => i !== idx);
+                                setCompanySettings({...companySettings, invoice_custom_fields: fields});
+                              }}
+                            >
+                              ✕
+                            </Button>
+                          </div>
+                        ))}
+                        {(!companySettings.invoice_custom_fields || companySettings.invoice_custom_fields.length === 0) && (
+                          <p className="text-sm text-gray-500 italic">No custom fields. Click "Add Field" to add.</p>
+                        )}
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="indemnity_fields" className="mt-4">
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <Label>Indemnity Form Custom Fields</Label>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => {
+                              const fields = companySettings.indemnity_custom_fields || [];
+                              setCompanySettings({
+                                ...companySettings, 
+                                indemnity_custom_fields: [...fields, { label: '', type: 'text', required: false }]
+                              });
+                            }}
+                          >
+                            + Add Field
+                          </Button>
+                        </div>
+                        {(companySettings.indemnity_custom_fields || []).map((field, idx) => (
+                          <div key={idx} className="flex gap-2 items-center bg-white p-2 rounded border">
+                            <Input
+                              placeholder="Field Label"
+                              value={field.label}
+                              onChange={(e) => {
+                                const fields = [...(companySettings.indemnity_custom_fields || [])];
+                                fields[idx].label = e.target.value;
+                                setCompanySettings({...companySettings, indemnity_custom_fields: fields});
+                              }}
+                              className="flex-1"
+                            />
+                            <Select 
+                              value={field.type || 'text'}
+                              onValueChange={(v) => {
+                                const fields = [...(companySettings.indemnity_custom_fields || [])];
+                                fields[idx].type = v;
+                                setCompanySettings({...companySettings, indemnity_custom_fields: fields});
+                              }}
+                            >
+                              <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="text">Text</SelectItem>
+                                <SelectItem value="date">Date</SelectItem>
+                                <SelectItem value="checkbox">Checkbox</SelectItem>
+                                <SelectItem value="signature">Signature</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <div className="flex items-center gap-1">
+                              <input 
+                                type="checkbox" 
+                                checked={field.required}
+                                onChange={(e) => {
+                                  const fields = [...(companySettings.indemnity_custom_fields || [])];
+                                  fields[idx].required = e.target.checked;
+                                  setCompanySettings({...companySettings, indemnity_custom_fields: fields});
+                                }}
+                              />
+                              <span className="text-xs">Required</span>
+                            </div>
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => {
+                                const fields = (companySettings.indemnity_custom_fields || []).filter((_, i) => i !== idx);
+                                setCompanySettings({...companySettings, indemnity_custom_fields: fields});
+                              }}
+                            >
+                              ✕
+                            </Button>
+                          </div>
+                        ))}
+                        {(!companySettings.indemnity_custom_fields || companySettings.indemnity_custom_fields.length === 0) && (
+                          <p className="text-sm text-gray-500 italic">No custom fields. Click "Add Field" to add.</p>
+                        )}
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="payslip_fields" className="mt-4">
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <Label>Payslip Custom Fields</Label>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => {
+                              const fields = companySettings.payslip_custom_fields || [];
+                              setCompanySettings({
+                                ...companySettings, 
+                                payslip_custom_fields: [...fields, { label: '', type: 'earning', default_value: '' }]
+                              });
+                            }}
+                          >
+                            + Add Field
+                          </Button>
+                        </div>
+                        {(companySettings.payslip_custom_fields || []).map((field, idx) => (
+                          <div key={idx} className="flex gap-2 items-center bg-white p-2 rounded border">
+                            <Input
+                              placeholder="Field Label (e.g., Transport Allowance)"
+                              value={field.label}
+                              onChange={(e) => {
+                                const fields = [...(companySettings.payslip_custom_fields || [])];
+                                fields[idx].label = e.target.value;
+                                setCompanySettings({...companySettings, payslip_custom_fields: fields});
+                              }}
+                              className="flex-1"
+                            />
+                            <Select 
+                              value={field.type || 'earning'}
+                              onValueChange={(v) => {
+                                const fields = [...(companySettings.payslip_custom_fields || [])];
+                                fields[idx].type = v;
+                                setCompanySettings({...companySettings, payslip_custom_fields: fields});
+                              }}
+                            >
+                              <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="earning">Earning (+)</SelectItem>
+                                <SelectItem value="deduction">Deduction (-)</SelectItem>
+                                <SelectItem value="info">Info Only</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => {
+                                const fields = (companySettings.payslip_custom_fields || []).filter((_, i) => i !== idx);
+                                setCompanySettings({...companySettings, payslip_custom_fields: fields});
+                              }}
+                            >
+                              ✕
+                            </Button>
+                          </div>
+                        ))}
+                        {(!companySettings.payslip_custom_fields || companySettings.payslip_custom_fields.length === 0) && (
+                          <p className="text-sm text-gray-500 italic">No custom fields. Click "Add Field" to add.</p>
+                        )}
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="payadvice_fields" className="mt-4">
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <Label>Pay Advice Custom Fields</Label>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => {
+                              const fields = companySettings.payadvice_custom_fields || [];
+                              setCompanySettings({
+                                ...companySettings, 
+                                payadvice_custom_fields: [...fields, { label: '', show_in_summary: true }]
+                              });
+                            }}
+                          >
+                            + Add Field
+                          </Button>
+                        </div>
+                        {(companySettings.payadvice_custom_fields || []).map((field, idx) => (
+                          <div key={idx} className="flex gap-2 items-center bg-white p-2 rounded border">
+                            <Input
+                              placeholder="Field Label (e.g., Bonus, Incentive)"
+                              value={field.label}
+                              onChange={(e) => {
+                                const fields = [...(companySettings.payadvice_custom_fields || [])];
+                                fields[idx].label = e.target.value;
+                                setCompanySettings({...companySettings, payadvice_custom_fields: fields});
+                              }}
+                              className="flex-1"
+                            />
+                            <div className="flex items-center gap-1">
+                              <input 
+                                type="checkbox" 
+                                checked={field.show_in_summary !== false}
+                                onChange={(e) => {
+                                  const fields = [...(companySettings.payadvice_custom_fields || [])];
+                                  fields[idx].show_in_summary = e.target.checked;
+                                  setCompanySettings({...companySettings, payadvice_custom_fields: fields});
+                                }}
+                              />
+                              <span className="text-xs">Show in Summary</span>
+                            </div>
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => {
+                                const fields = (companySettings.payadvice_custom_fields || []).filter((_, i) => i !== idx);
+                                setCompanySettings({...companySettings, payadvice_custom_fields: fields});
+                              }}
+                            >
+                              ✕
+                            </Button>
+                          </div>
+                        ))}
+                        {(!companySettings.payadvice_custom_fields || companySettings.payadvice_custom_fields.length === 0) && (
+                          <p className="text-sm text-gray-500 italic">No custom fields. Click "Add Field" to add.</p>
+                        )}
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                </div>
+
+                {/* Live Document Preview */}
+                <div className="p-4 bg-gray-50 rounded-lg space-y-4">
+                  <h3 className="font-semibold text-gray-900">👁️ Live Document Preview</h3>
+                  <p className="text-sm text-gray-600">See how your documents will look with current settings</p>
+                  
+                  <Tabs defaultValue="invoice_preview" className="w-full">
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger value="invoice_preview">Invoice</TabsTrigger>
+                      <TabsTrigger value="indemnity_preview">Indemnity</TabsTrigger>
+                      <TabsTrigger value="payslip_preview">Payslip</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="invoice_preview" className="mt-4">
+                      <div 
+                        className="bg-white border-2 border-gray-200 rounded-lg p-6 shadow-inner relative overflow-hidden"
+                        style={{ minHeight: '400px' }}
+                      >
+                        {/* Watermark */}
+                        {companySettings.show_watermark && companySettings.logo_url && (
+                          <div 
+                            className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                            style={{ opacity: companySettings.watermark_opacity || 0.08 }}
+                          >
+                            <img src={companySettings.logo_url} alt="" style={{ width: '300px' }} />
+                          </div>
+                        )}
+                        
+                        {/* Header */}
+                        <div style={{ textAlign: companySettings.logo_position || 'center' }}>
+                          {companySettings.logo_url && (
+                            <img 
+                              src={companySettings.logo_url} 
+                              alt="Logo" 
+                              style={{ width: `${companySettings.logo_width || 150}px`, marginBottom: '10px', display: 'inline-block' }}
+                            />
+                          )}
+                          <div style={{ 
+                            fontFamily: companySettings.header_font || 'Arial',
+                            fontSize: '20px',
+                            fontWeight: 'bold',
+                            color: companySettings.primary_color || '#1a365d'
+                          }}>
+                            {companySettings.company_name || 'MDDRC SDN BHD'}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#666' }}>
+                            {companySettings.address_line1} {companySettings.address_line2}<br/>
+                            {companySettings.city} {companySettings.postcode} {companySettings.state}
+                          </div>
+                        </div>
+                        
+                        {/* Invoice Title */}
+                        <div style={{ 
+                          textAlign: 'center', 
+                          margin: '15px 0',
+                          fontFamily: companySettings.header_font || 'Arial',
+                          fontSize: '16px',
+                          fontWeight: 'bold',
+                          color: companySettings.primary_color || '#1a365d'
+                        }}>
+                          INVOICE
+                        </div>
+                        
+                        {/* Sample Table */}
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', marginTop: '10px' }}>
+                          <thead>
+                            <tr style={{ backgroundColor: companySettings.secondary_color || '#4472C4', color: 'white' }}>
+                              <th style={{ padding: '6px', border: '1px solid #ddd' }}>No</th>
+                              <th style={{ padding: '6px', border: '1px solid #ddd' }}>Description</th>
+                              <th style={{ padding: '6px', border: '1px solid #ddd', textAlign: 'right' }}>Amount</th>
+                            </tr>
+                          </thead>
+                          <tbody style={{ fontFamily: companySettings.body_font || 'Arial' }}>
+                            <tr>
+                              <td style={{ padding: '6px', border: '1px solid #ddd' }}>1</td>
+                              <td style={{ padding: '6px', border: '1px solid #ddd' }}>Training Fee (Sample)</td>
+                              <td style={{ padding: '6px', border: '1px solid #ddd', textAlign: 'right' }}>RM 5,000.00</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                        
+                        {/* Custom Fields Preview */}
+                        {(companySettings.invoice_custom_fields || []).filter(f => f.label).length > 0 && (
+                          <div style={{ marginTop: '10px', fontSize: '11px', fontFamily: companySettings.body_font || 'Arial' }}>
+                            {(companySettings.invoice_custom_fields || []).filter(f => f.label && f.position === 'footer').map((f, i) => (
+                              <div key={i}><strong>{f.label}:</strong> {f.value || '[Value]'}</div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {/* Tagline */}
+                        <div style={{ 
+                          textAlign: 'center',
+                          marginTop: '20px',
+                          paddingTop: '15px',
+                          borderTop: `2px solid ${companySettings.primary_color || '#1a365d'}`,
+                          fontFamily: companySettings.tagline_font || 'Georgia',
+                          fontStyle: companySettings.tagline_style === 'italic' ? 'italic' : 'normal',
+                          fontWeight: companySettings.tagline_style === 'bold' ? 'bold' : 'normal',
+                          color: companySettings.primary_color || '#1a365d',
+                          fontSize: '12px'
+                        }}>
+                          "{companySettings.tagline || 'Towards a Nation of Safe Drivers'}"
+                        </div>
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="indemnity_preview" className="mt-4">
+                      <div 
+                        className="bg-white border-2 border-gray-200 rounded-lg p-6 shadow-inner relative overflow-hidden"
+                        style={{ minHeight: '400px' }}
+                      >
+                        {/* Watermark */}
+                        {companySettings.show_watermark && companySettings.logo_url && (
+                          <div 
+                            className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                            style={{ opacity: companySettings.watermark_opacity || 0.08 }}
+                          >
+                            <img src={companySettings.logo_url} alt="" style={{ width: '300px' }} />
+                          </div>
+                        )}
+                        
+                        {/* Header */}
+                        <div style={{ textAlign: companySettings.logo_position || 'center' }}>
+                          {companySettings.logo_url && (
+                            <img 
+                              src={companySettings.logo_url} 
+                              alt="Logo" 
+                              style={{ width: `${companySettings.logo_width || 150}px`, marginBottom: '10px', display: 'inline-block' }}
+                            />
+                          )}
+                          <div style={{ 
+                            fontFamily: companySettings.header_font || 'Arial',
+                            fontSize: '20px',
+                            fontWeight: 'bold',
+                            color: companySettings.primary_color || '#1a365d'
+                          }}>
+                            {companySettings.company_name || 'MDDRC SDN BHD'}
+                          </div>
+                        </div>
+                        
+                        <div style={{ 
+                          textAlign: 'center', 
+                          margin: '15px 0',
+                          fontFamily: companySettings.header_font || 'Arial',
+                          fontSize: '16px',
+                          fontWeight: 'bold',
+                          color: companySettings.primary_color || '#1a365d'
+                        }}>
+                          INDEMNITY FORM
+                        </div>
+                        
+                        <div style={{ fontFamily: companySettings.body_font || 'Arial', fontSize: '11px', lineHeight: '1.6' }}>
+                          <p style={{ marginBottom: '10px' }}>
+                            I, the undersigned, hereby acknowledge that I am participating in the training program voluntarily...
+                          </p>
+                          
+                          <div style={{ marginTop: '15px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                            <div><strong>Full Name:</strong> _______________</div>
+                            <div><strong>IC Number:</strong> _______________</div>
+                            <div><strong>Date:</strong> _______________</div>
+                            <div><strong>Signature:</strong> _______________</div>
+                          </div>
+                          
+                          {/* Custom Fields */}
+                          {(companySettings.indemnity_custom_fields || []).filter(f => f.label).length > 0 && (
+                            <div style={{ marginTop: '15px', borderTop: '1px solid #ddd', paddingTop: '10px' }}>
+                              <strong>Additional Information:</strong>
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '5px' }}>
+                                {(companySettings.indemnity_custom_fields || []).filter(f => f.label).map((f, i) => (
+                                  <div key={i}><strong>{f.label}{f.required ? '*' : ''}:</strong> _______________</div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Tagline */}
+                        <div style={{ 
+                          textAlign: 'center',
+                          marginTop: '20px',
+                          paddingTop: '15px',
+                          borderTop: `2px solid ${companySettings.primary_color || '#1a365d'}`,
+                          fontFamily: companySettings.tagline_font || 'Georgia',
+                          fontStyle: companySettings.tagline_style === 'italic' ? 'italic' : 'normal',
+                          fontWeight: companySettings.tagline_style === 'bold' ? 'bold' : 'normal',
+                          color: companySettings.primary_color || '#1a365d',
+                          fontSize: '12px'
+                        }}>
+                          "{companySettings.tagline || 'Towards a Nation of Safe Drivers'}"
+                        </div>
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="payslip_preview" className="mt-4">
+                      <div 
+                        className="bg-white border-2 border-gray-200 rounded-lg p-6 shadow-inner relative overflow-hidden"
+                        style={{ minHeight: '400px' }}
+                      >
+                        {/* Watermark */}
+                        {companySettings.show_watermark && companySettings.logo_url && (
+                          <div 
+                            className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                            style={{ opacity: companySettings.watermark_opacity || 0.08 }}
+                          >
+                            <img src={companySettings.logo_url} alt="" style={{ width: '300px' }} />
+                          </div>
+                        )}
+                        
+                        {/* Header */}
+                        <div style={{ textAlign: companySettings.logo_position || 'center' }}>
+                          {companySettings.logo_url && (
+                            <img 
+                              src={companySettings.logo_url} 
+                              alt="Logo" 
+                              style={{ width: `${companySettings.logo_width || 150}px`, marginBottom: '10px', display: 'inline-block' }}
+                            />
+                          )}
+                          <div style={{ 
+                            fontFamily: companySettings.header_font || 'Arial',
+                            fontSize: '20px',
+                            fontWeight: 'bold',
+                            color: companySettings.primary_color || '#1a365d'
+                          }}>
+                            {companySettings.company_name || 'MDDRC SDN BHD'}
+                          </div>
+                        </div>
+                        
+                        <div style={{ 
+                          textAlign: 'center', 
+                          margin: '15px 0',
+                          fontFamily: companySettings.header_font || 'Arial',
+                          fontSize: '16px',
+                          fontWeight: 'bold',
+                          color: companySettings.primary_color || '#1a365d'
+                        }}>
+                          PAYSLIP - January 2026
+                        </div>
+                        
+                        <div style={{ fontFamily: companySettings.body_font || 'Arial', fontSize: '11px' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                            {/* Earnings */}
+                            <div>
+                              <div style={{ backgroundColor: companySettings.secondary_color || '#4472C4', color: 'white', padding: '5px 10px', fontWeight: 'bold' }}>
+                                EARNINGS
+                              </div>
+                              <div style={{ padding: '5px 10px', borderBottom: '1px solid #ddd' }}>Basic Salary: RM 3,000.00</div>
+                              {(companySettings.payslip_custom_fields || []).filter(f => f.label && f.type === 'earning').map((f, i) => (
+                                <div key={i} style={{ padding: '5px 10px', borderBottom: '1px solid #ddd' }}>{f.label}: RM 0.00</div>
+                              ))}
+                              <div style={{ padding: '5px 10px', fontWeight: 'bold' }}>Total Earnings: RM 3,000.00</div>
+                            </div>
+                            
+                            {/* Deductions */}
+                            <div>
+                              <div style={{ backgroundColor: '#dc2626', color: 'white', padding: '5px 10px', fontWeight: 'bold' }}>
+                                DEDUCTIONS
+                              </div>
+                              <div style={{ padding: '5px 10px', borderBottom: '1px solid #ddd' }}>EPF (11%): RM 330.00</div>
+                              <div style={{ padding: '5px 10px', borderBottom: '1px solid #ddd' }}>SOCSO: RM 15.00</div>
+                              {(companySettings.payslip_custom_fields || []).filter(f => f.label && f.type === 'deduction').map((f, i) => (
+                                <div key={i} style={{ padding: '5px 10px', borderBottom: '1px solid #ddd' }}>{f.label}: RM 0.00</div>
+                              ))}
+                              <div style={{ padding: '5px 10px', fontWeight: 'bold' }}>Total Deductions: RM 345.00</div>
+                            </div>
+                          </div>
+                          
+                          <div style={{ 
+                            marginTop: '15px', 
+                            padding: '10px', 
+                            backgroundColor: companySettings.secondary_color || '#4472C4',
+                            color: 'white',
+                            fontWeight: 'bold',
+                            fontSize: '14px',
+                            textAlign: 'center'
+                          }}>
+                            NET PAY: RM 2,655.00
+                          </div>
+                        </div>
+                        
+                        {/* Tagline */}
+                        <div style={{ 
+                          textAlign: 'center',
+                          marginTop: '20px',
+                          paddingTop: '15px',
+                          borderTop: `2px solid ${companySettings.primary_color || '#1a365d'}`,
+                          fontFamily: companySettings.tagline_font || 'Georgia',
+                          fontStyle: companySettings.tagline_style === 'italic' ? 'italic' : 'normal',
+                          fontWeight: companySettings.tagline_style === 'bold' ? 'bold' : 'normal',
+                          color: companySettings.primary_color || '#1a365d',
+                          fontSize: '12px'
+                        }}>
+                          "{companySettings.tagline || 'Towards a Nation of Safe Drivers'}"
+                        </div>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                </div>
+
                 <div className="flex justify-end">
                   <Button onClick={handleSaveSettings} disabled={settingsLoading}>
                     {settingsLoading ? 'Saving...' : 'Save Settings'}
