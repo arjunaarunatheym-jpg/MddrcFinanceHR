@@ -12,8 +12,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { 
   DollarSign, FileText, CreditCard, TrendingUp, 
   CheckCircle, Clock, AlertCircle, LogOut, RefreshCw,
-  Check, X, Plus, FileX, Receipt, Edit, Printer, Settings, Download, FileSpreadsheet
+  Check, X, Plus, FileX, Receipt, Edit, Printer, Settings, Download, FileSpreadsheet, Users
 } from 'lucide-react';
+import HRModule from '../components/HRModule';
 
 const FinanceDashboard = ({ user, onLogout }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
