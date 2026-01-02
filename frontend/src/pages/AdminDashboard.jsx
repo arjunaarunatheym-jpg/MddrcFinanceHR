@@ -345,18 +345,33 @@ const AdminDashboard = ({ user, onLogout }) => {
   }, [programsSearch, programs]);
   
   useEffect(() => {
-    if (!sessionsSearch) {
-      setFilteredSessions(sessions);
-    } else {
-      const filtered = sessions.filter(s =>
+    let filtered = sessions;
+    
+    // Apply month filter first
+    if (sessionsMonthFilter && sessionsMonthFilter !== "all") {
+      filtered = filtered.filter(s => {
+        // Check start_date or created_at for the month
+        const sessionDate = s.start_date || s.created_at;
+        if (sessionDate) {
+          const dateStr = sessionDate.substring(0, 7); // Get YYYY-MM
+          return dateStr === sessionsMonthFilter;
+        }
+        return false;
+      });
+    }
+    
+    // Then apply text search
+    if (sessionsSearch) {
+      filtered = filtered.filter(s =>
         s.name.toLowerCase().includes(sessionsSearch.toLowerCase()) ||
         (s.company_name && s.company_name.toLowerCase().includes(sessionsSearch.toLowerCase())) ||
         (s.program_name && s.program_name.toLowerCase().includes(sessionsSearch.toLowerCase())) ||
         (s.location && s.location.toLowerCase().includes(sessionsSearch.toLowerCase()))
       );
-      setFilteredSessions(filtered);
     }
-  }, [sessionsSearch, sessions]);
+    
+    setFilteredSessions(filtered);
+  }, [sessionsSearch, sessionsMonthFilter, sessions]);
   
   useEffect(() => {
     if (!usersSearch) {
