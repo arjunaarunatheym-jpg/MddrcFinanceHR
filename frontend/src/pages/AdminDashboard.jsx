@@ -4640,6 +4640,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                       <th className="px-3 py-2 text-center">Status</th>
                       <th className="px-3 py-2 text-left">Signed Name</th>
                       <th className="px-3 py-2 text-left">Signed Date</th>
+                      <th className="px-3 py-2 text-center">Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -4661,6 +4662,18 @@ const AdminDashboard = ({ user, onLogout }) => {
                         </td>
                         <td className="px-3 py-2">{record.indemnity_signed_name || '-'}</td>
                         <td className="px-3 py-2">{record.indemnity_signed_date || '-'}</td>
+                        <td className="px-3 py-2 text-center">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 px-2"
+                            onClick={() => setPrintIndemnityRecord(record)}
+                            data-testid={`print-indemnity-${record.id}`}
+                          >
+                            <Printer className="w-3 h-3 mr-1" />
+                            Print
+                          </Button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -4670,6 +4683,21 @@ const AdminDashboard = ({ user, onLogout }) => {
           )}
         </DialogContent>
       </Dialog>
+      
+      {/* Individual Indemnity Form Print Modal */}
+      {printIndemnityRecord && (
+        <IndemnityFormPrint
+          record={printIndemnityRecord}
+          sessionInfo={{
+            session_name: indemnityRecords?.session_name,
+            company_name: indemnityRecords?.company_name,
+            training_date: indemnityRecords?.training_date,
+            location: indemnityRecords?.location
+          }}
+          companySettings={companySettings}
+          onClose={() => setPrintIndemnityRecord(null)}
+        />
+      )}
     </div>
   );
 };
