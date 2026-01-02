@@ -4025,14 +4025,14 @@ const AdminDashboard = ({ user, onLogout }) => {
                 <Label>Session Coordinator</Label>
                 <p className="text-xs text-gray-500 mb-2">Change the primary coordinator for this session</p>
                 <Select
-                  value={editingSession.coordinator_id || ""}
-                  onValueChange={(value) => setEditingSession({ ...editingSession, coordinator_id: value })}
+                  value={editingSession.coordinator_id || "none"}
+                  onValueChange={(value) => setEditingSession({ ...editingSession, coordinator_id: value === "none" ? null : value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select coordinator" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No Coordinator</SelectItem>
+                    <SelectItem value="none">No Coordinator</SelectItem>
                     {allStaffForCoordinator.map((staff) => (
                       <SelectItem key={staff.id} value={staff.id}>
                         {staff.full_name} ({staff.role.replace('_', ' ')})
