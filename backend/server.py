@@ -5769,10 +5769,15 @@ async def get_assigned_participants(session_id: str, current_user: User = Depend
     # Get all participant IDs
     all_participant_ids = session.get('participant_ids', [])
     
-    # ===== FILTER OUT ABSENT PARTICIPANTS =====
-    # Get attendance records (clock-in) for all participants in this session
+    # ===== DYNAMIC ATTENDANCE-BASED FILTERING =====
+    # Logic: Participant is PRESENT if EITHER:
+    #   1. Has clocked in, OR
+    #   2. Coordinator marked as "present"
+    # This is dynamic - late arrivals are automatically added when they clock in or get marked
+    
+    # Get all clock-in records for this session
     attendance_records = await db.attendance.find(
-        {"session_id": session_id, "clock_in": {"$exists": True, "$ne": None}},
+        {"session_id": session_id, "clock_in": {"$exists": True, "$ne": None, "$ne": ""}},
         {"_id": 0, "participant_id": 1}
     ).to_list(1000)
     clocked_in_ids = set(record["participant_id"] for record in attendance_records)
@@ -5782,28 +5787,40 @@ async def get_assigned_participants(session_id: str, current_user: User = Depend
         {"session_id": session_id},
         {"_id": 0, "participant_id": 1, "status": 1}
     ).to_list(1000)
-    absent_by_coordinator = set(
+    
+    # Build sets for present/absent based on coordinator marking
+    marked_present_ids = set(
+        record["participant_id"] for record in coordinator_attendance 
+        if record.get("status") == "present"
+    )
+    marked_absent_ids = set(
         record["participant_id"] for record in coordinator_attendance 
         if record.get("status") == "absent"
     )
     
-    # Filter participants: Keep only those who:
-    # 1. Have clocked in OR not marked as absent by coordinator
-    # If coordinator marks absent, always exclude
-    # If no clock-in and no coordinator mark, include (might not have started yet)
-    filtered_participant_ids = []
-    for pid in all_participant_ids:
-        # If coordinator explicitly marked as absent, exclude
-        if pid in absent_by_coordinator:
-            continue
-        # If we have attendance records for this session and participant didn't clock in, exclude
-        # But only if at least some participants have clocked in (training has started)
-        if len(clocked_in_ids) > 0 and pid not in clocked_in_ids:
-            continue
-        filtered_participant_ids.append(pid)
+    # Determine which participants are PRESENT (either clocked in OR marked present)
+    # A participant is PRESENT if:
+    #   - They clocked in (regardless of coordinator marking), OR
+    #   - Coordinator marked them as "present" (even without clock-in)
+    present_participant_ids = []
     
-    participant_ids = filtered_participant_ids
-    # ===== END FILTER =====
+    # Check if training has started (at least one person clocked in or marked)
+    training_started = len(clocked_in_ids) > 0 or len(marked_present_ids) > 0 or len(marked_absent_ids) > 0
+    
+    for pid in all_participant_ids:
+        if pid in clocked_in_ids:
+            # Clocked in = PRESENT (even if coordinator marked absent by mistake)
+            present_participant_ids.append(pid)
+        elif pid in marked_present_ids:
+            # Coordinator marked present (even without clock-in) = PRESENT
+            present_participant_ids.append(pid)
+        elif not training_started:
+            # Training hasn't started yet - include everyone
+            present_participant_ids.append(pid)
+        # else: Not clocked in AND not marked present AND training started = ABSENT (excluded)
+    
+    participant_ids = present_participant_ids
+    # ===== END DYNAMIC FILTERING =====
     
     total_participants = len(participant_ids)
     total_trainers = len(trainers)
@@ -5811,8 +5828,8 @@ async def get_assigned_participants(session_id: str, current_user: User = Depend
     if total_trainers == 0 or total_participants == 0:
         return []
     
-    # EQUAL DISTRIBUTION: All trainers (chief and regular) get equal number of participants
-    # Divide participants equally among all trainers
+    # DYNAMIC EQUAL DISTRIBUTION among trainers
+    # Recalculated each time based on current attendance
     participants_per_trainer = total_participants // total_trainers
     remainder = total_participants % total_trainers
     
@@ -5822,16 +5839,14 @@ async def get_assigned_participants(session_id: str, current_user: User = Depend
     except ValueError:
         return []
     
-    # Calculate start index and count for this trainer
-    start_index = current_trainer_index * participants_per_trainer
-    assigned_count = participants_per_trainer
+    # Calculate start index for this trainer
+    # Account for remainder distribution (first N trainers get +1)
+    start_index = 0
+    for i in range(current_trainer_index):
+        start_index += participants_per_trainer + (1 if i < remainder else 0)
     
-    # Distribute remainder evenly (first N trainers get +1 participant)
-    if current_trainer_index < remainder:
-        assigned_count += 1
-    
-    # Adjust start index based on remainder distribution
-    start_index += min(current_trainer_index, remainder)
+    # Calculate assigned count for this trainer
+    assigned_count = participants_per_trainer + (1 if current_trainer_index < remainder else 0)
     
     end_index = start_index + assigned_count
     assigned_participant_ids = participant_ids[start_index:end_index]
@@ -5842,7 +5857,10 @@ async def get_assigned_participants(session_id: str, current_user: User = Depend
         {"_id": 0, "password": 0}
     ).to_list(100)
     
-    # Get vehicle details for each
+    # Sort by name for consistent ordering
+    participants.sort(key=lambda p: p.get('full_name', ''))
+    
+    # Get vehicle details and checklist status for each
     for participant in participants:
         vehicle = await db.vehicle_details.find_one({
             "participant_id": participant['id'],
@@ -5857,6 +5875,10 @@ async def get_assigned_participants(session_id: str, current_user: User = Depend
             "verified_by": current_user.id
         }, {"_id": 0})
         participant['checklist'] = checklist
+        
+        # Add attendance status for reference
+        participant['clocked_in'] = participant['id'] in clocked_in_ids
+        participant['marked_present'] = participant['id'] in marked_present_ids
     
     return participants
 
