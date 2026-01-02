@@ -2347,17 +2347,42 @@ const AdminDashboard = ({ user, onLogout }) => {
                   </div>
                 ) : (
                   <>
-                    <div className="mb-4">
-                      <SearchBar
-                        placeholder="Search sessions by name, company, program, or location..."
-                        onSearch={setSessionsSearch}
-                        className="max-w-md"
-                      />
+                    <div className="mb-4 flex flex-wrap gap-4 items-end">
+                      <div className="flex-1 min-w-[200px]">
+                        <SearchBar
+                          placeholder="Search sessions by name, company, program, or location..."
+                          onSearch={setSessionsSearch}
+                          className="w-full"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Label className="text-sm whitespace-nowrap">Month:</Label>
+                        <Input
+                          type="month"
+                          value={sessionsMonthFilter}
+                          onChange={(e) => setSessionsMonthFilter(e.target.value)}
+                          className="w-40"
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSessionsMonthFilter("all")}
+                          className={sessionsMonthFilter === "all" ? "bg-blue-100" : ""}
+                        >
+                          All
+                        </Button>
+                      </div>
                     </div>
+                    {sessionsMonthFilter && sessionsMonthFilter !== "all" && (
+                      <div className="mb-3 text-sm text-blue-600 bg-blue-50 px-3 py-2 rounded-lg">
+                        Showing sessions for: <strong>{new Date(sessionsMonthFilter + '-01').toLocaleString('en-MY', { month: 'long', year: 'numeric' })}</strong>
+                        {' '}({filteredSessions.length} session{filteredSessions.length !== 1 ? 's' : ''})
+                      </div>
+                    )}
                     <div className="space-y-3">
                       {filteredSessions.length === 0 ? (
                         <p className="text-gray-500 text-center py-8">
-                          {sessionsSearch ? "No sessions match your search." : "No sessions yet"}
+                          {sessionsSearch || sessionsMonthFilter !== "all" ? "No sessions match your filters." : "No sessions yet"}
                         </p>
                       ) : (
                         filteredSessions.map((session) => {
