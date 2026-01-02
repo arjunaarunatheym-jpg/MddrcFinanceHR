@@ -1037,8 +1037,12 @@ const AdminDashboard = ({ user, onLogout }) => {
   // View Indemnity Records for a session
   const handleViewIndemnityRecords = async (session) => {
     try {
-      const response = await axiosInstance.get(`/sessions/${session.id}/indemnity-records`);
-      setIndemnityRecords(response.data);
+      const [recordsRes, settingsRes] = await Promise.all([
+        axiosInstance.get(`/sessions/${session.id}/indemnity-records`),
+        axiosInstance.get('/finance/company-settings').catch(() => ({ data: {} }))
+      ]);
+      setIndemnityRecords(recordsRes.data);
+      setCompanySettings(settingsRes.data);
       setIndemnityDialogOpen(true);
     } catch (error) {
       toast.error("Failed to load indemnity records");
