@@ -70,6 +70,10 @@ const AdminDashboard = ({ user, onLogout }) => {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
   
+  // Indemnity records state
+  const [indemnityRecords, setIndemnityRecords] = useState(null);
+  const [indemnityDialogOpen, setIndemnityDialogOpen] = useState(false);
+  
   // Bulk delete users state
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
