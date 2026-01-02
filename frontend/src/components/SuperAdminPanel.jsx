@@ -263,6 +263,7 @@ const SuperAdminPanel = () => {
       await refreshParticipant(sessionId, participant.id);
       
       setTestForm({ score: "" });
+      setScoreCalculator({ correct: "", total: "" });
       
       // Close dialog after successful submission
       setTestDialog({ open: false, participant: null, sessionId: null, testType: null });
