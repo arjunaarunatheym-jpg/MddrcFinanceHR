@@ -4411,6 +4411,40 @@ const AdminDashboard = ({ user, onLogout }) => {
         </DialogContent>
       </Dialog>
 
+      {/* Bulk Delete Users Confirmation Dialog */}
+      <Dialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Delete {selectedUsers.length} Users?</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. Are you sure you want to permanently delete {selectedUsers.length} selected user(s)?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-2">
+            <p className="text-sm text-red-700">
+              <strong>Warning:</strong> All associated data for these users will also be removed.
+            </p>
+          </div>
+          <div className="flex gap-3 mt-4">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setBulkDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1"
+              onClick={handleBulkDeleteUsers}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete {selectedUsers.length} Users
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Session Costing Modal */}
       {costingSession && (
         <SessionCosting
