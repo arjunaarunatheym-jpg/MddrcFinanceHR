@@ -64,6 +64,10 @@ const AdminDashboard = ({ user, onLogout }) => {
   const [filteredTrainers, setFilteredTrainers] = useState([]);
   const [filteredAssistantAdmins, setFilteredAssistantAdmins] = useState([]);
   
+  // Bulk delete users state
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  
   // Checklist states
   const [checklistTemplates, setChecklistTemplates] = useState([]);
   const [checklistForm, setChecklistForm] = useState({ program_id: "", items: [""] });
