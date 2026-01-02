@@ -41,7 +41,19 @@ const FinanceDashboard = ({ user, onLogout }) => {
     bank_account_name: '',
     bank_account_number: '',
     invoice_terms: 'Upon receipt of invoice',
-    invoice_footer_note: 'Thank you for your business!'
+    invoice_footer_note: 'Thank you for your business!',
+    // Document styling settings
+    tagline: 'Towards a Nation of Safe Drivers',
+    primary_color: '#1a365d',
+    secondary_color: '#4472C4',
+    header_font: 'Arial',
+    body_font: 'Arial',
+    logo_width: 150,
+    logo_position: 'center',
+    show_watermark: true,
+    watermark_opacity: 0.08,
+    tagline_font: 'Georgia',
+    tagline_style: 'italic'
   });
   const [settingsLoading, setSettingsLoading] = useState(false);
   
