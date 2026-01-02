@@ -745,6 +745,18 @@ class CompanySettings(BaseModel):
     invoice_prefix: str = "INV/MDDRC"
     invoice_terms: str = "Upon receipt of invoice"
     invoice_footer_note: str = "Thank you for your business!"
+    # Document styling settings
+    tagline: str = "Towards a Nation of Safe Drivers"
+    primary_color: str = "#1a365d"  # Header/title color
+    secondary_color: str = "#4472C4"  # Accent color
+    header_font: str = "Arial"  # Font for headers
+    body_font: str = "Arial"  # Font for body text
+    logo_width: int = 150  # Logo width in pixels (default was ~80)
+    logo_position: str = "center"  # center, left, right
+    show_watermark: bool = True  # Show watermark logo in background
+    watermark_opacity: float = 0.08  # Watermark opacity (0.0 - 1.0)
+    tagline_font: str = "Georgia"  # Font for tagline (elegant)
+    tagline_style: str = "italic"  # normal, italic, bold
     updated_at: datetime = Field(default_factory=get_malaysia_time)
     updated_by: Optional[str] = None
 
