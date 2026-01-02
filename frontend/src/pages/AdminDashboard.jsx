@@ -64,6 +64,12 @@ const AdminDashboard = ({ user, onLogout }) => {
   const [filteredTrainers, setFilteredTrainers] = useState([]);
   const [filteredAssistantAdmins, setFilteredAssistantAdmins] = useState([]);
   
+  // Sessions month filter - default to current month
+  const [sessionsMonthFilter, setSessionsMonthFilter] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
+  
   // Bulk delete users state
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
