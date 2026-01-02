@@ -74,6 +74,8 @@ const AdminDashboard = ({ user, onLogout }) => {
   // Indemnity records state
   const [indemnityRecords, setIndemnityRecords] = useState(null);
   const [indemnityDialogOpen, setIndemnityDialogOpen] = useState(false);
+  const [printIndemnityRecord, setPrintIndemnityRecord] = useState(null);
+  const [companySettings, setCompanySettings] = useState(null);
   
   // Bulk delete users state
   const [selectedUsers, setSelectedUsers] = useState([]);
