@@ -757,6 +757,11 @@ class CompanySettings(BaseModel):
     watermark_opacity: float = 0.08  # Watermark opacity (0.0 - 1.0)
     tagline_font: str = "Georgia"  # Font for tagline (elegant)
     tagline_style: str = "italic"  # normal, italic, bold
+    # Dynamic custom fields for documents
+    invoice_custom_fields: Optional[List[dict]] = None  # [{label, value, position}]
+    indemnity_custom_fields: Optional[List[dict]] = None  # [{label, type, required}]
+    payslip_custom_fields: Optional[List[dict]] = None  # [{label, type, default_value}]
+    payadvice_custom_fields: Optional[List[dict]] = None  # [{label, show_in_summary}]
     updated_at: datetime = Field(default_factory=get_malaysia_time)
     updated_by: Optional[str] = None
 
