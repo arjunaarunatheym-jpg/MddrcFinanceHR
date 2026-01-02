@@ -861,6 +861,14 @@ const SessionCosting = ({ session, onClose, onUpdate }) => {
           </Card>
         </div>
       </div>
+      
+      {/* Claim Form Print Modal */}
+      {showClaimForm && (
+        <ClaimFormPrint 
+          session={session} 
+          onClose={() => setShowClaimForm(false)} 
+        />
+      )}
     </div>
   );
 };
