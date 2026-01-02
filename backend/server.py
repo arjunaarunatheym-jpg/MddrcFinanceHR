@@ -1548,13 +1548,18 @@ async def get_session_indemnity_records(session_id: str, current_user: User = De
             "id": 1,
             "full_name": 1,
             "id_number": 1,
+            "email": 1,
+            "phone_number": 1,
             "profile_verified": 1,
             "indemnity_accepted": 1,
             "indemnity_accepted_at": 1,
             "indemnity_signature": 1,
             "indemnity_signed_name": 1,
             "indemnity_signed_ic": 1,
-            "indemnity_signed_date": 1
+            "indemnity_signed_date": 1,
+            "emergency_contact_name": 1,
+            "emergency_contact_relationship": 1,
+            "emergency_contact_phone": 1
         }
     ).to_list(1000)
     
@@ -1562,6 +1567,8 @@ async def get_session_indemnity_records(session_id: str, current_user: User = De
         "session_id": session_id,
         "session_name": session.get("name"),
         "company_name": session.get("company_name"),
+        "training_date": f"{session.get('start_date')} to {session.get('end_date')}",
+        "location": session.get("location"),
         "total_participants": len(participants),
         "indemnity_records": participants
     }
