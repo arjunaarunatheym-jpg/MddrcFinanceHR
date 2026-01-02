@@ -33,6 +33,9 @@ const SuperAdminPanel = () => {
   const [checklistTemplate, setChecklistTemplate] = useState(null);
   const [feedbackForm, setFeedbackForm] = useState({ responses: [] });
   const [feedbackTemplate, setFeedbackTemplate] = useState(null);
+  
+  // Score calculator state
+  const [scoreCalculator, setScoreCalculator] = useState({ correct: "", total: "" });
 
   useEffect(() => {
     loadActiveSessions();
