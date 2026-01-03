@@ -11588,6 +11588,22 @@ async def get_profit_loss_report(
         "created_at": {"$gte": start_date, "$lte": end_date + "T23:59:59"}
     }, {"_id": 0}).to_list(10000)
     
+    # Get trainer fees (EXPENSE - Training)
+    trainer_fees = await db.trainer_fees.find({
+        "created_at": {"$gte": start_date, "$lte": end_date + "T23:59:59"}
+    }, {"_id": 0}).to_list(10000)
+    
+    # Get coordinator fees (EXPENSE - Training)
+    coordinator_fees = await db.coordinator_fees.find({
+        "created_at": {"$gte": start_date, "$lte": end_date + "T23:59:59"}
+    }, {"_id": 0}).to_list(10000)
+    
+    # Get marketing commissions (EXPENSE - Training)
+    marketing_commissions = await db.marketing_commissions.find({
+        "updated_at": {"$gte": start_date, "$lte": end_date + "T23:59:59"},
+        "status": {"$in": ["approved", "paid"]}
+    }, {"_id": 0}).to_list(10000)
+    
     # Get petty cash expenses
     petty_cash = await db.petty_cash_transactions.find({
         "date": {"$gte": start_date, "$lte": end_date},
