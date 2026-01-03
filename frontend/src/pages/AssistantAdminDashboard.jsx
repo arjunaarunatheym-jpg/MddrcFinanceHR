@@ -11,10 +11,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useTheme } from "../context/ThemeContext";
-import { Plus, Users, LogOut, Calendar, BookOpen, ClipboardList, ClipboardCheck, MessageSquare, FileText, Search, Eye, Building2, BarChart3, Archive, Upload, Settings, DollarSign } from "lucide-react";
+import { Plus, Users, LogOut, Calendar, BookOpen, ClipboardList, ClipboardCheck, MessageSquare, FileText, Search, Eye, Building2, BarChart3, Archive, Upload, Settings, DollarSign, Wallet } from "lucide-react";
 import TestManagement from "./TestManagement";
 import ChecklistManagement from "./ChecklistManagement";
 import FeedbackManagement from "./FeedbackManagement";
+import MyPayroll from "../components/MyPayroll";
 
 const AssistantAdminDashboard = ({ user, onLogout }) => {
   const navigate = useNavigate();
