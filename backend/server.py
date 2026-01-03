@@ -7903,6 +7903,9 @@ async def record_payment(payment_data: PaymentCreate, current_user: User = Depen
     
     await db.payments.insert_one(payment)
     
+    # Remove MongoDB _id if present (not JSON serializable)
+    payment.pop("_id", None)
+    
     # Check if fully paid
     all_payments = await db.payments.find({"invoice_id": payment_data.invoice_id}, {"_id": 0}).to_list(100)
     total_paid = sum(p.get("amount", 0) for p in all_payments)
