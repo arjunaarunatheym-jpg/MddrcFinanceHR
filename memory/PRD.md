@@ -83,7 +83,29 @@ A comprehensive training management platform for MDDRC (Malaysian Defensive Driv
 - `POST /api/security/unblock-ip` - Unblock IP (admin only)
 - `GET /api/security/audit-log` - Security event log (admin only)
 
-### January 3, 2026 - P0, P1, P2 Features Complete
+### January 3, 2026 - P0, P1, P2, P3 Features Complete
+
+#### My Payroll Tab for All Roles (P0 - COMPLETED)
+- **Admin Dashboard**: Added MyPayroll tab with data-testid="my-payroll-tab", blue gradient styling
+- **Assistant Admin Dashboard**: Already had MyPayroll tab, verified working
+- **Trainer Dashboard**: Payroll tab visible under income section
+- **Coordinator Dashboard**: MyPayroll tab visible
+- All staff can now access their Payslips, Pay Advice, and EA Form at any time
+
+#### Live Document Preview (P1 - COMPLETED)
+- **New `DocumentPreview.jsx` Component**: Full-page document preview with:
+  - Dark overlay background
+  - Zoom controls (50% - 200%)
+  - Fullscreen toggle
+  - Print and Download buttons
+  - Keyboard shortcuts (Esc to close, Ctrl+P to print)
+  - Mobile zoom controls
+- **Enhanced `PayslipPrint.jsx`**: Added "Full Preview" button that opens DocumentPreview
+
+#### Page Crash Fixes (P3 - COMPLETED)
+- **`ResultsSummary.jsx`**: Added null-safe checks for participants array, session data
+- **`TrainerChiefFeedback.jsx`**: Added null-safe checks for sessions and feedback template
+- Both pages now load without crashing even with empty/null data
 
 #### Profit/Loss Ledger (P2 - NEW)
 - **Monthly P&L Comparison**: All 12 months displayed with Income, Expenses, Net Profit, Status
