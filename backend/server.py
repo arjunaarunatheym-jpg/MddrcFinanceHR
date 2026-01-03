@@ -10248,9 +10248,11 @@ async def create_staff(data: dict, current_user: User = Depends(get_current_user
         "user_id": data.get("user_id"),
         "employee_id": data.get("employee_id"),
         "full_name": full_name or data.get("full_name", ""),
+        "nric": data.get("nric", ""),
         "designation": data.get("designation", ""),
         "department": data.get("department", ""),
         "date_joined": data.get("date_joined"),
+        "date_of_birth": data.get("date_of_birth"),
         "bank_name": data.get("bank_name", ""),
         "bank_account": data.get("bank_account", ""),
         "basic_salary": float(data.get("basic_salary", 0)),
@@ -10277,6 +10279,7 @@ async def update_staff(staff_id: str, data: dict, current_user: User = Depends(g
     """Update a staff record"""
     if current_user.role not in ["admin"]:
         raise HTTPException(status_code=403, detail="Only Admin can manage staff")
+    
     
     existing = await db.hr_staff.find_one({"id": staff_id})
     if not existing:
