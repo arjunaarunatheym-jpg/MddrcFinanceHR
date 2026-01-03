@@ -212,6 +212,7 @@ const HRModule = () => {
       user_id: staffMember.user_id || '',
       employee_id: staffMember.employee_id || '',
       full_name: staffMember.full_name || '',
+      nric: staffMember.nric || '',
       designation: staffMember.designation || '',
       department: staffMember.department || '',
       date_joined: staffMember.date_joined || '',
