@@ -175,8 +175,8 @@ class TestPartBParticipantViewChecklist:
         print(f"Response: {response.json()}")
         assert response.status_code == 200
         data = response.json()
-        assert "token" in data
-        return data["token"]
+        assert "access_token" in data
+        return get_token(data)
     
     def test_02_participant_view_own_checklist(self):
         """Test participant can view their own checklist results"""
@@ -184,7 +184,7 @@ class TestPartBParticipantViewChecklist:
         if login_resp.status_code != 200:
             pytest.skip("Participant login failed")
         
-        token = login_resp.json()["token"]
+        token = get_token(login_resp.json())
         user = login_resp.json()["user"]
         participant_id = user.get("id")
         headers = {"Authorization": f"Bearer {token}"}
