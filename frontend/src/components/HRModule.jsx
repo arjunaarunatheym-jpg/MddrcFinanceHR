@@ -408,12 +408,13 @@ const HRModule = () => {
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-4">
-          <TabsTrigger value="staff">Staff Management</TabsTrigger>
-          <TabsTrigger value="periods">Payroll Periods</TabsTrigger>
+        <TabsList className="mb-4 flex-wrap">
+          <TabsTrigger value="staff">Staff</TabsTrigger>
+          <TabsTrigger value="periods">Periods</TabsTrigger>
           <TabsTrigger value="payslips">Payslips</TabsTrigger>
           <TabsTrigger value="pay-advice">Pay Advice</TabsTrigger>
-          <TabsTrigger value="rates">Statutory Rates</TabsTrigger>
+          <TabsTrigger value="ea-forms">EA Forms</TabsTrigger>
+          <TabsTrigger value="rates">Rates</TabsTrigger>
         </TabsList>
 
         {/* Staff Management Tab */}
