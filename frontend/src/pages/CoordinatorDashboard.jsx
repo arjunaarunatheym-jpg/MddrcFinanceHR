@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { LogOut, Calendar, Users, FileText, BarChart3, Camera, Upload, Sparkles, Save, Send, Edit, Trash2, Clock, MessageSquare, Download, CheckCircle, Search, Eye, Building2, BookOpen, Plus, DollarSign, Wallet } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
-import MyPayroll from "../components/MyPayroll";
+import MyEarnings from "../components/MyEarnings";
 
 const CoordinatorDashboard = ({ user, onLogout }) => {
   const navigate = useNavigate();
