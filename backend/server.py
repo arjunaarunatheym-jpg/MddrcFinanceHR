@@ -10558,6 +10558,131 @@ def calculate_age(date_of_birth: str, reference_date: str = None) -> int:
         return 30
 
 # =====================================================
+# STATUTORY RATES UPLOAD (Excel)
+# =====================================================
+
+@api_router.post("/hr/statutory-rates/upload")
+async def upload_statutory_rates(
+    file: UploadFile = File(...),
+    rate_type: str = Form(...),  # epf, socso, eis
+    current_user: User = Depends(get_current_user)
+):
+    """Upload Excel file with statutory contribution rates"""
+    if current_user.role not in ["admin"]:
+        raise HTTPException(status_code=403, detail="Only Admin can upload statutory rates")
+    
+    if rate_type not in ["epf", "socso", "eis"]:
+        raise HTTPException(status_code=400, detail="rate_type must be epf, socso, or eis")
+    
+    try:
+        import openpyxl
+        from io import BytesIO
+        
+        contents = await file.read()
+        wb = openpyxl.load_workbook(BytesIO(contents))
+        ws = wb.active
+        
+        # Delete existing rates for this type
+        await db.statutory_rates.delete_many({"rate_type": rate_type})
+        
+        # Parse Excel - expected columns: min_wages, max_wages, employee_amount/rate, employer_amount/rate
+        rates = []
+        headers = [cell.value for cell in ws[1]]
+        
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            if not row[0]:  # Skip empty rows
+                continue
+            
+            rate_record = {
+                "id": str(uuid.uuid4()),
+                "rate_type": rate_type,
+                "min_wages": float(row[0]) if row[0] else 0,
+                "max_wages": float(row[1]) if row[1] else 999999,
+                "employee_amount": float(row[2]) if len(row) > 2 and row[2] else 0,
+                "employer_amount": float(row[3]) if len(row) > 3 and row[3] else 0,
+                "total_amount": float(row[4]) if len(row) > 4 and row[4] else 0,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            rates.append(rate_record)
+        
+        if rates:
+            await db.statutory_rates.insert_many(rates)
+        
+        return {"message": f"Uploaded {len(rates)} {rate_type.upper()} rate records"}
+    
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to parse Excel file: {str(e)}")
+
+@api_router.get("/hr/statutory-rates")
+async def get_statutory_rates(rate_type: Optional[str] = None, current_user: User = Depends(get_current_user)):
+    """Get uploaded statutory rates"""
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    query = {}
+    if rate_type:
+        query["rate_type"] = rate_type
+    
+    rates = await db.statutory_rates.find(query, {"_id": 0}).sort("min_wages", 1).to_list(500)
+    return rates
+
+@api_router.get("/hr/statutory-rates/templates/{rate_type}")
+async def download_statutory_template(rate_type: str, current_user: User = Depends(get_current_user)):
+    """Download Excel template for statutory rates"""
+    if rate_type not in ["epf", "socso", "eis"]:
+        raise HTTPException(status_code=400, detail="Invalid rate type")
+    
+    import openpyxl
+    from io import BytesIO
+    from fastapi.responses import StreamingResponse
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = f"{rate_type.upper()} Rates"
+    
+    # Headers
+    headers = ["Min Wages (RM)", "Max Wages (RM)", "Employee Amount (RM)", "Employer Amount (RM)", "Total (RM)"]
+    for col, header in enumerate(headers, 1):
+        ws.cell(row=1, column=col, value=header)
+    
+    # Sample data based on type
+    if rate_type == "epf":
+        sample_data = [
+            [0, 20, 0, 0, 0],
+            [20, 40, 4, 5, 9],
+            [40, 60, 6, 8, 14],
+        ]
+    elif rate_type == "socso":
+        sample_data = [
+            [0, 30, 0.10, 0.40, 0.50],
+            [30, 50, 0.20, 0.70, 0.90],
+            [50, 70, 0.30, 1.00, 1.30],
+        ]
+    else:  # eis
+        sample_data = [
+            [0, 30, 0.05, 0.05, 0.10],
+            [30, 50, 0.10, 0.10, 0.20],
+        ]
+    
+    for row_idx, row_data in enumerate(sample_data, 2):
+        for col_idx, value in enumerate(row_data, 1):
+            ws.cell(row=row_idx, column=col_idx, value=value)
+    
+    # Set column widths
+    for col in ws.columns:
+        ws.column_dimensions[col[0].column_letter].width = 20
+    
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={rate_type}_rates_template.xlsx"}
+    )
+
+# =====================================================
 # PAYSLIP GENERATION
 # =====================================================
 
