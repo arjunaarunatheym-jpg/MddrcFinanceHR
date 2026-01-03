@@ -306,8 +306,10 @@ class TestPhase3BPostTest:
         assert response.status_code == 200, f"Failed to get available tests: {response.text}"
         data = response.json()
         
-        # Check post-test is available
-        assert data.get("can_access_post_test") == True, "Post-test should be accessible"
+        # Response is a list of available tests
+        # Check if post-test is in the list
+        post_test_available = any(t.get("test_type") in ["post", "post_test"] for t in data) if isinstance(data, list) else data.get("can_access_post_test") == True
+        assert post_test_available, f"Post-test should be accessible. Response: {data}"
         print(f"✓ Post-test is available for participants")
     
     def test_03_submit_post_tests_12_pass_1_fail(self):
