@@ -323,7 +323,7 @@ const EAFormsTab = ({ staff, companySettings }) => {
         {!eaFormData && !loading && (
           <div className="text-center py-12 text-gray-500">
             <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>Select a staff member and year, then click "Generate EA Form"</p>
+            <p>Select a staff member and year, then click &quot;Generate EA Form&quot;</p>
             <p className="text-sm mt-2">EA Forms summarize annual income and deductions for tax purposes</p>
           </div>
         )}
