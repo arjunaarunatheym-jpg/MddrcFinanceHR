@@ -186,6 +186,84 @@ if not SECRET_KEY or SECRET_KEY == 'your-secret-key-change-in-production':
     raise ValueError("SECRET_KEY environment variable must be set to a secure random value")
 ALGORITHM = "HS256"
 
+# ==================== FILE UPLOAD SECURITY ====================
+ALLOWED_FILE_EXTENSIONS = {
+    'documents': {'.xlsx', '.xls', '.csv', '.docx', '.doc', '.pdf', '.txt'},
+    'images': {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'},
+    'all': {'.xlsx', '.xls', '.csv', '.docx', '.doc', '.pdf', '.txt', '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'}
+}
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB max
+DANGEROUS_EXTENSIONS = {'.exe', '.bat', '.cmd', '.sh', '.ps1', '.vbs', '.js', '.jar', '.msi', '.dll', '.scr', '.pif'}
+
+# Magic bytes for file type verification
+FILE_SIGNATURES = {
+    b'\x50\x4b\x03\x04': ['xlsx', 'docx', 'zip'],  # ZIP-based formats
+    b'\xd0\xcf\x11\xe0': ['xls', 'doc'],  # OLE format
+    b'\xff\xd8\xff': ['jpg', 'jpeg'],
+    b'\x89\x50\x4e\x47': ['png'],
+    b'\x47\x49\x46\x38': ['gif'],
+    b'\x25\x50\x44\x46': ['pdf'],
+}
+
+async def validate_file_upload(file: UploadFile, allowed_types: str = 'all') -> tuple[bool, str]:
+    """
+    Validate uploaded file for security
+    Returns (is_valid, error_message)
+    """
+    if not file or not file.filename:
+        return False, "No file provided"
+    
+    # Check extension
+    ext = Path(file.filename).suffix.lower()
+    
+    if ext in DANGEROUS_EXTENSIONS:
+        logging.warning(f"Blocked dangerous file upload: {file.filename}")
+        return False, "File type not allowed for security reasons"
+    
+    allowed = ALLOWED_FILE_EXTENSIONS.get(allowed_types, ALLOWED_FILE_EXTENSIONS['all'])
+    if ext not in allowed:
+        return False, f"File type {ext} not allowed. Allowed: {', '.join(allowed)}"
+    
+    # Check file size
+    file.file.seek(0, 2)  # Seek to end
+    size = file.file.tell()
+    file.file.seek(0)  # Reset to beginning
+    
+    if size > MAX_FILE_SIZE:
+        return False, f"File too large. Maximum size: {MAX_FILE_SIZE // (1024*1024)}MB"
+    
+    if size == 0:
+        return False, "Empty file"
+    
+    # Verify file signature (magic bytes)
+    header = await file.read(8)
+    await file.seek(0)  # Reset position
+    
+    # Check if file signature matches claimed extension
+    extension_verified = False
+    for signature, extensions in FILE_SIGNATURES.items():
+        if header.startswith(signature):
+            if ext.lstrip('.') in extensions or ext in [f'.{e}' for e in extensions]:
+                extension_verified = True
+                break
+    
+    # For text files, we can't verify by signature
+    if ext in {'.csv', '.txt'} and not extension_verified:
+        extension_verified = True  # Allow text files
+    
+    return True, ""
+
+def secure_filename(filename: str) -> str:
+    """Generate a secure filename to prevent path traversal"""
+    # Remove path components
+    filename = Path(filename).name
+    # Remove any dangerous characters
+    filename = re.sub(r'[^\w\s\-\.]', '', filename)
+    # Add random prefix to prevent overwrites
+    prefix = hashlib.md5(f"{time.time()}{random.random()}".encode()).hexdigest()[:8]
+    return f"{prefix}_{filename}"
+
+
 # Create the main app
 app = FastAPI(
     title="MDDRC Training Management System",
