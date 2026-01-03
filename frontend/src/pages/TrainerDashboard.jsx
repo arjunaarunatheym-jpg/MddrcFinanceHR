@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useTheme } from "../context/ThemeContext";
 import { LogOut, Calendar, ClipboardCheck, Users, FileText, ChevronDown, ChevronRight, MessageSquare, Search, Eye, Building2, BookOpen, DollarSign, Settings, Wallet } from "lucide-react";
-import MyPayroll from "../components/MyPayroll";
+import MyEarnings from "../components/MyEarnings";
 
 const TrainerDashboard = ({ user, onLogout }) => {
   const navigate = useNavigate();
