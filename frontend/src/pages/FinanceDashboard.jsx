@@ -1582,6 +1582,16 @@ const FinanceDashboard = ({ user, onLogout }) => {
             </Card>
           </TabsContent>
 
+          {/* Profit & Loss Ledger Tab */}
+          <TabsContent value="profit-loss">
+            <ProfitLossLedger />
+          </TabsContent>
+
+          {/* Petty Cash Tab */}
+          <TabsContent value="petty-cash">
+            <PettyCash />
+          </TabsContent>
+
           {/* HR & Payroll Tab */}
           <TabsContent value="hr">
             <HRModule />
