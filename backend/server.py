@@ -11583,15 +11583,22 @@ async def get_profit_loss_report(
         "year": year
     }, {"_id": 0}).to_list(1000)
     
-    # Get session expenses
+    # Get session expenses (F&B, HRDCorp, Printing, Venue, etc - NOT trainer/coordinator fees)
     session_expenses = await db.session_expenses.find({
         "created_at": {"$gte": start_date, "$lte": end_date + "T23:59:59"}
     }, {"_id": 0}).to_list(10000)
     
-    # NOTE: trainer_fees and coordinator_fees are already captured in pay_advice (session_workers)
-    # So we don't fetch them separately to avoid double counting
+    # Get trainer fees from trainer_fees collection
+    trainer_fees = await db.trainer_fees.find({
+        "created_at": {"$gte": start_date, "$lte": end_date + "T23:59:59"}
+    }, {"_id": 0}).to_list(10000)
     
-    # Get marketing commissions (EXPENSE - Training) - only APPROVED/PAID ones
+    # Get coordinator fees from coordinator_fees collection
+    coordinator_fees = await db.coordinator_fees.find({
+        "created_at": {"$gte": start_date, "$lte": end_date + "T23:59:59"}
+    }, {"_id": 0}).to_list(10000)
+    
+    # Get marketing commissions - recalculate from costing to ensure accuracy
     marketing_commissions = await db.marketing_commissions.find({
         "updated_at": {"$gte": start_date, "$lte": end_date + "T23:59:59"},
         "status": {"$in": ["approved", "paid"]}
