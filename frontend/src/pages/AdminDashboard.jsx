@@ -21,6 +21,7 @@ import { useTheme } from "../context/ThemeContext";
 import { SearchBar } from "../components/SearchBar";
 import SessionCosting from "../components/SessionCosting";
 import IndemnityFormPrint from "../components/IndemnityFormPrint";
+import MyPayroll from "../components/MyPayroll";
 
 const AdminDashboard = ({ user, onLogout }) => {
   const navigate = useNavigate();
@@ -1483,6 +1484,11 @@ const AdminDashboard = ({ user, onLogout }) => {
               <SettingsIcon className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline">Settings</span>
               <span className="sm:hidden">Settings</span>
+            </TabsTrigger>
+            <TabsTrigger value="my-payroll" data-testid="my-payroll-tab" className="flex-1 min-w-[120px] md:min-w-0 bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
+              <DollarSign className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">My Payroll</span>
+              <span className="sm:hidden">Payroll</span>
             </TabsTrigger>
           </TabsList>
 
@@ -4082,6 +4088,11 @@ const AdminDashboard = ({ user, onLogout }) => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* My Payroll Tab */}
+          <TabsContent value="my-payroll">
+            <MyPayroll />
           </TabsContent>
 
         </Tabs>
