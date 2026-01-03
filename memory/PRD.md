@@ -94,15 +94,18 @@ A comprehensive training management platform for MDDRC (Malaysian Defensive Driv
 ### P0 - Critical
 - [x] ~~Course Registration Form (Claim Form)~~ - DONE
 - [x] ~~Individual Indemnity Form Printing~~ - DONE
+- [x] ~~EA Forms Generation~~ - DONE (Jan 3, 2026)
+- [x] ~~Self-Service Payroll Portal~~ - DONE (Jan 3, 2026)
 
-### P1 - High Priority (In Progress)
+### P1 - High Priority
 - [x] HR Module - Staff Management - DONE
-- [ ] **Payslip Generation** - Generate monthly payslips with statutory deductions
-- [ ] **Pay Advice** - For session workers, data from Claim Form
-- [ ] EPF/SOCSO Excel upload for statutory rate tables
-- [ ] Improve Live Document Previews
+- [x] **Payslip Generation** - DONE (with statutory deductions, YTD tracking)
+- [x] **Pay Advice** - DONE (for session workers)
+- [x] EPF/SOCSO/EIS Excel upload for statutory rate tables - DONE
+- [x] Live Document Previews - DONE (in Finance Dashboard Settings)
 
 ### P2 - Medium Priority
+- [x] Mobile-friendly UI - DONE (responsive tabs across all dashboards)
 - [ ] Profit/Loss Ledger
 - [ ] Petty Cash Module
 - [ ] Password protection for Data tab
@@ -110,14 +113,18 @@ A comprehensive training management platform for MDDRC (Malaysian Defensive Driv
 ### P3 - Bug Fixes/Refactoring
 - [ ] Fix `ResultsSummary.jsx` page crash
 - [ ] Fix `TrainerChiefFeedback.jsx` page crash
-- [ ] Code refactoring (split large files)
+- [ ] Code refactoring (split large files: server.py, HRModule.jsx)
+- [ ] Conditional F&B Expense Logic
 
 ---
 
 ## Key Files Reference
-- `backend/server.py` - Main FastAPI server (HR APIs at bottom)
+- `backend/server.py` - Main FastAPI server (HR APIs, 11000+ lines)
 - `frontend/src/pages/FinanceDashboard.jsx` - Finance interface with HR tab
-- `frontend/src/components/HRModule.jsx` - HR staff management
+- `frontend/src/components/HRModule.jsx` - HR module with Staff, Payroll, EA Forms
+- `frontend/src/components/MyPayroll.jsx` - Self-service payroll portal
+- `frontend/src/components/PayslipPrint.jsx` - Payslip print component
+- `frontend/src/components/PayAdvicePrint.jsx` - Pay advice print component
 - `frontend/src/components/ClaimFormPrint.jsx` - Claim form print
 - `frontend/src/components/IndemnityFormPrint.jsx` - Indemnity print
 
