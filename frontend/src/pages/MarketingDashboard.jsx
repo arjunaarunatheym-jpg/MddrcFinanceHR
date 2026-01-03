@@ -76,6 +76,10 @@ const MarketingDashboard = ({ user, onLogout }) => {
           <TabsList className="mb-6">
             <TabsTrigger value="income">My Income</TabsTrigger>
             <TabsTrigger value="calendar">Training Calendar</TabsTrigger>
+            <TabsTrigger value="payroll" className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white">
+              <FileText className="w-4 h-4 mr-2" />
+              My Payroll
+            </TabsTrigger>
           </TabsList>
 
           {/* Income Tab */}
