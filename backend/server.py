@@ -11748,14 +11748,14 @@ async def get_profit_loss_report(
         except:
             pass
     
-    # Process marketing commissions - use session_start_date for month attribution
-    for mc in marketing_commissions:
+    # Process marketing commissions - use session_date_map to get session's start_date
+    for mc in all_marketing_commissions:
         try:
-            # Use session_start_date field (already filtered by year)
-            mc_date = mc.get("session_start_date", "")
-            if not mc_date:
+            session_id = mc.get("session_id")
+            session_date = session_date_map.get(session_id, "")
+            if not session_date or not session_date.startswith(str(year)):
                 continue
-            mc_month = int(mc_date[5:7]) if len(mc_date) >= 7 else 1
+            mc_month = int(session_date[5:7]) if len(session_date) >= 7 else 1
             amount = float(mc.get("calculated_amount") or 0)
             monthly_data[mc_month]["expenses"]["marketing_commissions"] += amount
         except:
