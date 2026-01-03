@@ -96,12 +96,22 @@ const ClaimFormPrint = ({ session, onClose }) => {
             }
             .info-grid-3 { grid-template-columns: repeat(3, 1fr); }
             .info-item { }
-            .info-label { font-weight: bold; font-size: 9px; color: #666; display: block; margin-bottom: 2px; }
+            .info-label { 
+              font-weight: bold; 
+              font-size: 9px; 
+              color: #333; 
+              display: block; 
+              margin-bottom: 4px; 
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
             .info-value { 
               border-bottom: 1px solid #ccc; 
-              padding: 4px 0; 
-              min-height: 22px; 
-              font-size: 10px; 
+              padding: 6px 8px; 
+              min-height: 26px; 
+              font-size: 11px;
+              background: #fafafa;
+              margin-top: 2px;
             }
             .info-full { grid-column: span 2; }
             
