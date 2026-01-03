@@ -412,11 +412,11 @@ const SessionCosting = ({ session, onClose, onUpdate }) => {
             <Button 
               variant="outline" 
               onClick={() => setShowClaimForm(true)}
-              className="bg-blue-50 border-blue-200 hover:bg-blue-100 text-blue-700"
+              className="bg-green-50 border-green-200 hover:bg-green-100 text-green-700"
               data-testid="print-claim-form-btn"
             >
-              <Printer className="w-4 h-4 mr-2" />
-              Print Claim Form
+              <Download className="w-4 h-4 mr-2" />
+              Download Claim Form
             </Button>
             <Button variant="outline" onClick={onClose}>Cancel</Button>
             <Button onClick={saveAll} disabled={saving} className="bg-green-600 hover:bg-green-700">
