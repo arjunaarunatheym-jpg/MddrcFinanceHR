@@ -316,18 +316,24 @@ const ProfitLossLedger = () => {
               <CardDescription>Expenses by category</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {Object.entries(expBreakdown).map(([category, amount]) => {
                   const labels = {
                     payroll: 'Payroll (Staff)',
                     session_workers: 'Session Workers',
-                    session_expenses: 'Session Expenses',
+                    trainer_fees: 'Trainer Fees',
+                    coordinator_fees: 'Coordinator Fees',
+                    marketing_commissions: 'Marketing Commissions',
+                    session_expenses: 'Session Expenses (F&B, etc)',
                     petty_cash: 'Petty Cash',
                     manual: 'Manual Entries'
                   };
                   const colors = {
                     payroll: 'bg-blue-100 text-blue-700 border-blue-200',
                     session_workers: 'bg-purple-100 text-purple-700 border-purple-200',
+                    trainer_fees: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+                    coordinator_fees: 'bg-cyan-100 text-cyan-700 border-cyan-200',
+                    marketing_commissions: 'bg-pink-100 text-pink-700 border-pink-200',
                     session_expenses: 'bg-orange-100 text-orange-700 border-orange-200',
                     petty_cash: 'bg-green-100 text-green-700 border-green-200',
                     manual: 'bg-gray-100 text-gray-700 border-gray-200'
@@ -337,10 +343,10 @@ const ProfitLossLedger = () => {
                   return (
                     <div key={category} className={`p-4 rounded-lg border ${colors[category] || 'bg-gray-50'}`}>
                       <div className="flex justify-between items-start mb-2">
-                        <span className="font-medium">{labels[category] || category}</span>
+                        <span className="font-medium text-sm">{labels[category] || category}</span>
                         <Badge variant="outline">{percentage}%</Badge>
                       </div>
-                      <p className="text-2xl font-bold">{formatCurrency(amount)}</p>
+                      <p className="text-xl font-bold">{formatCurrency(amount)}</p>
                       <div className="mt-2 h-2 bg-white/50 rounded-full overflow-hidden">
                         <div 
                           className="h-full bg-current opacity-50 rounded-full transition-all"
