@@ -15,10 +15,6 @@ const ResultsSummary = () => {
   const [detailedResult, setDetailedResult] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadSummary();
-  }, [sessionId]);
-
   const loadSummary = async () => {
     try {
       const response = await axiosInstance.get(`/sessions/${sessionId}/results-summary`);
@@ -29,6 +25,11 @@ const ResultsSummary = () => {
       navigate(-1);
     }
   };
+
+  useEffect(() => {
+    loadSummary();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId]);
 
   const loadDetailedResult = async (resultId) => {
     try {
@@ -167,8 +168,8 @@ const ResultsSummary = () => {
             <div className="space-y-2">
               {participants.length === 0 ? (
                 <p className="text-center text-gray-500 py-8">No participants found for this session</p>
-              ) : participants.map((participant) => (
-                <div key={participant?.participant?.id || Math.random()}>
+              ) : participants.map((participant, index) => (
+                <div key={participant?.participant?.id || `participant-${index}`}>
                   {/* Main Row */}
                   <div
                     className="p-4 bg-gray-50 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors"

@@ -27,21 +27,6 @@ const DocumentPreview = ({
   const containerRef = useRef(null);
   const contentRef = useRef(null);
 
-  // Handle escape key to close
-  useEffect(() => {
-    const handleEscape = (e) => {
-      if (e.key === 'Escape') {
-        if (isFullscreen) {
-          exitFullscreen();
-        } else {
-          onClose?.();
-        }
-      }
-    };
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [isFullscreen, onClose]);
-
   // Fullscreen handling
   const enterFullscreen = () => {
     if (containerRef.current?.requestFullscreen) {
@@ -56,6 +41,21 @@ const DocumentPreview = ({
       setIsFullscreen(false);
     }
   };
+
+  // Handle escape key to close
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        if (isFullscreen) {
+          exitFullscreen();
+        } else {
+          onClose?.();
+        }
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isFullscreen, onClose]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
