@@ -10424,6 +10424,43 @@ async def close_payroll_period(period_id: str, current_user: User = Depends(get_
 # STATUTORY CONTRIBUTION CALCULATOR
 # =====================================================
 
+def calculate_age_from_nric(nric: str, reference_date: str = None) -> int:
+    """Calculate age from Malaysian NRIC (first 6 digits = YYMMDD)"""
+    if not nric or len(nric) < 6:
+        return 30  # Default
+    
+    try:
+        # Extract YYMMDD
+        yy = int(nric[:2])
+        mm = int(nric[2:4])
+        dd = int(nric[4:6])
+        
+        # Determine century (if YY > 30, assume 1900s, else 2000s)
+        current_year = datetime.now().year
+        current_yy = current_year % 100
+        
+        if yy > current_yy + 5:  # e.g., 85 > 31, so 1985
+            year = 1900 + yy
+        else:
+            year = 2000 + yy
+        
+        dob = datetime(year, mm, dd)
+        ref = datetime.fromisoformat(reference_date) if reference_date else datetime.now()
+        age = ref.year - dob.year - ((ref.month, ref.day) < (dob.month, dob.day))
+        return max(18, min(age, 100))  # Clamp between 18-100
+    except:
+        return 30
+
+async def get_statutory_rates_from_db(rate_type: str, wages: float):
+    """Get statutory rates from uploaded Excel tables"""
+    # Find the rate bracket for given wages
+    rate = await db.statutory_rates.find_one({
+        "rate_type": rate_type,
+        "min_wages": {"$lte": wages},
+        "max_wages": {"$gte": wages}
+    }, {"_id": 0})
+    return rate
+
 def calculate_epf(basic_salary: float, age: int, custom_employee_rate: float = None, custom_employer_rate: float = None):
     """Calculate EPF contributions based on salary and age"""
     # Age 60 and above: Employer 4%, Employee 0% (voluntary)
