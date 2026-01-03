@@ -1381,6 +1381,11 @@ const TrainerDashboard = ({ user, onLogout }) => {
             </Card>
           </TabsContent>
 
+          {/* Payroll Tab */}
+          <TabsContent value="payroll">
+            <MyPayroll user={user} />
+          </TabsContent>
+
         </Tabs>
       </main>
     </div>
