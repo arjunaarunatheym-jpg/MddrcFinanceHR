@@ -23,8 +23,9 @@ const TrainerChiefFeedback = ({ user, onLogout }) => {
   const loadSessions = async () => {
     try {
       const response = await axiosInstance.get("/sessions");
-      const mySessions = response.data.filter(session => 
-        session.trainer_assignments && session.trainer_assignments.some(t => t.trainer_id === user.id)
+      const sessionsData = response.data || [];
+      const mySessions = sessionsData.filter(session => 
+        session?.trainer_assignments?.some(t => t?.trainer_id === user?.id)
       );
       setSessions(mySessions);
       if (mySessions.length > 0) {
@@ -33,6 +34,7 @@ const TrainerChiefFeedback = ({ user, onLogout }) => {
       }
     } catch (error) {
       toast.error("Failed to load sessions");
+      setSessions([]);
     }
   };
 
@@ -131,27 +133,27 @@ const TrainerChiefFeedback = ({ user, onLogout }) => {
                 Chief Trainer Feedback Form
               </CardTitle>
               <CardDescription>
-                Session: {selectedSession.name}
+                Session: {selectedSession?.name || 'Unknown Session'}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {feedbackTemplate.questions?.map((question) => (
-                  <div key={question.id} className="space-y-2">
+                {(feedbackTemplate?.questions || []).map((question) => (
+                  <div key={question?.id || Math.random()} className="space-y-2">
                     <label className="text-sm font-medium text-gray-700">
-                      {question.question}
-                      {question.type === 'rating' && (
-                        <span className="text-gray-500 ml-1">(Rate 1-{question.scale})</span>
+                      {question?.question || 'Question'}
+                      {question?.type === 'rating' && (
+                        <span className="text-gray-500 ml-1">(Rate 1-{question?.scale || 5})</span>
                       )}
                     </label>
-                    {question.type === 'rating' ? (
+                    {question?.type === 'rating' ? (
                       <div className="flex gap-2">
-                        {[...Array(question.scale)].map((_, i) => (
+                        {[...Array(question?.scale || 5)].map((_, i) => (
                           <button
                             key={i}
-                            onClick={() => setFeedback({...feedback, [question.id]: i + 1})}
+                            onClick={() => setFeedback({...feedback, [question?.id]: i + 1})}
                             className={`w-10 h-10 rounded-full font-bold ${
-                              feedback[question.id] === i + 1
+                              feedback[question?.id] === i + 1
                                 ? 'bg-blue-600 text-white'
                                 : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
                             }`}
@@ -163,8 +165,8 @@ const TrainerChiefFeedback = ({ user, onLogout }) => {
                       </div>
                     ) : (
                       <textarea
-                        value={feedback[question.id] || ''}
-                        onChange={(e) => setFeedback({...feedback, [question.id]: e.target.value})}
+                        value={feedback[question?.id] || ''}
+                        onChange={(e) => setFeedback({...feedback, [question?.id]: e.target.value})}
                         className="w-full p-3 border rounded-md"
                         rows={4}
                         disabled={feedbackSubmitted}
