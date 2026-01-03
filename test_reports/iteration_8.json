@@ -1,0 +1,134 @@
+{
+  "summary": "Iteration 8 - Focused Verification: Trainer checklists, participant checklist visibility, supervisor report access, payslip/pay advice tally. 19/22 API tests passed. UI flows verified.",
+  "phase": "Iteration 8 - Focused Verification",
+  "test_results": {
+    "part_a_trainer_checklist_access": {
+      "vijay_login": "WORKING - Role: trainer",
+      "vijay_see_session": "WORKING - Can see RapidKL session",
+      "vijay_assigned_participants": "WORKING - 5 participants (clocked-in only)",
+      "thinagaran_login": "WORKING - Role: trainer",
+      "thinagaran_assigned_participants": "WORKING - 4 participants",
+      "hisam_login": "WORKING - Role: trainer",
+      "hisam_assigned_participants": "WORKING - 4 participants",
+      "checklist_submit_api": "FAILED - 422 error, needs 'item' field not 'name'",
+      "ui_trainer_portal": "WORKING - Shows Checklists tab, participants visible after clock-in"
+    },
+    "part_b_participant_view_checklist": {
+      "participant_login": "WORKING - IC: 900101-01-0001, Role: participant",
+      "view_own_checklist_api": "WORKING - Returns 1 checklist with 15 items",
+      "ui_participant_portal": "WORKING - Shows Vehicle Inspection Checklists with all items and status (GOOD/NEEDS REPAIR)"
+    },
+    "part_c_supervisor_report_access": {
+      "supervisor_login": "WORKING - Role: pic_supervisor",
+      "view_sessions_api": "WORKING - Returns 1 session (Bus Defensive Training)",
+      "view_training_report_sessions_api": "FAILED - 403 error, role check expects 'supervisor' but user has 'pic_supervisor'",
+      "view_attendance_api": "WORKING - Returns 13 attendance records",
+      "ui_supervisor_portal": "WORKING - Shows session and attendance records"
+    },
+    "part_d_payroll_verification": {
+      "admin_login": "WORKING",
+      "hr_staff_api": "WORKING - Returns 1 staff (Test Staff only)",
+      "payslips_api": "WORKING - Returns 1 payslip (Test Staff - Jan 2026)",
+      "pay_advice_api": "WORKING - Returns 0 records (none generated)",
+      "session_costing": "FAILED - Session costing is empty {}, trainer_fee and coordinator_fee not populated",
+      "trainer_fees_payables": "WORKING - 3 records (Vijay RM600, Thinagaran RM500, Mawardi RM200) - but for TELEGAMAS session, not RapidKL",
+      "coordinator_fees_payables": "WORKING - 1 record (Abillasha RM50) - for TELEGAMAS session",
+      "payroll_periods": "WORKING - 1 period (Jan 2026, open)"
+    }
+  },
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "/api/trainer-checklist/submit",
+        "issue": "422 validation error - ChecklistItem model expects 'item' field, not 'name'",
+        "priority": "MEDIUM",
+        "fix": "Update frontend to send 'item' instead of 'name' in checklist items"
+      },
+      {
+        "endpoint": "/api/training-reports/supervisor/sessions",
+        "issue": "403 Forbidden - Role check expects 'supervisor' but user has 'pic_supervisor' role",
+        "priority": "HIGH",
+        "fix": "Update line 5629 in server.py to include 'pic_supervisor' in allowed roles"
+      },
+      {
+        "endpoint": "Session costing",
+        "issue": "RapidKL session (d664b79d-91a1-4968-bd72-de82611cdb1f) has empty costing field - trainer_fee and coordinator_fee not populated",
+        "priority": "HIGH",
+        "fix": "Session needs costing populated: trainer_fee=1500, coordinator_fee=800 as mentioned in agent context"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "/api/hr/staff",
+        "issue": "Only returns 1 staff (Test Staff). Malek, Chandra, Vijay are in Staff Management but not in HR Staff for payslips",
+        "priority": "LOW",
+        "note": "HR Staff is separate from Staff Management - need to add staff to HR module"
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "working_features": {
+    "trainer_portal": [
+      "Trainer login (Vijay, Thinagaran, Hisam)",
+      "View assigned sessions",
+      "View assigned participants (clocked-in only)",
+      "Checklists tab visible",
+      "Chief Trainer designation shown"
+    ],
+    "participant_portal": [
+      "Participant login with IC number",
+      "View own checklist results",
+      "See inspection items with status (GOOD/NEEDS REPAIR)",
+      "See items needing attention highlighted"
+    ],
+    "supervisor_portal": [
+      "Supervisor login",
+      "View company sessions",
+      "View attendance records with clock-in/out times"
+    ],
+    "finance_portal": [
+      "HR & Payroll module accessible",
+      "Payslips tab working",
+      "Pay Advice tab working",
+      "Payables showing trainer/coordinator fees"
+    ]
+  },
+  "test_report_links": [
+    "/app/tests/test_iteration8_focused.py",
+    "/app/test_reports/pytest/iteration8_results.xml"
+  ],
+  "action_items": [
+    "FIX CRITICAL: Update /api/training-reports/supervisor/sessions to allow 'pic_supervisor' role (line 5629 in server.py)",
+    "FIX: Populate RapidKL session costing with trainer_fee=1500, coordinator_fee=800",
+    "VERIFY: Trainer checklist submit - ensure frontend sends 'item' field in checklist items",
+    "OPTIONAL: Add Malek, Chandra, Vijay to HR Staff module if payslips needed for them"
+  ],
+  "critical_code_review_comments": [
+    "Role check in /api/training-reports/supervisor/sessions uses 'supervisor' but actual role is 'pic_supervisor'",
+    "Session costing field is not being populated when trainers are assigned",
+    "Participants only appear in trainer checklist after clock-in (by design per user clarification)"
+  ],
+  "updated_files": [
+    "/app/tests/test_iteration8_focused.py"
+  ],
+  "success_rate": {
+    "backend": "86% (19/22 tests passed)",
+    "frontend": "100% (all UI flows working)"
+  },
+  "test_credentials": {
+    "trainer_vijay": "vijay@mddrc.com.my / mddrc1",
+    "trainer_thinagaran": "Dheena8983@gmail.com / mddrc1",
+    "trainer_hisam": "hisam@gmail.com.my / mddrc1",
+    "participant": "900101-01-0001 / mddrc1",
+    "supervisor": "rapidkl@gmail.com / mddrc1",
+    "admin": "arjuna@mddrc.com.my / Dana102229"
+  },
+  "seed_data_creation": "None - used existing data",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Iteration 8 complete. Key findings: (1) Supervisor training report API needs 'pic_supervisor' role added, (2) RapidKL session costing is empty - needs trainer_fee=1500, coordinator_fee=800, (3) Trainer checklist submit needs 'item' field not 'name'. All UI portals working - Trainer, Participant, Supervisor, Finance. Payables show fees for TELEGAMAS session (Dec 2025) but not RapidKL (Jan 2026) due to missing costing. HR Staff only has 1 test staff - Malek/Chandra/Vijay are in Staff Management but not HR module."
+}
