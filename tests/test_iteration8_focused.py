@@ -277,12 +277,12 @@ class TestPartDPayrollVerification:
         response = requests.post(f"{BASE_URL}/api/auth/login", json=CREDENTIALS["admin"])
         print(f"Admin login response: {response.status_code}")
         assert response.status_code == 200
-        return response.json()["token"]
+        return get_token(response.json())
     
     def test_02_get_hr_staff(self):
         """Get HR staff list to find malek, chandra, vijay"""
         login_resp = requests.post(f"{BASE_URL}/api/auth/login", json=CREDENTIALS["admin"])
-        token = login_resp.json()["token"]
+        token = get_token(login_resp.json())
         headers = {"Authorization": f"Bearer {token}"}
         
         response = requests.get(f"{BASE_URL}/api/hr/staff", headers=headers)
@@ -304,7 +304,7 @@ class TestPartDPayrollVerification:
     def test_03_get_payslips(self):
         """Get payslips and check for malek, chandra, vijay"""
         login_resp = requests.post(f"{BASE_URL}/api/auth/login", json=CREDENTIALS["admin"])
-        token = login_resp.json()["token"]
+        token = get_token(login_resp.json())
         headers = {"Authorization": f"Bearer {token}"}
         
         response = requests.get(f"{BASE_URL}/api/hr/payslips", headers=headers)
@@ -325,7 +325,7 @@ class TestPartDPayrollVerification:
     def test_04_get_pay_advice(self):
         """Get pay advice records"""
         login_resp = requests.post(f"{BASE_URL}/api/auth/login", json=CREDENTIALS["admin"])
-        token = login_resp.json()["token"]
+        token = get_token(login_resp.json())
         headers = {"Authorization": f"Bearer {token}"}
         
         response = requests.get(f"{BASE_URL}/api/hr/pay-advice", headers=headers)
@@ -346,7 +346,7 @@ class TestPartDPayrollVerification:
     def test_05_verify_session_costing(self):
         """Verify session costing matches expected values (trainer_fee: 1500, coordinator_fee: 800)"""
         login_resp = requests.post(f"{BASE_URL}/api/auth/login", json=CREDENTIALS["admin"])
-        token = login_resp.json()["token"]
+        token = get_token(login_resp.json())
         headers = {"Authorization": f"Bearer {token}"}
         
         response = requests.get(f"{BASE_URL}/api/sessions/{SESSION_ID}", headers=headers)
@@ -372,7 +372,7 @@ class TestPartDPayrollVerification:
     def test_06_get_trainer_fees_payables(self):
         """Get trainer fees from payables"""
         login_resp = requests.post(f"{BASE_URL}/api/auth/login", json=CREDENTIALS["admin"])
-        token = login_resp.json()["token"]
+        token = get_token(login_resp.json())
         headers = {"Authorization": f"Bearer {token}"}
         
         response = requests.get(f"{BASE_URL}/api/finance/payables/trainer-fees", headers=headers)
@@ -389,7 +389,7 @@ class TestPartDPayrollVerification:
     def test_07_get_coordinator_fees_payables(self):
         """Get coordinator fees from payables"""
         login_resp = requests.post(f"{BASE_URL}/api/auth/login", json=CREDENTIALS["admin"])
-        token = login_resp.json()["token"]
+        token = get_token(login_resp.json())
         headers = {"Authorization": f"Bearer {token}"}
         
         response = requests.get(f"{BASE_URL}/api/finance/payables/coordinator-fees", headers=headers)
@@ -406,7 +406,7 @@ class TestPartDPayrollVerification:
     def test_08_get_payroll_periods(self):
         """Get payroll periods"""
         login_resp = requests.post(f"{BASE_URL}/api/auth/login", json=CREDENTIALS["admin"])
-        token = login_resp.json()["token"]
+        token = get_token(login_resp.json())
         headers = {"Authorization": f"Bearer {token}"}
         
         response = requests.get(f"{BASE_URL}/api/hr/payroll-periods", headers=headers)
