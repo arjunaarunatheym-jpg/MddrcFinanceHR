@@ -521,11 +521,20 @@ const DataManagement = ({ user }) => {
       <FilterSection />
       
       <Tabs defaultValue="test-results" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="test-results">Test Scores</TabsTrigger>
-          <TabsTrigger value="feedback">Feedback</TabsTrigger>
-          <TabsTrigger value="attendance">Attendance</TabsTrigger>
-          <TabsTrigger value="checklists">Checklists</TabsTrigger>
+        <TabsList className="flex flex-wrap gap-1 h-auto p-1">
+          <TabsTrigger value="test-results" className="text-xs sm:text-sm px-2 sm:px-3 py-2">
+            <span className="hidden sm:inline">Test Scores</span>
+            <span className="sm:hidden">Tests</span>
+          </TabsTrigger>
+          <TabsTrigger value="feedback" className="text-xs sm:text-sm px-2 sm:px-3 py-2">Feedback</TabsTrigger>
+          <TabsTrigger value="attendance" className="text-xs sm:text-sm px-2 sm:px-3 py-2">
+            <span className="hidden sm:inline">Attendance</span>
+            <span className="sm:hidden">Attend</span>
+          </TabsTrigger>
+          <TabsTrigger value="checklists" className="text-xs sm:text-sm px-2 sm:px-3 py-2">
+            <span className="hidden sm:inline">Checklists</span>
+            <span className="sm:hidden">Checks</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="test-results" className="space-y-4">
