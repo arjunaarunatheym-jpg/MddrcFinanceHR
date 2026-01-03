@@ -192,9 +192,9 @@ class TestPhase3ATrainerChecklists:
             items = []
             for item_name in CHECKLIST_ITEMS:
                 items.append({
-                    "name": item_name,
+                    "item": item_name,
                     "status": "good",
-                    "notes": "",
+                    "comments": "",
                     "photo_url": None
                 })
             
@@ -234,9 +234,9 @@ class TestPhase3ATrainerChecklists:
             items = []
             for item_name in CHECKLIST_ITEMS:
                 items.append({
-                    "name": item_name,
+                    "item": item_name,
                     "status": "good",
-                    "notes": "",
+                    "comments": "",
                     "photo_url": None
                 })
             
