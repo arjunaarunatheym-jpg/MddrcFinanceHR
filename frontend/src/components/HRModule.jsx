@@ -412,6 +412,7 @@ const HRModule = () => {
           <TabsTrigger value="periods">Payroll Periods</TabsTrigger>
           <TabsTrigger value="payslips">Payslips</TabsTrigger>
           <TabsTrigger value="pay-advice">Pay Advice</TabsTrigger>
+          <TabsTrigger value="rates">Statutory Rates</TabsTrigger>
         </TabsList>
 
         {/* Staff Management Tab */}
