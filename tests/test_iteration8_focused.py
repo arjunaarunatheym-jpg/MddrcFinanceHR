@@ -217,13 +217,13 @@ class TestPartCSupervisorReportAccess:
         print(f"Response: {response.json()}")
         assert response.status_code == 200
         data = response.json()
-        assert "token" in data
-        return data["token"]
+        assert "access_token" in data
+        return get_token(data)
     
     def test_02_supervisor_view_sessions(self):
         """Test supervisor can view their company's sessions"""
         login_resp = requests.post(f"{BASE_URL}/api/auth/login", json=CREDENTIALS["supervisor"])
-        token = login_resp.json()["token"]
+        token = get_token(login_resp.json())
         headers = {"Authorization": f"Bearer {token}"}
         
         response = requests.get(f"{BASE_URL}/api/supervisor/sessions", headers=headers)
@@ -240,7 +240,7 @@ class TestPartCSupervisorReportAccess:
     def test_03_supervisor_view_training_report_sessions(self):
         """Test supervisor can view training report sessions"""
         login_resp = requests.post(f"{BASE_URL}/api/auth/login", json=CREDENTIALS["supervisor"])
-        token = login_resp.json()["token"]
+        token = get_token(login_resp.json())
         headers = {"Authorization": f"Bearer {token}"}
         
         response = requests.get(f"{BASE_URL}/api/training-reports/supervisor/sessions", headers=headers)
@@ -257,7 +257,7 @@ class TestPartCSupervisorReportAccess:
     def test_04_supervisor_view_session_attendance(self):
         """Test supervisor can view session attendance"""
         login_resp = requests.post(f"{BASE_URL}/api/auth/login", json=CREDENTIALS["supervisor"])
-        token = login_resp.json()["token"]
+        token = get_token(login_resp.json())
         headers = {"Authorization": f"Bearer {token}"}
         
         response = requests.get(f"{BASE_URL}/api/supervisor/attendance/{SESSION_ID}", headers=headers)
