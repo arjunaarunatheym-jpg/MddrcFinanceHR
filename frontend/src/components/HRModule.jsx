@@ -45,9 +45,17 @@ const HRModule = () => {
     commission: 0,
     pcb: 0,
     loan_deduction: 0,
-    other_deductions: 0
+    other_deductions: 0,
+    // Editable statutory values
+    epf_employee: null,
+    epf_employer: null,
+    socso_employee: null,
+    socso_employer: null,
+    eis_employee: null,
+    eis_employer: null
   });
   const [viewPayslip, setViewPayslip] = useState(null);
+  const [printPayslip, setPrintPayslip] = useState(null);
   
   // Pay advice state
   const [payAdviceList, setPayAdviceList] = useState([]);
@@ -59,11 +67,18 @@ const HRModule = () => {
     month: new Date().getMonth() + 1
   });
   const [viewPayAdvice, setViewPayAdvice] = useState(null);
+  const [printPayAdvice, setPrintPayAdvice] = useState(null);
+  
+  // Statutory rates upload state
+  const [statutoryRates, setStatutoryRates] = useState({ epf: [], socso: [], eis: [] });
+  const fileInputRef = useRef(null);
+  const [uploadRateType, setUploadRateType] = useState('epf');
   
   const [formData, setFormData] = useState({
     user_id: '',
     employee_id: '',
     full_name: '',
+    nric: '',
     designation: '',
     department: '',
     date_joined: '',
