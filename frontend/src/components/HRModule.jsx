@@ -248,7 +248,7 @@ const HRModule = () => {
   const resetForm = () => {
     setEditingStaff(null);
     setFormData({
-      user_id: '', employee_id: '', full_name: '', designation: '', department: '',
+      user_id: '', employee_id: '', full_name: '', nric: '', designation: '', department: '',
       date_joined: '', date_of_birth: '', bank_name: '', bank_account: '', basic_salary: '',
       housing_allowance: '', transport_allowance: '', meal_allowance: '', phone_allowance: '',
       other_allowance: '', epf_number: '', socso_number: '', tax_number: '',
@@ -279,13 +279,57 @@ const HRModule = () => {
     }
   };
 
+  // Calculate statutory deductions for preview
+  const calculateStatutory = (staffMember) => {
+    const basic = staffMember?.basic_salary || 0;
+    const gross = basic + (staffMember?.housing_allowance || 0) + (staffMember?.transport_allowance || 0) + 
+                  (staffMember?.meal_allowance || 0) + (staffMember?.phone_allowance || 0) + (staffMember?.other_allowance || 0);
+    
+    // Estimate age from NRIC
+    const nric = staffMember?.nric || '';
+    let age = 30;
+    if (nric.length >= 6) {
+      const yy = parseInt(nric.substring(0, 2));
+      const currentYY = new Date().getFullYear() % 100;
+      const year = yy > currentYY + 5 ? 1900 + yy : 2000 + yy;
+      age = new Date().getFullYear() - year;
+    }
+    
+    const isAbove60 = age >= 60;
+    const epfEeRate = isAbove60 ? 0 : 11;
+    const epfErRate = isAbove60 ? 4 : (basic <= 5000 ? 13 : 12);
+    const socsoEeRate = isAbove60 ? 0 : 0.5;
+    const socsoErRate = isAbove60 ? 1.25 : 1.75;
+    const eisEeRate = isAbove60 ? 0 : 0.2;
+    const eisErRate = isAbove60 ? 0 : 0.2;
+    
+    const cappedGross = Math.min(gross, 6000);
+    
+    return {
+      epf_employee: Math.round(basic * epfEeRate) / 100,
+      epf_employer: Math.round(basic * epfErRate) / 100,
+      socso_employee: Math.round(cappedGross * socsoEeRate) / 100,
+      socso_employer: Math.round(cappedGross * socsoErRate) / 100,
+      eis_employee: Math.round(cappedGross * eisEeRate) / 100,
+      eis_employer: Math.round(cappedGross * eisErRate) / 100,
+      age
+    };
+  };
+
   // Payslip Generation
   const openPayslipDialog = (staffMember) => {
     setSelectedStaffForPayslip(staffMember);
+    const calc = calculateStatutory(staffMember);
     setPayslipForm({
       year: new Date().getFullYear(),
       month: new Date().getMonth() + 1,
-      overtime: 0, bonus: 0, commission: 0, pcb: 0, loan_deduction: 0, other_deductions: 0
+      overtime: 0, bonus: 0, commission: 0, pcb: 0, loan_deduction: 0, other_deductions: 0,
+      epf_employee: calc.epf_employee,
+      epf_employer: calc.epf_employer,
+      socso_employee: calc.socso_employee,
+      socso_employer: calc.socso_employer,
+      eis_employee: calc.eis_employee,
+      eis_employer: calc.eis_employer
     });
     setPayslipDialogOpen(true);
   };
