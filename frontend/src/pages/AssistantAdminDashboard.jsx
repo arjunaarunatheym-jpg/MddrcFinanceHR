@@ -1253,6 +1253,11 @@ const AssistantAdminDashboard = ({ user, onLogout }) => {
             </Card>
           </TabsContent>
 
+          {/* My Payroll Tab */}
+          <TabsContent value="my-payroll">
+            <MyPayroll />
+          </TabsContent>
+
         </Tabs>
       </div>
     </div>
