@@ -1184,28 +1184,33 @@ const DataManagement = ({ user }) => {
 
       {/* Main Tab Navigation */}
       <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="space-y-4">
-        <TabsList className={`grid w-full ${hasFinanceAccess ? "grid-cols-5" : "grid-cols-1"}`}>
-          <TabsTrigger value="sessions-data" className="flex items-center gap-2">
-            <Database className="h-4 w-4" />
-            Sessions Data Management
+        <TabsList className={`flex flex-wrap gap-1 h-auto p-1 ${hasFinanceAccess ? "" : ""}`}>
+          <TabsTrigger value="sessions-data" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 py-2">
+            <Database className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Sessions Data</span>
+            <span className="sm:hidden">Data</span>
           </TabsTrigger>
           {hasFinanceAccess && (
             <>
-              <TabsTrigger value="invoice-management" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Invoice Management
+              <TabsTrigger value="invoice-management" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 py-2">
+                <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Invoices</span>
+                <span className="sm:hidden">Inv</span>
               </TabsTrigger>
-              <TabsTrigger value="payment-management" className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4" />
-                Payment Management
+              <TabsTrigger value="payment-management" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 py-2">
+                <CreditCard className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Payments</span>
+                <span className="sm:hidden">Pay</span>
               </TabsTrigger>
-              <TabsTrigger value="settings" className="flex items-center gap-2">
-                <Settings className="h-4 w-4" />
-                Settings
+              <TabsTrigger value="settings" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 py-2">
+                <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Settings</span>
+                <span className="sm:hidden">Set</span>
               </TabsTrigger>
-              <TabsTrigger value="audit-trail" className="flex items-center gap-2">
-                <History className="h-4 w-4" />
-                Audit Trail
+              <TabsTrigger value="audit-trail" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 py-2">
+                <History className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Audit Trail</span>
+                <span className="sm:hidden">Audit</span>
               </TabsTrigger>
             </>
           )}
