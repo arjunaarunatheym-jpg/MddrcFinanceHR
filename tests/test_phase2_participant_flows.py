@@ -371,10 +371,18 @@ class TestCoordinatorAttendance:
         """Mark participants 14 & 15 as absent"""
         headers = {"Authorization": f"Bearer {coordinator_token}"}
         
-        # Get participant IDs for 14 & 15
-        response = requests.get(f"{BASE_URL}/api/sessions/{SESSION_ID}/participants", headers=headers)
-        assert response.status_code == 200
-        participants = response.json()
+        # Get all users and filter by session (coordinator approach)
+        users_response = requests.get(f"{BASE_URL}/api/users", headers=headers)
+        assert users_response.status_code == 200
+        all_users = users_response.json()
+        
+        # Get session to find participant IDs
+        session_response = requests.get(f"{BASE_URL}/api/sessions/{SESSION_ID}", headers=headers)
+        assert session_response.status_code == 200
+        session = session_response.json()
+        
+        # Filter participants for this session
+        participants = [u for u in all_users if u.get("id") in session.get("participant_ids", [])]
         
         # Find participants 14 and 15 by IC number
         absent_ics = ["900101-01-0014", "900101-01-0015"]
