@@ -3092,9 +3092,12 @@ const CoordinatorDashboard = ({ user, onLogout }) => {
               </Card>
             </TabsContent>
 
-            {/* Payroll Tab - Self-Service */}
-            <TabsContent value="payroll">
-              <MyPayroll />
+            {/* My Earnings Tab - Combined Income & Payroll */}
+            <TabsContent value="my-earnings">
+              <MyEarnings 
+                userId={user.id} 
+                userRoles={[user.role, ...(user.additional_roles || [])]}
+              />
             </TabsContent>
 
           </Tabs>
