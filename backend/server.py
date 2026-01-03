@@ -10223,9 +10223,11 @@ async def get_staff(current_user: User = Depends(get_current_user)):
         if staff.get("user_id"):
             user = await db.users.find_one({"id": staff["user_id"]}, {"_id": 0, "full_name": 1, "email": 1, "id_number": 1})
             if user:
-                staff["full_name"] = user.get("full_name")
+                staff["full_name"] = user.get("full_name") or staff.get("full_name")
                 staff["email"] = user.get("email")
-                staff["ic_number"] = user.get("id_number")
+                # Use id_number as nric if not already set
+                if not staff.get("nric"):
+                    staff["nric"] = user.get("id_number", "")
     
     return staff_records
 
