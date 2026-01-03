@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Badge } from '../components/ui/badge';
 import { 
   DollarSign, Users, Truck, Calculator, Plus, Trash2, Save, 
-  FileText, TrendingUp, User, Building2, Calendar, RefreshCw, FileX, Printer
+  FileText, TrendingUp, User, Building2, Calendar, RefreshCw, FileX, Download
 } from 'lucide-react';
 import ClaimFormPrint from './ClaimFormPrint';
 
