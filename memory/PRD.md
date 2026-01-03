@@ -21,6 +21,23 @@ A comprehensive training management platform for MDDRC (Malaysian Defensive Driv
 
 ### January 3, 2026 - P0, P1, P2 Features Complete
 
+#### Profit/Loss Ledger (P2 - NEW)
+- **Monthly P&L Comparison**: All 12 months displayed with Income, Expenses, Net Profit, Status
+- **YTD Summary Cards**: Total Income, Total Expenses, Net Profit, Profit Margin %
+- **Income Sources**: Invoices (auto-aggregated) + Manual one-off entries
+- **Expense Tracking**: Payroll, Session Workers, Session Expenses, Petty Cash, Manual entries
+- **Expense Breakdown**: Visual category breakdown with percentages and progress bars
+- Backend APIs: `/finance/profit-loss`, `/finance/manual-income`, `/finance/manual-expenses`
+
+#### Petty Cash Module (P2 - NEW)
+- **Float Management**: Set initial float amount, current balance tracking
+- **Expense Recording**: Date, description, amount, category, notes
+- **Category Tracking**: Office Supplies, Transport, Refreshments, Postage, Printing, etc.
+- **Approval Workflow**: Auto-approve under threshold (default RM 100), manual approval for larger expenses
+- **Reconciliation**: Compare physical count with system balance, variance tracking, adjustment transactions
+- **Audit Trail**: Full transaction history with who created/approved
+- Backend APIs: `/finance/petty-cash/*` (settings, transaction, approve, reject, reconcile, summary)
+
 #### EA Forms Generation (P0)
 - **EA Forms Tab** in HR Module: Admin can select staff member and year to generate annual remuneration statement
 - Displays: Employee Particulars, Annual Gross Income, Annual Deductions (Employee), Employer Contributions, Monthly Breakdown
