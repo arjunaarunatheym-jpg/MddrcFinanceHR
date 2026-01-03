@@ -11559,7 +11559,12 @@ async def get_profit_loss_report(
     month: int = None,
     current_user: User = Depends(get_current_user)
 ):
-    """Get Profit/Loss report - monthly breakdown and YTD"""
+    """Get Profit/Loss report - monthly breakdown and YTD
+    
+    IMPORTANT: All session-related expenses (trainer fees, coordinator fees, 
+    marketing commissions, session expenses) are attributed to the month based 
+    on the SESSION'S START DATE, not the record's created_at date.
+    """
     if current_user.role not in ["admin", "finance"]:
         raise HTTPException(status_code=403, detail="Access denied")
     
@@ -11570,10 +11575,21 @@ async def get_profit_loss_report(
     start_date = f"{year}-01-01"
     end_date = f"{year}-12-31"
     
-    # Get all invoices for the year (INCOME)
-    invoices = await db.invoices.find({
-        "created_at": {"$gte": start_date, "$lte": end_date + "T23:59:59"}
-    }, {"_id": 0}).to_list(10000)
+    # Get all invoices for the year (INCOME) - filter by session start date
+    # First get sessions for the year to map invoice amounts to correct months
+    sessions = await db.sessions.find({
+        "start_date": {"$gte": start_date, "$lte": end_date}
+    }, {"_id": 0, "id": 1, "start_date": 1, "invoice_id": 1}).to_list(10000)
+    
+    session_date_map = {}  # session_id -> start_date
+    invoice_session_map = {}  # invoice_id -> session_id
+    for s in sessions:
+        session_date_map[s.get("id")] = s.get("start_date", "")
+        if s.get("invoice_id"):
+            invoice_session_map[s.get("invoice_id")] = s.get("id")
+    
+    # Get all invoices
+    invoices = await db.invoices.find({}, {"_id": 0}).to_list(10000)
     
     # Get manual income entries
     manual_income = await db.manual_income.find({
@@ -11590,24 +11606,22 @@ async def get_profit_loss_report(
         "year": year
     }, {"_id": 0}).to_list(1000)
     
-    # Get session expenses (F&B, HRDCorp, Printing, Venue, etc - NOT trainer/coordinator fees)
-    session_expenses = await db.session_expenses.find({
-        "created_at": {"$gte": start_date, "$lte": end_date + "T23:59:59"}
-    }, {"_id": 0}).to_list(10000)
-    
-    # Get trainer fees from trainer_fees collection
+    # Get trainer fees - filter by session_start_date field
     trainer_fees = await db.trainer_fees.find({
-        "created_at": {"$gte": start_date, "$lte": end_date + "T23:59:59"}
+        "session_start_date": {"$gte": start_date, "$lte": end_date}
     }, {"_id": 0}).to_list(10000)
     
-    # Get coordinator fees from coordinator_fees collection
+    # Get coordinator fees - filter by session_start_date field
     coordinator_fees = await db.coordinator_fees.find({
-        "created_at": {"$gte": start_date, "$lte": end_date + "T23:59:59"}
+        "session_start_date": {"$gte": start_date, "$lte": end_date}
     }, {"_id": 0}).to_list(10000)
     
-    # Get marketing commissions - recalculate from costing to ensure accuracy
+    # Get session expenses - we need to join with sessions to get correct month
+    all_session_expenses = await db.session_expenses.find({}, {"_id": 0}).to_list(10000)
+    
+    # Get marketing commissions - filter by session_start_date field
     marketing_commissions = await db.marketing_commissions.find({
-        "updated_at": {"$gte": start_date, "$lte": end_date + "T23:59:59"},
+        "session_start_date": {"$gte": start_date, "$lte": end_date},
         "status": {"$in": ["approved", "paid"]}
     }, {"_id": 0}).to_list(10000)
     
@@ -11636,9 +11650,9 @@ async def get_profit_loss_report(
             },
             "expenses": {
                 "payroll": 0,
-                "session_workers": 0,  # Trainer + Coordinator fees via pay_advice
+                "session_workers": 0,  # Trainer + Coordinator fees
                 "marketing_commissions": 0,
-                "session_expenses": 0,  # F&B, venue, etc
+                "session_expenses": 0,  # F&B, venue, HRDCorp levy, etc
                 "petty_cash": 0,
                 "manual": 0,
                 "total": 0
@@ -11646,14 +11660,27 @@ async def get_profit_loss_report(
             "net_profit": 0
         }
     
-    # Process invoices (income)
+    # Process invoices (income) - attribute to session's start date month
     for inv in invoices:
         try:
-            inv_date = inv.get("created_at", "")[:10]
-            inv_month = int(inv_date[5:7]) if len(inv_date) >= 7 else 1
+            if inv.get("status") not in ["approved", "paid"]:
+                continue
             amount = float(inv.get("total_amount") or inv.get("amount") or 0)
-            if inv.get("status") in ["approved", "paid"]:
-                monthly_data[inv_month]["income"]["invoices"] += amount
+            inv_id = inv.get("id")
+            
+            # Try to find session for this invoice to get correct month
+            session_id = invoice_session_map.get(inv_id)
+            if session_id and session_id in session_date_map:
+                session_date = session_date_map[session_id]
+                if session_date.startswith(str(year)):
+                    inv_month = int(session_date[5:7])
+                    monthly_data[inv_month]["income"]["invoices"] += amount
+            else:
+                # Fallback to invoice created_at
+                inv_date = inv.get("created_at", "")[:10]
+                if inv_date.startswith(str(year)):
+                    inv_month = int(inv_date[5:7]) if len(inv_date) >= 7 else 1
+                    monthly_data[inv_month]["income"]["invoices"] += amount
         except:
             pass
     
@@ -11678,7 +11705,7 @@ async def get_profit_loss_report(
         except:
             pass
     
-    # Process pay advice (session workers)
+    # Process pay advice (session workers) - only if pay advice system is used
     for pa in pay_advice:
         try:
             pa_month = pa.get("month", 1)
@@ -11686,61 +11713,53 @@ async def get_profit_loss_report(
         except:
             pass
     
-    # Process trainer fees
+    # Process trainer fees - use session_start_date for month attribution
     for tf in trainer_fees:
         try:
-            tf_date = tf.get("created_at", "")[:10]
+            # Use session_start_date field (already filtered by year)
+            tf_date = tf.get("session_start_date", "")
+            if not tf_date:
+                continue
             tf_month = int(tf_date[5:7]) if len(tf_date) >= 7 else 1
             amount = float(tf.get("fee_amount") or 0)
             monthly_data[tf_month]["expenses"]["session_workers"] += amount
         except:
             pass
     
-    # Process coordinator fees
+    # Process coordinator fees - use session_start_date for month attribution
     for cf in coordinator_fees:
         try:
-            cf_date = cf.get("created_at", "")[:10]
+            # Use session_start_date field (already filtered by year)
+            cf_date = cf.get("session_start_date", "")
+            if not cf_date:
+                continue
             cf_month = int(cf_date[5:7]) if len(cf_date) >= 7 else 1
             amount = float(cf.get("total_fee") or 0)
             monthly_data[cf_month]["expenses"]["session_workers"] += amount
         except:
             pass
     
-    # Process session expenses (F&B, venue, etc)
-    for exp in session_expenses:
+    # Process session expenses (F&B, venue, HRDCorp, etc) - use session's start_date
+    for exp in all_session_expenses:
         try:
-            exp_date = exp.get("created_at", "")[:10]
-            exp_month = int(exp_date[5:7]) if len(exp_date) >= 7 else 1
+            session_id = exp.get("session_id")
+            session_date = session_date_map.get(session_id, "")
+            if not session_date or not session_date.startswith(str(year)):
+                continue
+            exp_month = int(session_date[5:7]) if len(session_date) >= 7 else 1
             # Use actual_amount first, then estimated_amount as fallback
             amount = float(exp.get("actual_amount") or exp.get("estimated_amount") or exp.get("amount") or 0)
             monthly_data[exp_month]["expenses"]["session_expenses"] += amount
         except:
             pass
     
-    # Process trainer fees - add to session_workers
-    for tf in trainer_fees:
-        try:
-            tf_date = tf.get("created_at", "")[:10]
-            tf_month = int(tf_date[5:7]) if len(tf_date) >= 7 else 1
-            amount = float(tf.get("fee_amount") or 0)
-            monthly_data[tf_month]["expenses"]["session_workers"] += amount
-        except:
-            pass
-    
-    # Process coordinator fees - add to session_workers
-    for cf in coordinator_fees:
-        try:
-            cf_date = cf.get("created_at", "")[:10]
-            cf_month = int(cf_date[5:7]) if len(cf_date) >= 7 else 1
-            amount = float(cf.get("total_fee") or 0)
-            monthly_data[cf_month]["expenses"]["session_workers"] += amount
-        except:
-            pass
-    
-    # Process marketing commissions
+    # Process marketing commissions - use session_start_date for month attribution
     for mc in marketing_commissions:
         try:
-            mc_date = mc.get("updated_at", "")[:10]
+            # Use session_start_date field (already filtered by year)
+            mc_date = mc.get("session_start_date", "")
+            if not mc_date:
+                continue
             mc_month = int(mc_date[5:7]) if len(mc_date) >= 7 else 1
             amount = float(mc.get("calculated_amount") or 0)
             monthly_data[mc_month]["expenses"]["marketing_commissions"] += amount
