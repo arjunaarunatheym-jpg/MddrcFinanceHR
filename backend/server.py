@@ -7165,7 +7165,7 @@ async def generate_training_report_content(session_id: str, program_id: str, com
         }
     }
     
-    # Create prompt for GPT-5
+    # Create prompt for AI report generation
     prompt = f"""Generate a comprehensive Defensive Driving/Riding Training Report based on the following data:
 
 TRAINING DETAILS:
