@@ -1037,6 +1037,11 @@ const CoordinatorDashboard = ({ user, onLogout }) => {
                 <span className="hidden sm:inline">My Income</span>
                 <span className="sm:hidden">Income</span>
               </TabsTrigger>
+              <TabsTrigger value="payroll" className="flex-1 min-w-[100px] sm:min-w-0 bg-gradient-to-r from-purple-500 to-indigo-500 text-white">
+                <FileText className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">My Payroll</span>
+                <span className="sm:hidden">Payroll</span>
+              </TabsTrigger>
             </TabsList>
 
             {/* Tab 1: My Sessions */}
