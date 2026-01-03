@@ -15,7 +15,7 @@ import { Plus, Users, LogOut, Calendar, BookOpen, ClipboardList, ClipboardCheck,
 import TestManagement from "./TestManagement";
 import ChecklistManagement from "./ChecklistManagement";
 import FeedbackManagement from "./FeedbackManagement";
-import MyPayroll from "../components/MyPayroll";
+import MyEarnings from "../components/MyEarnings";
 
 const AssistantAdminDashboard = ({ user, onLogout }) => {
   const navigate = useNavigate();
