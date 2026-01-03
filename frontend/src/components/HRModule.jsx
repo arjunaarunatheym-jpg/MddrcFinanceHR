@@ -723,13 +723,13 @@ const HRModule = () => {
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-4 flex-wrap">
-          <TabsTrigger value="staff">Staff</TabsTrigger>
-          <TabsTrigger value="periods">Periods</TabsTrigger>
-          <TabsTrigger value="payslips">Payslips</TabsTrigger>
-          <TabsTrigger value="pay-advice">Pay Advice</TabsTrigger>
-          <TabsTrigger value="ea-forms">EA Forms</TabsTrigger>
-          <TabsTrigger value="rates">Rates</TabsTrigger>
+        <TabsList className="mb-4 flex flex-wrap gap-1 h-auto w-full justify-start bg-gray-100 p-2 rounded-lg">
+          <TabsTrigger value="staff" className="flex-shrink-0">Staff</TabsTrigger>
+          <TabsTrigger value="periods" className="flex-shrink-0">Periods</TabsTrigger>
+          <TabsTrigger value="payslips" className="flex-shrink-0">Payslips</TabsTrigger>
+          <TabsTrigger value="pay-advice" className="flex-shrink-0">Pay Advice</TabsTrigger>
+          <TabsTrigger value="ea-forms" className="flex-shrink-0">EA Forms</TabsTrigger>
+          <TabsTrigger value="rates" className="flex-shrink-0">Rates</TabsTrigger>
         </TabsList>
 
         {/* Staff Management Tab */}
