@@ -1,8 +1,9 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, Form
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, Form, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
@@ -21,6 +22,133 @@ from docx import Document
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 import json
 import asyncio
+import re
+import html
+from collections import defaultdict
+import time
+import hashlib
+
+# ==================== SECURITY CONFIGURATION ====================
+# Rate limiting storage (in-memory, consider Redis for production)
+rate_limit_storage = defaultdict(list)
+RATE_LIMIT_REQUESTS = 100  # Max requests per window
+RATE_LIMIT_WINDOW = 60  # Window in seconds
+BLOCKED_IPS = set()  # Manually blocked IPs
+FAILED_LOGIN_ATTEMPTS = defaultdict(list)
+MAX_FAILED_LOGINS = 5  # Max failed attempts before lockout
+LOGIN_LOCKOUT_TIME = 300  # Lockout time in seconds (5 minutes)
+
+# Security patterns to detect malicious input
+MALICIOUS_PATTERNS = [
+    r'<script[^>]*>.*?</script>',  # XSS script tags
+    r'javascript:',  # JavaScript protocol
+    r'on\w+\s*=',  # Event handlers (onclick, onerror, etc.)
+    r'\$where',  # MongoDB injection
+    r'\$gt|\$lt|\$ne|\$eq|\$regex',  # MongoDB operators in strings
+    r';\s*drop\s+',  # SQL-like injection attempts
+    r';\s*delete\s+',
+    r'union\s+select',
+    r'exec\s*\(',  # Code execution attempts
+    r'eval\s*\(',
+    r'__proto__',  # Prototype pollution
+    r'constructor\s*\[',
+]
+
+def is_malicious_input(value: str) -> bool:
+    """Check if input contains malicious patterns"""
+    if not isinstance(value, str):
+        return False
+    value_lower = value.lower()
+    for pattern in MALICIOUS_PATTERNS:
+        if re.search(pattern, value_lower, re.IGNORECASE):
+            return True
+    return False
+
+def sanitize_input(value):
+    """Sanitize input to prevent XSS and injection attacks"""
+    if isinstance(value, str):
+        # HTML escape
+        value = html.escape(value)
+        # Remove null bytes
+        value = value.replace('\x00', '')
+        # Limit length to prevent DoS
+        if len(value) > 50000:
+            value = value[:50000]
+    elif isinstance(value, dict):
+        return {k: sanitize_input(v) for k, v in value.items() if not k.startswith('$')}
+    elif isinstance(value, list):
+        return [sanitize_input(v) for v in value]
+    return value
+
+def check_rate_limit(ip: str) -> bool:
+    """Check if IP has exceeded rate limit"""
+    current_time = time.time()
+    # Clean old entries
+    rate_limit_storage[ip] = [t for t in rate_limit_storage[ip] if current_time - t < RATE_LIMIT_WINDOW]
+    
+    if len(rate_limit_storage[ip]) >= RATE_LIMIT_REQUESTS:
+        return False  # Rate limited
+    
+    rate_limit_storage[ip].append(current_time)
+    return True
+
+def check_login_lockout(ip: str) -> tuple[bool, int]:
+    """Check if IP is locked out due to failed logins. Returns (is_locked, remaining_seconds)"""
+    current_time = time.time()
+    # Clean old entries
+    FAILED_LOGIN_ATTEMPTS[ip] = [t for t in FAILED_LOGIN_ATTEMPTS[ip] if current_time - t < LOGIN_LOCKOUT_TIME]
+    
+    if len(FAILED_LOGIN_ATTEMPTS[ip]) >= MAX_FAILED_LOGINS:
+        oldest = min(FAILED_LOGIN_ATTEMPTS[ip])
+        remaining = int(LOGIN_LOCKOUT_TIME - (current_time - oldest))
+        return True, max(0, remaining)
+    return False, 0
+
+def record_failed_login(ip: str):
+    """Record a failed login attempt"""
+    FAILED_LOGIN_ATTEMPTS[ip].append(time.time())
+
+def clear_failed_logins(ip: str):
+    """Clear failed login attempts after successful login"""
+    FAILED_LOGIN_ATTEMPTS[ip] = []
+
+
+# ==================== SECURITY MIDDLEWARE ====================
+class SecurityMiddleware(BaseHTTPMiddleware):
+    """Comprehensive security middleware"""
+    
+    async def dispatch(self, request: Request, call_next):
+        client_ip = request.client.host if request.client else "unknown"
+        
+        # Check if IP is blocked
+        if client_ip in BLOCKED_IPS:
+            return JSONResponse(
+                status_code=403,
+                content={"detail": "Access denied"}
+            )
+        
+        # Rate limiting (skip for health checks)
+        if not request.url.path.endswith('/health'):
+            if not check_rate_limit(client_ip):
+                logging.warning(f"Rate limit exceeded for IP: {client_ip}")
+                return JSONResponse(
+                    status_code=429,
+                    content={"detail": "Too many requests. Please try again later."}
+                )
+        
+        # Add security headers to response
+        response = await call_next(request)
+        
+        # Security headers
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+        
+        return response
+
 
 # Malaysian Timezone (UTC+8)
 MALAYSIA_TZ = ZoneInfo("Asia/Kuala_Lumpur")
