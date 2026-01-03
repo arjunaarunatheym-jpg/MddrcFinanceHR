@@ -90,6 +90,21 @@ const ResultsSummary = () => {
     );
   }
 
+  // Safety check for null/undefined summary
+  if (!summary) {
+    return (
+      <div className="min-h-screen flex items-center justify-center flex-col gap-4">
+        <p className="text-lg text-gray-600">No results data available</p>
+        <Button variant="outline" onClick={() => navigate(-1)}>
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Go Back
+        </Button>
+      </div>
+    );
+  }
+
+  const participants = summary.participants || [];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-4 sm:py-8">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
@@ -104,8 +119,8 @@ const ResultsSummary = () => {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mt-3 sm:mt-4">{summary.session_name}</h1>
-          <p className="text-sm sm:text-base text-gray-600">Results Summary - {summary.participants.length} Participants</p>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mt-3 sm:mt-4">{summary.session_name || 'Session Results'}</h1>
+          <p className="text-sm sm:text-base text-gray-600">Results Summary - {participants.length} Participants</p>
         </div>
 
         {/* Summary Stats */}
@@ -116,7 +131,7 @@ const ResultsSummary = () => {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold text-blue-600">
-                {summary.participants.filter(p => p.pre_test && p.pre_test.completed).length} / {summary.participants.length}
+                {participants.filter(p => p?.pre_test?.completed).length} / {participants.length}
               </p>
             </CardContent>
           </Card>
@@ -126,7 +141,7 @@ const ResultsSummary = () => {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold text-green-600">
-                {summary.participants.filter(p => p.post_test && p.post_test.completed).length} / {summary.participants.length}
+                {participants.filter(p => p?.post_test?.completed).length} / {participants.length}
               </p>
             </CardContent>
           </Card>
@@ -136,7 +151,7 @@ const ResultsSummary = () => {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold text-purple-600">
-                {summary.participants.filter(p => p.feedback_submitted).length} / {summary.participants.length}
+                {participants.filter(p => p?.feedback_submitted).length} / {participants.length}
               </p>
             </CardContent>
           </Card>
@@ -150,34 +165,36 @@ const ResultsSummary = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {summary.participants.map((participant) => (
-                <div key={participant.participant.id}>
+              {participants.length === 0 ? (
+                <p className="text-center text-gray-500 py-8">No participants found for this session</p>
+              ) : participants.map((participant) => (
+                <div key={participant?.participant?.id || Math.random()}>
                   {/* Main Row */}
                   <div
                     className="p-4 bg-gray-50 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors"
                     onClick={() => handleToggleExpand(participant)}
-                    data-testid={`participant-${participant.participant.id}`}
+                    data-testid={`participant-${participant?.participant?.id || 'unknown'}`}
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       <div className="flex items-center gap-3 min-w-0">
-                        {expandedParticipant === participant.participant.id ? (
+                        {expandedParticipant === participant?.participant?.id ? (
                           <ChevronDown className="w-5 h-5 text-gray-600 flex-shrink-0" />
                         ) : (
                           <ChevronRight className="w-5 h-5 text-gray-600 flex-shrink-0" />
                         )}
                         <div className="min-w-0">
-                          <h3 className="font-semibold text-gray-900 truncate">{participant.participant.name}</h3>
-                          <p className="text-sm text-gray-500 truncate">{participant.participant.email}</p>
+                          <h3 className="font-semibold text-gray-900 truncate">{participant?.participant?.name || 'Unknown'}</h3>
+                          <p className="text-sm text-gray-500 truncate">{participant?.participant?.email || '-'}</p>
                         </div>
                       </div>
                       <div className="flex gap-4 sm:gap-6 text-sm ml-8 sm:ml-0">
                         {/* Pre-Test */}
                         <div className="text-center flex-1 sm:flex-none">
                           <p className="text-xs text-gray-500 mb-1">Pre-Test</p>
-                          {participant.pre_test && participant.pre_test.completed ? (
+                          {participant?.pre_test?.completed ? (
                             <div className="flex items-center gap-1 justify-center">
                               <span className="font-semibold text-xs sm:text-sm">
-                                {participant.pre_test.correct}/{participant.pre_test.total}
+                                {participant.pre_test.correct || 0}/{participant.pre_test.total || 0}
                               </span>
                               {participant.pre_test.passed ? (
                                 <CheckCircle className="w-4 h-4 text-green-600" />
@@ -192,10 +209,10 @@ const ResultsSummary = () => {
                         {/* Post-Test */}
                         <div className="text-center flex-1 sm:flex-none">
                           <p className="text-xs text-gray-500 mb-1">Post-Test</p>
-                          {participant.post_test && participant.post_test.completed ? (
+                          {participant?.post_test?.completed ? (
                             <div className="flex items-center gap-1 justify-center">
                               <span className="font-semibold text-xs sm:text-sm">
-                                {participant.post_test.correct}/{participant.post_test.total}
+                                {participant.post_test.correct || 0}/{participant.post_test.total || 0}
                               </span>
                               {participant.post_test.passed ? (
                                 <CheckCircle className="w-4 h-4 text-green-600" />
@@ -210,7 +227,7 @@ const ResultsSummary = () => {
                         {/* Feedback */}
                         <div className="text-center flex-1 sm:flex-none">
                           <p className="text-xs text-gray-500 mb-1">Feedback</p>
-                          {participant.feedback_submitted ? (
+                          {participant?.feedback_submitted ? (
                             <CheckCircle className="w-5 h-5 text-green-600 mx-auto" />
                           ) : (
                             <XCircle className="w-5 h-5 text-gray-400 mx-auto" />
@@ -221,10 +238,10 @@ const ResultsSummary = () => {
                   </div>
 
                   {/* Expanded Section Buttons */}
-                  {expandedParticipant === participant.participant.id && (
+                  {expandedParticipant === participant?.participant?.id && (
                     <div className="ml-4 sm:ml-8 mt-3 space-y-2">
                       <div className="flex flex-wrap gap-2">
-                        {participant.pre_test && participant.pre_test.completed && (
+                        {participant?.pre_test?.completed && (
                           <Button
                             size="sm"
                             variant={expandedSection === 'pre-test' ? 'default' : 'outline'}
@@ -234,7 +251,7 @@ const ResultsSummary = () => {
                             Pre-Test Details
                           </Button>
                         )}
-                        {participant.post_test && participant.post_test.completed && (
+                        {participant?.post_test?.completed && (
                           <Button
                             size="sm"
                             variant={expandedSection === 'post-test' ? 'default' : 'outline'}
@@ -244,7 +261,7 @@ const ResultsSummary = () => {
                             Post-Test Details
                           </Button>
                         )}
-                        {participant.feedback_submitted && (
+                        {participant?.feedback_submitted && (
                           <Button
                             size="sm"
                             variant={expandedSection === 'feedback' ? 'default' : 'outline'}
