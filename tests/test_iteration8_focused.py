@@ -39,15 +39,15 @@ class TestPartATrainerChecklistAccess:
         print(f"Response: {response.json()}")
         assert response.status_code == 200
         data = response.json()
-        assert "token" in data
+        assert "access_token" in data
         assert data.get("user", {}).get("role") == "trainer"
-        return data["token"]
+        return get_token(data)
     
     def test_02_trainer_vijay_can_see_session(self):
         """Test Vijay can see RapidKL session"""
         # Login first
         login_resp = requests.post(f"{BASE_URL}/api/auth/login", json=CREDENTIALS["trainer_vijay"])
-        token = login_resp.json()["token"]
+        token = get_token(login_resp.json())
         headers = {"Authorization": f"Bearer {token}"}
         
         # Get session
@@ -65,7 +65,7 @@ class TestPartATrainerChecklistAccess:
     def test_03_trainer_vijay_get_assigned_participants(self):
         """Test Vijay can get assigned participants for checklist"""
         login_resp = requests.post(f"{BASE_URL}/api/auth/login", json=CREDENTIALS["trainer_vijay"])
-        token = login_resp.json()["token"]
+        token = get_token(login_resp.json())
         headers = {"Authorization": f"Bearer {token}"}
         
         response = requests.get(f"{BASE_URL}/api/trainer-checklist/{SESSION_ID}/assigned-participants", headers=headers)
@@ -87,13 +87,13 @@ class TestPartATrainerChecklistAccess:
         print(f"Response: {response.json()}")
         assert response.status_code == 200
         data = response.json()
-        assert "token" in data
-        return data["token"]
+        assert "access_token" in data
+        return get_token(data)
     
     def test_05_trainer_thinagaran_get_assigned_participants(self):
         """Test Thinagaran can get assigned participants"""
         login_resp = requests.post(f"{BASE_URL}/api/auth/login", json=CREDENTIALS["trainer_thinagaran"])
-        token = login_resp.json()["token"]
+        token = get_token(login_resp.json())
         headers = {"Authorization": f"Bearer {token}"}
         
         response = requests.get(f"{BASE_URL}/api/trainer-checklist/{SESSION_ID}/assigned-participants", headers=headers)
@@ -111,13 +111,13 @@ class TestPartATrainerChecklistAccess:
         print(f"Response: {response.json()}")
         assert response.status_code == 200
         data = response.json()
-        assert "token" in data
-        return data["token"]
+        assert "access_token" in data
+        return get_token(data)
     
     def test_07_trainer_hisam_get_assigned_participants(self):
         """Test Hisam can get assigned participants"""
         login_resp = requests.post(f"{BASE_URL}/api/auth/login", json=CREDENTIALS["trainer_hisam"])
-        token = login_resp.json()["token"]
+        token = get_token(login_resp.json())
         headers = {"Authorization": f"Bearer {token}"}
         
         response = requests.get(f"{BASE_URL}/api/trainer-checklist/{SESSION_ID}/assigned-participants", headers=headers)
@@ -131,7 +131,7 @@ class TestPartATrainerChecklistAccess:
     def test_08_trainer_submit_checklist(self):
         """Test trainer can submit checklist for a participant"""
         login_resp = requests.post(f"{BASE_URL}/api/auth/login", json=CREDENTIALS["trainer_vijay"])
-        token = login_resp.json()["token"]
+        token = get_token(login_resp.json())
         headers = {"Authorization": f"Bearer {token}"}
         
         # Get participants first
