@@ -217,6 +217,10 @@ A comprehensive training management platform for MDDRC (Malaysian Defensive Driv
 ### P3 - Bug Fixes/Refactoring
 - [x] **Fix `ResultsSummary.jsx` page crash** - DONE (Jan 3, 2026) - Null-safe checks added
 - [x] **Fix `TrainerChiefFeedback.jsx` page crash** - DONE (Jan 3, 2026) - Null-safe checks added
+- [x] **Fix P&L Ledger Double-Counting Bug** - DONE (Jan 3, 2026) - Fixed critical bug in `/api/finance/profit-loss` that was:
+  - Double-counting trainer and coordinator fees (duplicate processing loops)
+  - Using `created_at` instead of session's `start_date` for month attribution
+  - Now correctly attributes expenses to the session's execution month (Dec 2025 vs Jan 2026)
 - [ ] Code refactoring (split large files: server.py, HRModule.jsx)
 - [ ] Conditional F&B Expense Logic
 
