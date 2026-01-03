@@ -10599,6 +10599,15 @@ async def generate_payslip(data: dict, current_user: User = Depends(get_current_
     if not staff:
         raise HTTPException(status_code=404, detail="Staff not found")
     
+    # Get linked user for NRIC if available
+    user_nric = None
+    if staff.get("user_id"):
+        user = await db.users.find_one({"id": staff["user_id"]}, {"_id": 0, "id_number": 1})
+        user_nric = user.get("id_number") if user else None
+    
+    # Use staff's own NRIC or linked user's NRIC
+    nric = staff.get("nric") or user_nric or ""
+    
     # Check if period exists and is open
     period = None
     if period_id:
@@ -10618,17 +10627,20 @@ async def generate_payslip(data: dict, current_user: User = Depends(get_current_
     if existing:
         raise HTTPException(status_code=400, detail="Payslip already exists for this period. Delete it first to regenerate.")
     
-    # Calculate age for statutory deductions
-    age = calculate_age(staff.get("date_of_birth"), f"{year}-{month}-01")
+    # Calculate age from NRIC (first 6 digits = YYMMDD) or fallback to DOB
+    if nric and len(nric) >= 6:
+        age = calculate_age_from_nric(nric, f"{year}-{month:02d}-01")
+    else:
+        age = calculate_age(staff.get("date_of_birth"), f"{year}-{month}-01")
     
     # Calculate earnings
-    basic_salary = staff.get("basic_salary", 0)
+    basic_salary = data.get("basic_salary") if data.get("basic_salary") is not None else staff.get("basic_salary", 0)
     total_allowances = (
-        staff.get("housing_allowance", 0) +
-        staff.get("transport_allowance", 0) +
-        staff.get("meal_allowance", 0) +
-        staff.get("phone_allowance", 0) +
-        staff.get("other_allowance", 0)
+        (data.get("housing_allowance") if data.get("housing_allowance") is not None else staff.get("housing_allowance", 0)) +
+        (data.get("transport_allowance") if data.get("transport_allowance") is not None else staff.get("transport_allowance", 0)) +
+        (data.get("meal_allowance") if data.get("meal_allowance") is not None else staff.get("meal_allowance", 0)) +
+        (data.get("phone_allowance") if data.get("phone_allowance") is not None else staff.get("phone_allowance", 0)) +
+        (data.get("other_allowance") if data.get("other_allowance") is not None else staff.get("other_allowance", 0))
     )
     overtime = data.get("overtime", 0)
     bonus = data.get("bonus", 0)
@@ -10637,17 +10649,25 @@ async def generate_payslip(data: dict, current_user: User = Depends(get_current_
     
     gross_salary = basic_salary + total_allowances + overtime + bonus + commission + other_earnings
     
-    # Calculate statutory deductions
+    # Calculate statutory deductions (use provided values if given, otherwise auto-calculate)
     epf = calculate_epf(basic_salary, age, staff.get("employee_epf_rate"), staff.get("employer_epf_rate"))
     socso = calculate_socso(gross_salary, age)
     eis = calculate_eis(gross_salary, age)
+    
+    # Allow overriding auto-calculated values
+    epf_employee = data.get("epf_employee") if data.get("epf_employee") is not None else epf["employee_amount"]
+    epf_employer = data.get("epf_employer") if data.get("epf_employer") is not None else epf["employer_amount"]
+    socso_employee = data.get("socso_employee") if data.get("socso_employee") is not None else socso["employee_amount"]
+    socso_employer = data.get("socso_employer") if data.get("socso_employer") is not None else socso["employer_amount"]
+    eis_employee = data.get("eis_employee") if data.get("eis_employee") is not None else eis["employee_amount"]
+    eis_employer = data.get("eis_employer") if data.get("eis_employer") is not None else eis["employer_amount"]
     
     # Other deductions
     pcb = data.get("pcb", 0)  # Income tax
     loan_deduction = data.get("loan_deduction", 0)
     other_deductions = data.get("other_deductions", 0)
     
-    total_deductions = epf["employee_amount"] + socso["employee_amount"] + eis["employee_amount"] + pcb + loan_deduction + other_deductions
+    total_deductions = epf_employee + socso_employee + eis_employee + pcb + loan_deduction + other_deductions
     nett_pay = gross_salary - total_deductions
     
     # Get YTD data
