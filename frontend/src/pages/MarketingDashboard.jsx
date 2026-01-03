@@ -7,8 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { Badge } from '../components/ui/badge';
 import { 
   DollarSign, Calendar, TrendingUp, LogOut, RefreshCw,
-  Building, Clock, CheckCircle
+  Building, Clock, CheckCircle, FileText
 } from 'lucide-react';
+import MyPayroll from '../components/MyPayroll';
 
 const MarketingDashboard = ({ user, onLogout }) => {
   const [activeTab, setActiveTab] = useState('income');
