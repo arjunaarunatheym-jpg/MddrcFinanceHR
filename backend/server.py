@@ -11630,6 +11630,9 @@ async def get_profit_loss_report(
             "expenses": {
                 "payroll": 0,
                 "session_workers": 0,
+                "trainer_fees": 0,
+                "coordinator_fees": 0,
+                "marketing_commissions": 0,
                 "session_expenses": 0,
                 "petty_cash": 0,
                 "manual": 0,
