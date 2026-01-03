@@ -132,22 +132,22 @@ class TestPhase3ATrainerChecklists:
         
         submitted_count = 0
         for i, participant in enumerate(participants):
-            # Create checklist items - some with "bad condition" for variety
+            # Create checklist items - some with "needs_repair" for variety
             items = []
             for j, item_name in enumerate(CHECKLIST_ITEMS):
-                # Make some items "bad condition" for first 2 participants
+                # Make some items "needs_repair" for first 2 participants
                 if i < 2 and j in [3, 7]:  # Tire pressure and Horn for first 2
                     items.append({
-                        "name": item_name,
-                        "status": "bad",
-                        "notes": f"Needs attention - {item_name}",
+                        "item": item_name,
+                        "status": "needs_repair",
+                        "comments": f"Needs attention - {item_name}",
                         "photo_url": None
                     })
                 else:
                     items.append({
-                        "name": item_name,
+                        "item": item_name,
                         "status": "good",
-                        "notes": "",
+                        "comments": "",
                         "photo_url": None
                     })
             
