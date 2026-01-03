@@ -10287,9 +10287,11 @@ async def update_staff(staff_id: str, data: dict, current_user: User = Depends(g
     
     update_data = {
         "employee_id": data.get("employee_id", existing.get("employee_id")),
+        "nric": data.get("nric", existing.get("nric", "")),
         "designation": data.get("designation", existing.get("designation")),
         "department": data.get("department", existing.get("department")),
         "date_joined": data.get("date_joined", existing.get("date_joined")),
+        "date_of_birth": data.get("date_of_birth", existing.get("date_of_birth")),
         "bank_name": data.get("bank_name", existing.get("bank_name")),
         "bank_account": data.get("bank_account", existing.get("bank_account")),
         "basic_salary": float(data.get("basic_salary", existing.get("basic_salary", 0))),
