@@ -950,11 +950,11 @@ const HRModule = () => {
               <CardDescription>Upload EPF, SOCSO, and EIS rate tables from Excel</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex gap-4 items-end">
-                <div>
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
+                <div className="w-full sm:w-auto">
                   <Label>Rate Type</Label>
                   <Select value={uploadRateType} onValueChange={setUploadRateType}>
-                    <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="w-full sm:w-40"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="epf">EPF</SelectItem>
                       <SelectItem value="socso">SOCSO</SelectItem>
@@ -963,12 +963,14 @@ const HRModule = () => {
                   </Select>
                 </div>
                 <input type="file" ref={fileInputRef} onChange={handleStatutoryUpload} accept=".xlsx,.xls" className="hidden" />
-                <Button onClick={() => fileInputRef.current?.click()} className="bg-blue-600">
-                  <Upload className="w-4 h-4 mr-2" /> Upload Excel
-                </Button>
-                <Button variant="outline" onClick={() => handleDownloadTemplate(uploadRateType)}>
-                  <Download className="w-4 h-4 mr-2" /> Download Template
-                </Button>
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <Button onClick={() => fileInputRef.current?.click()} className="bg-blue-600 flex-1 sm:flex-none">
+                    <Upload className="w-4 h-4 mr-2" /> Upload Excel
+                  </Button>
+                  <Button variant="outline" onClick={() => handleDownloadTemplate(uploadRateType)} className="flex-1 sm:flex-none">
+                    <Download className="w-4 h-4 mr-2" /> Download Template
+                  </Button>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
