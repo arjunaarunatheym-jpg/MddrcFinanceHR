@@ -261,27 +261,27 @@ const ClaimFormPrint = ({ session, onClose }) => {
             <div className="info-grid">
               <div className="info-item info-full">
                 <span className="info-label">CLIENT</span>
-                <span className="info-value">{costingData.company_name}</span>
+                <div className="info-value">{costingData.company_name}</div>
               </div>
               <div className="info-item">
                 <span className="info-label">TRAINING START</span>
-                <span className="info-value">{formatDate(session.start_date)}</span>
+                <div className="info-value">{formatDate(session.start_date)}</div>
               </div>
               <div className="info-item">
                 <span className="info-label">TRAINING END</span>
-                <span className="info-value">{formatDate(session.end_date)}</span>
+                <div className="info-value">{formatDate(session.end_date)}</div>
               </div>
               <div className="info-item">
                 <span className="info-label">TOTAL PARTICIPANTS</span>
-                <span className="info-value">{costingData.pax}</span>
+                <div className="info-value">{costingData.pax}</div>
               </div>
               <div className="info-item">
                 <span className="info-label">NO. OF DAYS</span>
-                <span className="info-value">{days}</span>
+                <div className="info-value">{days}</div>
               </div>
               <div className="info-item info-full">
                 <span className="info-label">PROGRAM</span>
-                <span className="info-value">{session.name}</span>
+                <div className="info-value">{session.name}</div>
               </div>
             </div>
           </div>
