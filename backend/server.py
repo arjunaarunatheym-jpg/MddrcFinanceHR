@@ -11679,6 +11679,26 @@ async def get_profit_loss_report(
         except:
             pass
     
+    # Process trainer fees
+    for tf in trainer_fees:
+        try:
+            tf_date = tf.get("created_at", "")[:10]
+            tf_month = int(tf_date[5:7]) if len(tf_date) >= 7 else 1
+            amount = float(tf.get("fee_amount") or 0)
+            monthly_data[tf_month]["expenses"]["session_workers"] += amount
+        except:
+            pass
+    
+    # Process coordinator fees
+    for cf in coordinator_fees:
+        try:
+            cf_date = cf.get("created_at", "")[:10]
+            cf_month = int(cf_date[5:7]) if len(cf_date) >= 7 else 1
+            amount = float(cf.get("total_fee") or 0)
+            monthly_data[cf_month]["expenses"]["session_workers"] += amount
+        except:
+            pass
+    
     # Process session expenses (F&B, venue, etc)
     for exp in session_expenses:
         try:
