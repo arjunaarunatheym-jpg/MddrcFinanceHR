@@ -11606,22 +11606,17 @@ async def get_profit_loss_report(
         "year": year
     }, {"_id": 0}).to_list(1000)
     
-    # Get trainer fees - filter by session_start_date field
-    trainer_fees = await db.trainer_fees.find({
-        "session_start_date": {"$gte": start_date, "$lte": end_date}
-    }, {"_id": 0}).to_list(10000)
+    # Get ALL trainer fees - we'll filter by session date using session_date_map
+    all_trainer_fees = await db.trainer_fees.find({}, {"_id": 0}).to_list(10000)
     
-    # Get coordinator fees - filter by session_start_date field
-    coordinator_fees = await db.coordinator_fees.find({
-        "session_start_date": {"$gte": start_date, "$lte": end_date}
-    }, {"_id": 0}).to_list(10000)
+    # Get ALL coordinator fees - we'll filter by session date using session_date_map
+    all_coordinator_fees = await db.coordinator_fees.find({}, {"_id": 0}).to_list(10000)
     
-    # Get session expenses - we need to join with sessions to get correct month
+    # Get ALL session expenses - we'll filter by session date using session_date_map
     all_session_expenses = await db.session_expenses.find({}, {"_id": 0}).to_list(10000)
     
-    # Get marketing commissions - filter by session_start_date field
-    marketing_commissions = await db.marketing_commissions.find({
-        "session_start_date": {"$gte": start_date, "$lte": end_date},
+    # Get ALL marketing commissions with approved/paid status - we'll filter by session date
+    all_marketing_commissions = await db.marketing_commissions.find({
         "status": {"$in": ["approved", "paid"]}
     }, {"_id": 0}).to_list(10000)
     
