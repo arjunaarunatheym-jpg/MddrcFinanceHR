@@ -3501,7 +3501,12 @@ async def submit_test(submission: TestSubmit, current_user: User = Depends(get_c
     
     await db.test_results.insert_one(doc)
     
-    update_field = 'pre_test_completed' if test_doc['test_type'] == 'pre' else 'post_test_completed'
+    # Handle both "pre"/"post" and "pre_test"/"post_test" formats
+    test_type = test_doc['test_type']
+    if test_type in ['pre', 'pre_test']:
+        update_field = 'pre_test_completed'
+    else:
+        update_field = 'post_test_completed'
     await db.participant_access.update_one(
         {"participant_id": current_user.id, "session_id": submission.session_id},
         {"$set": {update_field: True}}
