@@ -971,7 +971,7 @@ const HRModule = () => {
                 </Button>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {['epf', 'socso', 'eis'].map((type) => (
                   <div key={type} className="border rounded-lg p-4">
                     <h4 className="font-semibold text-center mb-2">{type.toUpperCase()} Rates</h4>
