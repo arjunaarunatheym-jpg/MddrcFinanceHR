@@ -5629,9 +5629,14 @@ async def get_supervisor_reports(current_user: User = Depends(get_current_user))
     if current_user.role not in ["supervisor", "pic_supervisor", "admin"]:
         raise HTTPException(status_code=403, detail="Only supervisors and admins can access this")
     
-    # Get sessions assigned to supervisor
+    # Get sessions assigned to supervisor (check both supervisor_id and supervisor_ids)
     if current_user.role in ["supervisor", "pic_supervisor"]:
-        sessions = await db.sessions.find({"supervisor_id": current_user.id}, {"_id": 0}).to_list(100)
+        sessions = await db.sessions.find({
+            "$or": [
+                {"supervisor_id": current_user.id},
+                {"supervisor_ids": current_user.id}
+            ]
+        }, {"_id": 0}).to_list(100)
     else:
         # Admin can see all
         sessions = await db.sessions.find({}, {"_id": 0}).to_list(1000)
