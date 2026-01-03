@@ -123,8 +123,8 @@ A comprehensive training management platform for MDDRC (Malaysian Defensive Driv
 
 ### P2 - Medium Priority
 - [x] Mobile-friendly UI - DONE (responsive tabs across all dashboards)
-- [ ] Profit/Loss Ledger
-- [ ] Petty Cash Module
+- [x] **Profit/Loss Ledger** - DONE (Jan 3, 2026) - Monthly comparison, YTD, manual entries
+- [x] **Petty Cash Module** - DONE (Jan 3, 2026) - Float, expenses, approvals, reconciliation
 - [ ] Password protection for Data tab
 
 ### P3 - Bug Fixes/Refactoring
