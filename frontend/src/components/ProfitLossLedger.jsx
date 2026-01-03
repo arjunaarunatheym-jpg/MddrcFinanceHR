@@ -316,13 +316,11 @@ const ProfitLossLedger = () => {
               <CardDescription>Expenses by category</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {Object.entries(expBreakdown).map(([category, amount]) => {
                   const labels = {
-                    payroll: 'Payroll (Staff)',
-                    session_workers: 'Session Workers',
-                    trainer_fees: 'Trainer Fees',
-                    coordinator_fees: 'Coordinator Fees',
+                    payroll: 'Staff Payroll',
+                    session_workers: 'Trainers & Coordinators',
                     marketing_commissions: 'Marketing Commissions',
                     session_expenses: 'Session Expenses (F&B, etc)',
                     petty_cash: 'Petty Cash',
@@ -331,8 +329,6 @@ const ProfitLossLedger = () => {
                   const colors = {
                     payroll: 'bg-blue-100 text-blue-700 border-blue-200',
                     session_workers: 'bg-purple-100 text-purple-700 border-purple-200',
-                    trainer_fees: 'bg-indigo-100 text-indigo-700 border-indigo-200',
-                    coordinator_fees: 'bg-cyan-100 text-cyan-700 border-cyan-200',
                     marketing_commissions: 'bg-pink-100 text-pink-700 border-pink-200',
                     session_expenses: 'bg-orange-100 text-orange-700 border-orange-200',
                     petty_cash: 'bg-green-100 text-green-700 border-green-200',
