@@ -63,6 +63,26 @@ A comprehensive training management platform for MDDRC (Malaysian Defensive Driv
 
 ## What's Been Implemented
 
+### January 3, 2026 - Security & Stability Improvements
+
+#### Security Features Implemented
+- **Rate Limiting**: 100 requests per 60 seconds per IP
+- **Login Lockout**: 5 failed attempts = 5 minute lockout
+- **Malicious Input Detection**: XSS, SQL injection, MongoDB injection patterns blocked
+- **Input Sanitization**: HTML escaping, null byte removal, length limits
+- **Security Headers**: X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, etc.
+- **File Upload Security**: Extension validation, magic byte verification, size limits (10MB max)
+- **Dangerous File Blocking**: .exe, .bat, .sh, .ps1, etc. automatically blocked
+- **IP Blocking**: Admin can manually block/unblock IPs
+- **Security Audit**: Admin dashboard shows rate-limited, blocked, and locked-out IPs
+
+#### Security Endpoints
+- `GET /api/health` - Health check with DB status
+- `GET /api/security/status` - Security metrics (admin only)
+- `POST /api/security/block-ip` - Block IP (admin only)
+- `POST /api/security/unblock-ip` - Unblock IP (admin only)
+- `GET /api/security/audit-log` - Security event log (admin only)
+
 ### January 3, 2026 - P0, P1, P2 Features Complete
 
 #### Profit/Loss Ledger (P2 - NEW)
