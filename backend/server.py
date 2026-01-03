@@ -11086,6 +11086,192 @@ async def delete_pay_advice(advice_id: str, current_user: User = Depends(get_cur
     await db.pay_advice.delete_one({"id": advice_id})
     return {"message": "Pay advice deleted"}
 
+# =====================================================
+# SELF-SERVICE PAYSLIP/PAY ADVICE (For Staff Portal)
+# =====================================================
+
+@api_router.get("/hr/my-payslips")
+async def get_my_payslips(year: Optional[int] = None, current_user: User = Depends(get_current_user)):
+    """Get current user's own payslips (only locked/finalized ones)"""
+    # Find staff record linked to this user
+    staff = await db.hr_staff.find_one({"user_id": current_user.id}, {"_id": 0})
+    
+    if not staff:
+        # Check if user has any payslips directly by email match
+        staff = await db.hr_staff.find_one({"email": current_user.email}, {"_id": 0})
+    
+    if not staff:
+        return []
+    
+    query = {"staff_id": staff["id"], "is_locked": True}  # Only show locked payslips
+    if year:
+        query["year"] = year
+    
+    payslips = await db.payslips.find(query, {"_id": 0}).sort([("year", -1), ("month", -1)]).to_list(100)
+    return payslips
+
+@api_router.get("/hr/my-pay-advice")
+async def get_my_pay_advice(year: Optional[int] = None, current_user: User = Depends(get_current_user)):
+    """Get current user's own pay advice (only locked/finalized ones)"""
+    query = {"user_id": current_user.id, "is_locked": True}  # Only show locked pay advice
+    if year:
+        query["year"] = year
+    
+    advice_list = await db.pay_advice.find(query, {"_id": 0}).sort([("year", -1), ("month", -1)]).to_list(100)
+    return advice_list
+
+# =====================================================
+# EA FORM (Annual Remuneration Statement)
+# =====================================================
+
+@api_router.get("/hr/ea-form/{staff_id}/{year}")
+async def get_ea_form_data(staff_id: str, year: int, current_user: User = Depends(get_current_user)):
+    """Get EA Form data for a staff member for a specific year"""
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get staff details
+    staff = await db.hr_staff.find_one({"id": staff_id}, {"_id": 0})
+    if not staff:
+        raise HTTPException(status_code=404, detail="Staff not found")
+    
+    # Get all payslips for this staff for the year
+    payslips = await db.payslips.find(
+        {"staff_id": staff_id, "year": year},
+        {"_id": 0}
+    ).sort("month", 1).to_list(12)
+    
+    # Calculate annual totals
+    annual_data = {
+        "gross_salary": 0,
+        "basic_salary": 0,
+        "allowances": 0,
+        "overtime": 0,
+        "bonus": 0,
+        "commission": 0,
+        "epf_employee": 0,
+        "epf_employer": 0,
+        "socso_employee": 0,
+        "socso_employer": 0,
+        "eis_employee": 0,
+        "eis_employer": 0,
+        "pcb": 0,
+        "other_deductions": 0
+    }
+    
+    monthly_breakdown = []
+    
+    for ps in payslips:
+        annual_data["gross_salary"] += ps.get("gross_salary", 0)
+        annual_data["basic_salary"] += ps.get("basic_salary", 0)
+        annual_data["allowances"] += ps.get("total_allowances", 0)
+        annual_data["overtime"] += ps.get("overtime", 0)
+        annual_data["bonus"] += ps.get("bonus", 0)
+        annual_data["commission"] += ps.get("commission", 0)
+        annual_data["epf_employee"] += ps.get("epf_employee", 0)
+        annual_data["epf_employer"] += ps.get("epf_employer", 0)
+        annual_data["socso_employee"] += ps.get("socso_employee", 0)
+        annual_data["socso_employer"] += ps.get("socso_employer", 0)
+        annual_data["eis_employee"] += ps.get("eis_employee", 0)
+        annual_data["eis_employer"] += ps.get("eis_employer", 0)
+        annual_data["pcb"] += ps.get("pcb", 0)
+        annual_data["other_deductions"] += ps.get("loan_deduction", 0) + ps.get("other_deductions", 0)
+        
+        monthly_breakdown.append({
+            "month": ps.get("month"),
+            "gross_salary": ps.get("gross_salary", 0),
+            "epf_employee": ps.get("epf_employee", 0),
+            "socso_employee": ps.get("socso_employee", 0),
+            "eis_employee": ps.get("eis_employee", 0),
+            "pcb": ps.get("pcb", 0),
+            "nett_pay": ps.get("nett_pay", 0)
+        })
+    
+    return {
+        "year": year,
+        "staff_id": staff_id,
+        "employee_details": {
+            "full_name": staff.get("full_name"),
+            "nric": staff.get("nric"),
+            "employee_id": staff.get("employee_id"),
+            "designation": staff.get("designation"),
+            "epf_number": staff.get("epf_number"),
+            "socso_number": staff.get("socso_number"),
+            "tax_number": staff.get("tax_number")
+        },
+        "annual_totals": annual_data,
+        "monthly_breakdown": monthly_breakdown,
+        "months_worked": len(payslips)
+    }
+
+@api_router.get("/hr/my-ea-form/{year}")
+async def get_my_ea_form(year: int, current_user: User = Depends(get_current_user)):
+    """Get current user's own EA Form data"""
+    # Find staff record linked to this user
+    staff = await db.hr_staff.find_one({"user_id": current_user.id}, {"_id": 0})
+    if not staff:
+        staff = await db.hr_staff.find_one({"email": current_user.email}, {"_id": 0})
+    
+    if not staff:
+        raise HTTPException(status_code=404, detail="Staff record not found")
+    
+    # Reuse the main EA form function logic
+    payslips = await db.payslips.find(
+        {"staff_id": staff["id"], "year": year, "is_locked": True},
+        {"_id": 0}
+    ).sort("month", 1).to_list(12)
+    
+    annual_data = {
+        "gross_salary": 0,
+        "basic_salary": 0,
+        "allowances": 0,
+        "overtime": 0,
+        "bonus": 0,
+        "commission": 0,
+        "epf_employee": 0,
+        "epf_employer": 0,
+        "socso_employee": 0,
+        "eis_employee": 0,
+        "pcb": 0
+    }
+    
+    monthly_breakdown = []
+    
+    for ps in payslips:
+        annual_data["gross_salary"] += ps.get("gross_salary", 0)
+        annual_data["basic_salary"] += ps.get("basic_salary", 0)
+        annual_data["allowances"] += ps.get("total_allowances", 0)
+        annual_data["overtime"] += ps.get("overtime", 0)
+        annual_data["bonus"] += ps.get("bonus", 0)
+        annual_data["commission"] += ps.get("commission", 0)
+        annual_data["epf_employee"] += ps.get("epf_employee", 0)
+        annual_data["epf_employer"] += ps.get("epf_employer", 0)
+        annual_data["socso_employee"] += ps.get("socso_employee", 0)
+        annual_data["eis_employee"] += ps.get("eis_employee", 0)
+        annual_data["pcb"] += ps.get("pcb", 0)
+        
+        monthly_breakdown.append({
+            "month": ps.get("month"),
+            "gross_salary": ps.get("gross_salary", 0),
+            "epf_employee": ps.get("epf_employee", 0),
+            "pcb": ps.get("pcb", 0),
+            "nett_pay": ps.get("nett_pay", 0)
+        })
+    
+    return {
+        "year": year,
+        "employee_details": {
+            "full_name": staff.get("full_name"),
+            "nric": staff.get("nric"),
+            "employee_id": staff.get("employee_id"),
+            "designation": staff.get("designation"),
+            "epf_number": staff.get("epf_number"),
+            "tax_number": staff.get("tax_number")
+        },
+        "annual_totals": annual_data,
+        "monthly_breakdown": monthly_breakdown
+    }
+
 # Include router (after all routes are defined)
 app.include_router(api_router)
 
