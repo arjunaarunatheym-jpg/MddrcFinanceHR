@@ -106,12 +106,16 @@ const HRModule = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [staffRes, periodsRes, payslipsRes, adviceRes, usersRes] = await Promise.all([
+      const [staffRes, periodsRes, payslipsRes, adviceRes, usersRes, settingsRes, epfRates, socsoRates, eisRates] = await Promise.all([
         axiosInstance.get('/hr/staff').catch(() => ({ data: [] })),
         axiosInstance.get('/hr/payroll-periods').catch(() => ({ data: [] })),
         axiosInstance.get('/hr/payslips').catch(() => ({ data: [] })),
         axiosInstance.get('/hr/pay-advice').catch(() => ({ data: [] })),
-        axiosInstance.get('/hr/available-users').catch(() => ({ data: [] }))
+        axiosInstance.get('/hr/available-users').catch(() => ({ data: [] })),
+        axiosInstance.get('/finance/company-settings').catch(() => ({ data: {} })),
+        axiosInstance.get('/hr/statutory-rates?rate_type=epf').catch(() => ({ data: [] })),
+        axiosInstance.get('/hr/statutory-rates?rate_type=socso').catch(() => ({ data: [] })),
+        axiosInstance.get('/hr/statutory-rates?rate_type=eis').catch(() => ({ data: [] }))
       ]);
       
       setStaff(staffRes.data);
@@ -119,10 +123,55 @@ const HRModule = () => {
       setPayslips(payslipsRes.data);
       setPayAdviceList(adviceRes.data);
       setAvailableUsers(usersRes.data);
+      setCompanySettings(settingsRes.data);
+      setStatutoryRates({
+        epf: epfRates.data,
+        socso: socsoRates.data,
+        eis: eisRates.data
+      });
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Upload statutory rates
+  const handleStatutoryUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('rate_type', uploadRateType);
+    
+    try {
+      const response = await axiosInstance.post('/hr/statutory-rates/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      toast.success(response.data.message);
+      loadData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to upload rates');
+    }
+    
+    e.target.value = '';
+  };
+
+  // Download statutory template
+  const handleDownloadTemplate = async (rateType) => {
+    try {
+      const response = await axiosInstance.get(`/hr/statutory-rates/templates/${rateType}`, {
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${rateType}_rates_template.xlsx`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      toast.error('Failed to download template');
     }
   };
 
