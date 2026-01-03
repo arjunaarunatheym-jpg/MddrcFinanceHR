@@ -619,6 +619,76 @@ const HRModule = () => {
             )}
           </div>
         </TabsContent>
+
+        {/* Statutory Rates Tab */}
+        <TabsContent value="rates">
+          <Card>
+            <CardHeader>
+              <CardTitle>Statutory Contribution Rates</CardTitle>
+              <CardDescription>Upload EPF, SOCSO, and EIS rate tables from Excel</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex gap-4 items-end">
+                <div>
+                  <Label>Rate Type</Label>
+                  <Select value={uploadRateType} onValueChange={setUploadRateType}>
+                    <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="epf">EPF</SelectItem>
+                      <SelectItem value="socso">SOCSO</SelectItem>
+                      <SelectItem value="eis">EIS</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <input type="file" ref={fileInputRef} onChange={handleStatutoryUpload} accept=".xlsx,.xls" className="hidden" />
+                <Button onClick={() => fileInputRef.current?.click()} className="bg-blue-600">
+                  <Upload className="w-4 h-4 mr-2" /> Upload Excel
+                </Button>
+                <Button variant="outline" onClick={() => handleDownloadTemplate(uploadRateType)}>
+                  <Download className="w-4 h-4 mr-2" /> Download Template
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                {['epf', 'socso', 'eis'].map((type) => (
+                  <div key={type} className="border rounded-lg p-4">
+                    <h4 className="font-semibold text-center mb-2">{type.toUpperCase()} Rates</h4>
+                    <Badge className="w-full justify-center mb-2">
+                      {statutoryRates[type]?.length || 0} records uploaded
+                    </Badge>
+                    {statutoryRates[type]?.length > 0 && (
+                      <div className="text-xs text-gray-500 max-h-32 overflow-y-auto">
+                        <table className="w-full">
+                          <thead><tr><th>Min</th><th>Max</th><th>EE</th><th>ER</th></tr></thead>
+                          <tbody>
+                            {statutoryRates[type].slice(0, 5).map((r, i) => (
+                              <tr key={i}>
+                                <td>{r.min_wages}</td>
+                                <td>{r.max_wages}</td>
+                                <td>{r.employee_amount}</td>
+                                <td>{r.employer_amount}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        {statutoryRates[type].length > 5 && <p className="text-center mt-1">... and {statutoryRates[type].length - 5} more</p>}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="bg-yellow-50 p-4 rounded-lg text-sm">
+                <h4 className="font-semibold text-yellow-700 mb-2">Age-Based Rules (Auto-applied)</h4>
+                <ul className="list-disc list-inside text-yellow-600 space-y-1">
+                  <li><strong>Below 60:</strong> Standard EPF (11%/13%), SOCSO (0.5%/1.75%), EIS (0.2%/0.2%)</li>
+                  <li><strong>60 and above:</strong> EPF (0%/4%), SOCSO (0%/1.25% employer only), EIS (0%/0%)</li>
+                  <li>Age is calculated from NRIC (first 6 digits = YYMMDD)</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* Add/Edit Staff Dialog */}
@@ -636,6 +706,10 @@ const HRModule = () => {
               <div>
                 <Label>Full Name *</Label>
                 <Input value={formData.full_name} onChange={(e) => setFormData({ ...formData, full_name: e.target.value })} />
+              </div>
+              <div>
+                <Label>NRIC</Label>
+                <Input value={formData.nric} onChange={(e) => setFormData({ ...formData, nric: e.target.value })} placeholder="e.g., 850315-10-1234" />
               </div>
               <div>
                 <Label>Designation</Label>
