@@ -1272,16 +1272,16 @@ const FinanceDashboard = ({ user, onLogout }) => {
                                     <Button 
                                       variant="ghost" 
                                       size="sm"
-                                      className="text-purple-600"
+                                      className="text-green-600"
                                       onClick={() => handlePrintInvoice(invoice)}
-                                      title="Print Invoice"
+                                      title="Download Invoice"
                                     >
-                                      <Printer className="w-4 h-4" />
+                                      <Download className="w-4 h-4" />
                                     </Button>
                                     <Button 
                                       variant="ghost" 
                                       size="sm"
-                                      className="text-green-600"
+                                      className="text-blue-600"
                                       onClick={() => {
                                         handleInvoiceSelect(invoice.id);
                                         setActiveTab('payments');
@@ -1296,11 +1296,11 @@ const FinanceDashboard = ({ user, onLogout }) => {
                                   <Button 
                                     variant="ghost" 
                                     size="sm"
-                                    className="text-purple-600"
+                                    className="text-green-600"
                                     onClick={() => handlePrintInvoice(invoice)}
-                                    title="Print Invoice"
+                                    title="Download Invoice"
                                   >
-                                    <Printer className="w-4 h-4" />
+                                    <Download className="w-4 h-4" />
                                   </Button>
                                 )}
                                 {!['paid', 'cancelled'].includes(invoice.status) && (
