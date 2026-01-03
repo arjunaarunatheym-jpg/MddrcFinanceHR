@@ -811,12 +811,12 @@ const HRModule = () => {
 
       {/* Generate Payslip Dialog */}
       <Dialog open={payslipDialogOpen} onOpenChange={setPayslipDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>Generate Payslip</DialogTitle>
-            <DialogDescription>{selectedStaffForPayslip?.full_name}</DialogDescription>
+            <DialogDescription>{selectedStaffForPayslip?.full_name} • NRIC: {selectedStaffForPayslip?.nric || 'N/A'}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Year</Label>
@@ -834,29 +834,69 @@ const HRModule = () => {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Overtime (RM)</Label>
-                <Input type="number" value={payslipForm.overtime} onChange={(e) => setPayslipForm({ ...payslipForm, overtime: parseFloat(e.target.value) || 0 })} />
+            
+            <div className="border-t pt-4">
+              <h4 className="font-semibold text-sm text-green-600 mb-2">Additional Earnings</h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs">Overtime (RM)</Label>
+                  <Input type="number" value={payslipForm.overtime} onChange={(e) => setPayslipForm({ ...payslipForm, overtime: parseFloat(e.target.value) || 0 })} />
+                </div>
+                <div>
+                  <Label className="text-xs">Bonus (RM)</Label>
+                  <Input type="number" value={payslipForm.bonus} onChange={(e) => setPayslipForm({ ...payslipForm, bonus: parseFloat(e.target.value) || 0 })} />
+                </div>
               </div>
-              <div>
-                <Label>Bonus (RM)</Label>
-                <Input type="number" value={payslipForm.bonus} onChange={(e) => setPayslipForm({ ...payslipForm, bonus: parseFloat(e.target.value) || 0 })} />
+            </div>
+            
+            <div className="border-t pt-4">
+              <h4 className="font-semibold text-sm text-blue-600 mb-2">Statutory Deductions (Editable)</h4>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <Label className="text-xs">EPF (Employee)</Label>
+                  <Input type="number" step="0.01" value={payslipForm.epf_employee} onChange={(e) => setPayslipForm({ ...payslipForm, epf_employee: parseFloat(e.target.value) || 0 })} />
+                </div>
+                <div>
+                  <Label className="text-xs">SOCSO (Employee)</Label>
+                  <Input type="number" step="0.01" value={payslipForm.socso_employee} onChange={(e) => setPayslipForm({ ...payslipForm, socso_employee: parseFloat(e.target.value) || 0 })} />
+                </div>
+                <div>
+                  <Label className="text-xs">EIS (Employee)</Label>
+                  <Input type="number" step="0.01" value={payslipForm.eis_employee} onChange={(e) => setPayslipForm({ ...payslipForm, eis_employee: parseFloat(e.target.value) || 0 })} />
+                </div>
+                <div>
+                  <Label className="text-xs">EPF (Employer)</Label>
+                  <Input type="number" step="0.01" value={payslipForm.epf_employer} onChange={(e) => setPayslipForm({ ...payslipForm, epf_employer: parseFloat(e.target.value) || 0 })} />
+                </div>
+                <div>
+                  <Label className="text-xs">SOCSO (Employer)</Label>
+                  <Input type="number" step="0.01" value={payslipForm.socso_employer} onChange={(e) => setPayslipForm({ ...payslipForm, socso_employer: parseFloat(e.target.value) || 0 })} />
+                </div>
+                <div>
+                  <Label className="text-xs">EIS (Employer)</Label>
+                  <Input type="number" step="0.01" value={payslipForm.eis_employer} onChange={(e) => setPayslipForm({ ...payslipForm, eis_employer: parseFloat(e.target.value) || 0 })} />
+                </div>
               </div>
-              <div>
-                <Label>PCB/Tax (RM)</Label>
-                <Input type="number" value={payslipForm.pcb} onChange={(e) => setPayslipForm({ ...payslipForm, pcb: parseFloat(e.target.value) || 0 })} />
-              </div>
-              <div>
-                <Label>Loan Deduction (RM)</Label>
-                <Input type="number" value={payslipForm.loan_deduction} onChange={(e) => setPayslipForm({ ...payslipForm, loan_deduction: parseFloat(e.target.value) || 0 })} />
+            </div>
+            
+            <div className="border-t pt-4">
+              <h4 className="font-semibold text-sm text-red-600 mb-2">Other Deductions</h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs">PCB/Tax (RM)</Label>
+                  <Input type="number" value={payslipForm.pcb} onChange={(e) => setPayslipForm({ ...payslipForm, pcb: parseFloat(e.target.value) || 0 })} />
+                </div>
+                <div>
+                  <Label className="text-xs">Loan Deduction (RM)</Label>
+                  <Input type="number" value={payslipForm.loan_deduction} onChange={(e) => setPayslipForm({ ...payslipForm, loan_deduction: parseFloat(e.target.value) || 0 })} />
+                </div>
               </div>
             </div>
           </div>
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2 pt-4 border-t">
             <Button variant="outline" onClick={() => setPayslipDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleGeneratePayslip} className="bg-green-600 hover:bg-green-700">
-              <Calculator className="w-4 h-4 mr-2" /> Generate
+              <Calculator className="w-4 h-4 mr-2" /> Generate Payslip
             </Button>
           </div>
         </DialogContent>
@@ -866,8 +906,16 @@ const HRModule = () => {
       <Dialog open={!!viewPayslip} onOpenChange={() => setViewPayslip(null)}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Payslip - {viewPayslip?.full_name}</DialogTitle>
-            <DialogDescription>{getMonthName(viewPayslip?.month)} {viewPayslip?.year}</DialogDescription>
+            <div className="flex justify-between items-start">
+              <div>
+                <DialogTitle>Payslip - {viewPayslip?.full_name}</DialogTitle>
+                <DialogDescription>{getMonthName(viewPayslip?.month)} {viewPayslip?.year}</DialogDescription>
+              </div>
+              <Button size="sm" onClick={() => { setPrintPayslip(viewPayslip); setViewPayslip(null); }}>
+                <Printer className="w-4 h-4 mr-1" /> Print
+              </Button>
+            </div>
+          </DialogHeader>
           </DialogHeader>
           {viewPayslip && (
             <div className="space-y-4 text-sm">
