@@ -10704,6 +10704,7 @@ async def generate_payslip(data: dict, current_user: User = Depends(get_current_
         # Staff info snapshot
         "employee_id": staff.get("employee_id"),
         "full_name": staff.get("full_name"),
+        "nric": nric,
         "designation": staff.get("designation"),
         "department": staff.get("department"),
         "epf_number": staff.get("epf_number"),
@@ -10715,11 +10716,11 @@ async def generate_payslip(data: dict, current_user: User = Depends(get_current_
         
         # Earnings
         "basic_salary": basic_salary,
-        "housing_allowance": staff.get("housing_allowance", 0),
-        "transport_allowance": staff.get("transport_allowance", 0),
-        "meal_allowance": staff.get("meal_allowance", 0),
-        "phone_allowance": staff.get("phone_allowance", 0),
-        "other_allowance": staff.get("other_allowance", 0),
+        "housing_allowance": data.get("housing_allowance") if data.get("housing_allowance") is not None else staff.get("housing_allowance", 0),
+        "transport_allowance": data.get("transport_allowance") if data.get("transport_allowance") is not None else staff.get("transport_allowance", 0),
+        "meal_allowance": data.get("meal_allowance") if data.get("meal_allowance") is not None else staff.get("meal_allowance", 0),
+        "phone_allowance": data.get("phone_allowance") if data.get("phone_allowance") is not None else staff.get("phone_allowance", 0),
+        "other_allowance": data.get("other_allowance") if data.get("other_allowance") is not None else staff.get("other_allowance", 0),
         "total_allowances": total_allowances,
         "overtime": overtime,
         "bonus": bonus,
@@ -10727,15 +10728,15 @@ async def generate_payslip(data: dict, current_user: User = Depends(get_current_
         "other_earnings": other_earnings,
         "gross_salary": gross_salary,
         
-        # Deductions
-        "epf_employee": epf["employee_amount"],
-        "epf_employer": epf["employer_amount"],
+        # Deductions (use editable values)
+        "epf_employee": epf_employee,
+        "epf_employer": epf_employer,
         "epf_employee_rate": epf["employee_rate"],
         "epf_employer_rate": epf["employer_rate"],
-        "socso_employee": socso["employee_amount"],
-        "socso_employer": socso["employer_amount"],
-        "eis_employee": eis["employee_amount"],
-        "eis_employer": eis["employer_amount"],
+        "socso_employee": socso_employee,
+        "socso_employer": socso_employer,
+        "eis_employee": eis_employee,
+        "eis_employer": eis_employer,
         "pcb": pcb,
         "loan_deduction": loan_deduction,
         "other_deductions": other_deductions,
