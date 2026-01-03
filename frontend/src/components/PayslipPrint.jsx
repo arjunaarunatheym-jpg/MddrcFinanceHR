@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Button } from './ui/button';
-import { Printer, X, Maximize2 } from 'lucide-react';
+import { Printer, X, Maximize2, Download } from 'lucide-react';
 import DocumentPreview from './DocumentPreview';
 
 // Helper functions
@@ -190,8 +190,8 @@ const PayslipPrint = ({ payslip, companySettings, onClose }) => {
             <Button onClick={() => setShowFullPreview(true)} variant="outline" title="Full Page Preview">
               <Maximize2 className="w-4 h-4 mr-2" /> Full Preview
             </Button>
-            <Button onClick={handlePrint} className="bg-blue-600 hover:bg-blue-700">
-              <Printer className="w-4 h-4 mr-2" /> Print
+            <Button onClick={handlePrint} className="bg-green-600 hover:bg-green-700">
+              <Download className="w-4 h-4 mr-2" /> Download
             </Button>
             <Button variant="outline" onClick={onClose}><X className="w-4 h-4" /></Button>
           </div>

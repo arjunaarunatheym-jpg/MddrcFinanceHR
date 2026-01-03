@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { Button } from './ui/button';
-import { Printer, X } from 'lucide-react';
+import { Printer, X, Download } from 'lucide-react';
 
 const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
   const printRef = useRef(null);
@@ -69,8 +69,8 @@ const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
         <div className="sticky top-0 bg-white border-b p-3 flex justify-between items-center z-10">
           <h2 className="text-lg font-bold">Pay Advice Preview</h2>
           <div className="flex gap-2">
-            <Button onClick={handlePrint} className="bg-blue-600 hover:bg-blue-700">
-              <Printer className="w-4 h-4 mr-2" /> Print
+            <Button onClick={handlePrint} className="bg-green-600 hover:bg-green-700">
+              <Download className="w-4 h-4 mr-2" /> Download
             </Button>
             <Button variant="outline" onClick={onClose}><X className="w-4 h-4" /></Button>
           </div>

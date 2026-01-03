@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { axiosInstance } from '../App';
 import { Button } from './ui/button';
-import { Printer, X, Loader2 } from 'lucide-react';
+import { Printer, X, Loader2, Download } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ClaimFormPrint = ({ session, onClose }) => {
@@ -229,9 +229,9 @@ const ClaimFormPrint = ({ session, onClose }) => {
         <div className="sticky top-0 bg-white border-b p-3 flex justify-between items-center z-10">
           <h2 className="text-lg font-bold">Course Registration Form (Claim Form)</h2>
           <div className="flex gap-2">
-            <Button onClick={handlePrint} className="bg-blue-600 hover:bg-blue-700">
-              <Printer className="w-4 h-4 mr-2" />
-              Print
+            <Button onClick={handlePrint} className="bg-green-600 hover:bg-green-700">
+              <Download className="w-4 h-4 mr-2" />
+              Download
             </Button>
             <Button variant="outline" onClick={onClose}>
               <X className="w-4 h-4 mr-2" />
