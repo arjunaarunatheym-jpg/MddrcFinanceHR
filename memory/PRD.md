@@ -177,13 +177,14 @@ A comprehensive training management platform for MDDRC (Malaysian Defensive Driv
 - [x] ~~Individual Indemnity Form Printing~~ - DONE
 - [x] ~~EA Forms Generation~~ - DONE (Jan 3, 2026)
 - [x] ~~Self-Service Payroll Portal~~ - DONE (Jan 3, 2026)
+- [x] **My Payroll Tab for All Roles** - DONE (Jan 3, 2026) - Added to Admin, Assistant Admin, Coordinator, Trainer dashboards
 
 ### P1 - High Priority
 - [x] HR Module - Staff Management - DONE
 - [x] **Payslip Generation** - DONE (with statutory deductions, YTD tracking)
 - [x] **Pay Advice** - DONE (for session workers)
 - [x] EPF/SOCSO/EIS Excel upload for statutory rate tables - DONE
-- [x] Live Document Previews - DONE (in Finance Dashboard Settings)
+- [x] **Live Document Previews** - DONE (Jan 3, 2026) - Full-page preview with zoom, print, download
 
 ### P2 - Medium Priority
 - [x] Mobile-friendly UI - DONE (responsive tabs across all dashboards)
@@ -192,8 +193,8 @@ A comprehensive training management platform for MDDRC (Malaysian Defensive Driv
 - [ ] Password protection for Data tab
 
 ### P3 - Bug Fixes/Refactoring
-- [ ] Fix `ResultsSummary.jsx` page crash
-- [ ] Fix `TrainerChiefFeedback.jsx` page crash
+- [x] **Fix `ResultsSummary.jsx` page crash** - DONE (Jan 3, 2026) - Null-safe checks added
+- [x] **Fix `TrainerChiefFeedback.jsx` page crash** - DONE (Jan 3, 2026) - Null-safe checks added
 - [ ] Code refactoring (split large files: server.py, HRModule.jsx)
 - [ ] Conditional F&B Expense Logic
 
