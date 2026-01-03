@@ -11667,7 +11667,9 @@ async def get_profit_loss_report(
         try:
             exp_date = exp.get("created_at", "")[:10]
             exp_month = int(exp_date[5:7]) if len(exp_date) >= 7 else 1
-            monthly_data[exp_month]["expenses"]["session_expenses"] += float(exp.get("amount", 0))
+            # Use actual_amount first, then estimated_amount as fallback
+            amount = float(exp.get("actual_amount") or exp.get("estimated_amount") or exp.get("amount") or 0)
+            monthly_data[exp_month]["expenses"]["session_expenses"] += amount
         except:
             pass
     
