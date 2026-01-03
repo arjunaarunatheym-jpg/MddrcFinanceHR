@@ -170,8 +170,8 @@ const CoordinatorDashboard = ({ user, onLogout }) => {
         const testResults = testResultsRes.data || [];
         const feedbackResults = feedbackRes.data || [];
         
-        const preTestResults = testResults.filter(r => r.test_type === 'pre');
-        const postTestResults = testResults.filter(r => r.test_type === 'post');
+        const preTestResults = testResults.filter(r => r.test_type === 'pre' || r.test_type === 'pre_test');
+        const postTestResults = testResults.filter(r => r.test_type === 'post' || r.test_type === 'post_test');
         
         stats[session.id] = {
           participantCount: session.participant_ids?.length || 0,
