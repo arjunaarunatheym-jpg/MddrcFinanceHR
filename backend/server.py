@@ -9048,7 +9048,8 @@ async def save_marketing_commission(session_id: str, marketing_data: dict, curre
     # Calculate commission immediately from session costing
     costing = await get_session_costing(session_id, current_user)
     gross_revenue = costing.get("gross_revenue", 0)
-    total_expenses = costing.get("trainer_fees_total", 0) + costing.get("coordinator_fee_total", 0) + costing.get("cash_expenses_estimated", 0)
+    # Use actual expenses if available, otherwise estimated - must match get_session_costing
+    total_expenses = costing.get("trainer_fees_total", 0) + costing.get("coordinator_fee_total", 0) + costing.get("cash_expenses_actual", 0)
     profit_before_marketing = gross_revenue - total_expenses
     
     commission_type = marketing_data.get("commission_type", "percentage")
