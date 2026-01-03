@@ -12,12 +12,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { 
   Users, Plus, Edit, Trash2, Save, Search, DollarSign, 
   FileText, Building2, Printer, X, Calculator, Loader2, Lock, Unlock,
-  Calendar, Eye, RefreshCw
+  Calendar, Eye, RefreshCw, Upload, Download
 } from 'lucide-react';
+import PayslipPrint from './PayslipPrint';
+import PayAdvicePrint from './PayAdvicePrint';
 
 const HRModule = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('staff');
+  const [companySettings, setCompanySettings] = useState(null);
   
   // Staff state
   const [staff, setStaff] = useState([]);
