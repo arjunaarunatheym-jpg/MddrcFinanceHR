@@ -450,21 +450,21 @@ class TestPhase3CFeedback:
                 print(f"  ! Failed to login as {ic}")
                 continue
             
-            # Create feedback responses
+            # Create feedback responses - must be a list of dicts with question/answer
             feedback_data = {
                 "session_id": SESSION_ID,
                 "program_id": PROGRAM_ID,
-                "responses": {
-                    "How would you rate the overall training quality?": 5,
-                    "How knowledgeable was the trainer?": 5,
-                    "How clear were the training materials?": 4,
-                    "How relevant was the content to your job?": 5,
-                    "How would you rate the training facilities?": 4,
-                    "Would you recommend this training to colleagues?": 5,
-                    "What did you like most about the training?": "Very informative and practical",
-                    "What improvements would you suggest?": "More hands-on exercises",
-                    "Any additional comments?": "Great training session!"
-                }
+                "responses": [
+                    {"question": "How would you rate the overall training quality?", "answer": 5},
+                    {"question": "How knowledgeable was the trainer?", "answer": 5},
+                    {"question": "How clear were the training materials?", "answer": 4},
+                    {"question": "How relevant was the content to your job?", "answer": 5},
+                    {"question": "How would you rate the training facilities?", "answer": 4},
+                    {"question": "Would you recommend this training to colleagues?", "answer": 5},
+                    {"question": "What did you like most about the training?", "answer": "Very informative and practical"},
+                    {"question": "What improvements would you suggest?", "answer": "More hands-on exercises"},
+                    {"question": "Any additional comments?", "answer": "Great training session!"}
+                ]
             }
             
             response = requests.post(
