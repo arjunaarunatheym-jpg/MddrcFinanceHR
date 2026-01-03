@@ -12041,6 +12041,83 @@ async def get_petty_cash_summary(year: int = None, current_user: User = Depends(
     }
 
 
+# ==================== HEALTH & SECURITY ADMIN ENDPOINTS ====================
+
+@api_router.get("/health")
+async def health_check():
+    """Health check endpoint for monitoring"""
+    try:
+        # Quick DB check
+        await db.command('ping')
+        return {
+            "status": "healthy",
+            "timestamp": get_malaysia_time().isoformat(),
+            "database": "connected"
+        }
+    except Exception as e:
+        return JSONResponse(
+            status_code=503,
+            content={"status": "unhealthy", "error": str(e)}
+        )
+
+@api_router.get("/security/status")
+async def security_status(current_user: User = Depends(get_current_user)):
+    """Get security status (admin only)"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    return {
+        "rate_limited_ips": len([ip for ip, times in rate_limit_storage.items() if len(times) >= RATE_LIMIT_REQUESTS]),
+        "blocked_ips": len(BLOCKED_IPS),
+        "locked_out_ips": len([ip for ip in FAILED_LOGIN_ATTEMPTS if len(FAILED_LOGIN_ATTEMPTS[ip]) >= MAX_FAILED_LOGINS]),
+        "rate_limit_config": {
+            "requests_per_window": RATE_LIMIT_REQUESTS,
+            "window_seconds": RATE_LIMIT_WINDOW
+        },
+        "login_security": {
+            "max_failed_attempts": MAX_FAILED_LOGINS,
+            "lockout_seconds": LOGIN_LOCKOUT_TIME
+        }
+    }
+
+@api_router.post("/security/block-ip")
+async def block_ip(ip: str, current_user: User = Depends(get_current_user)):
+    """Block an IP address (admin only)"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    BLOCKED_IPS.add(ip)
+    logging.warning(f"IP blocked by admin {current_user.email}: {ip}")
+    return {"message": f"IP {ip} blocked"}
+
+@api_router.post("/security/unblock-ip")
+async def unblock_ip(ip: str, current_user: User = Depends(get_current_user)):
+    """Unblock an IP address (admin only)"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    BLOCKED_IPS.discard(ip)
+    clear_failed_logins(ip)
+    logging.info(f"IP unblocked by admin {current_user.email}: {ip}")
+    return {"message": f"IP {ip} unblocked"}
+
+@api_router.get("/security/audit-log")
+async def get_security_audit(
+    limit: int = 100,
+    current_user: User = Depends(get_current_user)
+):
+    """Get security audit log (admin only)"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get recent security events from audit log
+    events = await db.security_audit.find(
+        {}, {"_id": 0}
+    ).sort("timestamp", -1).limit(limit).to_list(limit)
+    
+    return events
+
+
 # Include router (after all routes are defined)
 app.include_router(api_router)
 
