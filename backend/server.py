@@ -2300,15 +2300,9 @@ async def update_session(session_id: str, session_data: dict, current_user: User
         {"$set": session_data}
     )
     
-    if result.modified_count == 0:
-        raise HTTPException(status_code=404, detail="Session not found")
-    
-    # Create participant_access records for newly added participants
-    # This ensures checklists and tests show up for trainers immediately
-    for user_id in newly_added_participants:
-        await get_or_create_participant_access(user_id, session_id)
-    
-    return {"message": "Session updated successfully"}
+    # Return the updated session
+    updated_session = await db.sessions.find_one({"id": session_id}, {"_id": 0})
+    return updated_session
 
 @api_router.delete("/sessions/{session_id}")
 async def delete_session(session_id: str, current_user: User = Depends(get_current_user)):
