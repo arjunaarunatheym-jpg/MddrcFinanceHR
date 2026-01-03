@@ -7070,7 +7070,7 @@ async def get_checklist_photo(filename: str):
 # ============ AI REPORT GENERATION ============
 
 async def generate_training_report_content(session_id: str, program_id: str, company_id: str) -> str:
-    """Generate comprehensive training report using GPT-5"""
+    """Generate comprehensive training report using AI"""
     
     # Gather all data
     session = await db.sessions.find_one({"id": session_id}, {"_id": 0})
