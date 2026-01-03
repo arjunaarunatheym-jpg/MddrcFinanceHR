@@ -33,7 +33,7 @@ from typing import Dict, List, Optional
 import uuid
 
 # Configuration
-BASE_URL = "https://payportal-19.preview.emergentagent.com/api"
+BASE_URL = "https://hrpay-portal-2.preview.emergentagent.com/api"
 
 # Test credentials from review request
 TEST_CREDENTIALS = {
