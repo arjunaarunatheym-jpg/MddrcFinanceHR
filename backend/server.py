@@ -11746,8 +11746,9 @@ async def get_profit_loss_report(
         md = monthly_data[m]
         md["income"]["total"] = md["income"]["invoices"] + md["income"]["manual"]
         md["expenses"]["total"] = (md["expenses"]["payroll"] + md["expenses"]["session_workers"] + 
-                                   md["expenses"]["session_expenses"] + md["expenses"]["petty_cash"] + 
-                                   md["expenses"]["manual"])
+                                   md["expenses"]["trainer_fees"] + md["expenses"]["coordinator_fees"] +
+                                   md["expenses"]["marketing_commissions"] + md["expenses"]["session_expenses"] + 
+                                   md["expenses"]["petty_cash"] + md["expenses"]["manual"])
         md["net_profit"] = md["income"]["total"] - md["expenses"]["total"]
         ytd_income += md["income"]["total"]
         ytd_expenses += md["expenses"]["total"]
@@ -11764,6 +11765,9 @@ async def get_profit_loss_report(
         "expense_breakdown": {
             "payroll": sum(md["expenses"]["payroll"] for md in monthly_data.values()),
             "session_workers": sum(md["expenses"]["session_workers"] for md in monthly_data.values()),
+            "trainer_fees": sum(md["expenses"]["trainer_fees"] for md in monthly_data.values()),
+            "coordinator_fees": sum(md["expenses"]["coordinator_fees"] for md in monthly_data.values()),
+            "marketing_commissions": sum(md["expenses"]["marketing_commissions"] for md in monthly_data.values()),
             "session_expenses": sum(md["expenses"]["session_expenses"] for md in monthly_data.values()),
             "petty_cash": sum(md["expenses"]["petty_cash"] for md in monthly_data.values()),
             "manual": sum(md["expenses"]["manual"] for md in monthly_data.values())
