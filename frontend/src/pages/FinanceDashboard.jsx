@@ -849,6 +849,14 @@ const FinanceDashboard = ({ user, onLogout }) => {
             <TabsTrigger value="payables" className="text-xs sm:text-sm">Payables</TabsTrigger>
             <TabsTrigger value="payments" className="text-xs sm:text-sm">Payments</TabsTrigger>
             <TabsTrigger value="credit-notes" className="text-xs sm:text-sm">Credit Notes</TabsTrigger>
+            <TabsTrigger value="profit-loss" className="text-xs sm:text-sm">
+              <BarChart3 className="w-4 h-4 mr-1 hidden sm:inline" />
+              P&L Ledger
+            </TabsTrigger>
+            <TabsTrigger value="petty-cash" className="text-xs sm:text-sm">
+              <Wallet className="w-4 h-4 mr-1 hidden sm:inline" />
+              Petty Cash
+            </TabsTrigger>
             <TabsTrigger value="hr" className="text-xs sm:text-sm">
               <Users className="w-4 h-4 mr-1 hidden sm:inline" />
               HR & Payroll
