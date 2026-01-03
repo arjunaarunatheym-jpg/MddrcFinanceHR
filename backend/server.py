@@ -7242,17 +7242,24 @@ ABSOLUTE CRITICAL RULES FOR VEHICLE INSPECTION SECTION:
 4. NEVER write "undefined" or leave item unnamed
 5. Be intelligent in extracting the core item name from any description"""
 
-    # Call GPT-5
+    # Call LLM for report generation
     try:
         api_key = os.getenv('EMERGENT_LLM_KEY')
-        llm = LlmChat(api_key=api_key)
+        if not api_key:
+            raise HTTPException(status_code=500, detail="EMERGENT_LLM_KEY not configured")
         
-        messages = [UserMessage(content=prompt)]
-        response = llm.chat(messages=messages, model="gpt-4o")
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"report_gen_{uuid.uuid4().hex[:8]}",
+            system_message="You are a professional training report writer specializing in defensive driving and road safety training programs."
+        ).with_model("openai", "gpt-4o")
         
-        return response.content
+        user_message = UserMessage(text=prompt)
+        response = await chat.send_message(user_message)
+        
+        return response
     except Exception as e:
-        logging.error(f"GPT-5 report generation failed: {str(e)}")
+        logging.error(f"Report generation failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Report generation failed: {str(e)}")
 
 @api_router.post("/reports/generate")
