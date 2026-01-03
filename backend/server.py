@@ -3391,10 +3391,11 @@ async def get_available_tests(session_id: str, current_user: User = Depends(get_
         can_access = False
         is_completed = False
         
-        if test_type == "pre":
+        # Handle both "pre"/"post" and "pre_test"/"post_test" formats
+        if test_type in ["pre", "pre_test"]:
             can_access = access.can_access_pre_test
             is_completed = access.pre_test_completed
-        elif test_type == "post":
+        elif test_type in ["post", "post_test"]:
             can_access = access.can_access_post_test
             is_completed = access.post_test_completed
         
