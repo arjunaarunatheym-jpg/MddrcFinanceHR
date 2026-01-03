@@ -1068,10 +1068,33 @@ const HRModule = () => {
                   </tr>
                 </tfoot>
               </table>
+              <div className="flex justify-end">
+                <Button onClick={() => { setPrintPayAdvice(viewPayAdvice); setViewPayAdvice(null); }}>
+                  <Printer className="w-4 h-4 mr-1" /> Print
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Print Payslip Modal */}
+      {printPayslip && (
+        <PayslipPrint 
+          payslip={printPayslip} 
+          companySettings={companySettings} 
+          onClose={() => setPrintPayslip(null)} 
+        />
+      )}
+
+      {/* Print Pay Advice Modal */}
+      {printPayAdvice && (
+        <PayAdvicePrint 
+          payAdvice={printPayAdvice} 
+          companySettings={companySettings} 
+          onClose={() => setPrintPayAdvice(null)} 
+        />
+      )}
     </div>
   );
 };
