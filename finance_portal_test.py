@@ -19,7 +19,7 @@ import sys
 from datetime import datetime
 
 # Configuration
-BASE_URL = "https://traintrack-59.preview.emergentagent.com/api"
+BASE_URL = "https://payroll-nexus-1.preview.emergentagent.com/api"
 ADMIN_EMAIL = "arjuna@mddrc.com.my"
 ADMIN_PASSWORD = "Dana102229"
 
