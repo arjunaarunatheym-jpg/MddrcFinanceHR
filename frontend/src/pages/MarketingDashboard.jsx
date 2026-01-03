@@ -206,6 +206,11 @@ const MarketingDashboard = ({ user, onLogout }) => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Payroll Tab - Self-Service */}
+          <TabsContent value="payroll">
+            <MyPayroll />
+          </TabsContent>
         </Tabs>
       </main>
     </div>
