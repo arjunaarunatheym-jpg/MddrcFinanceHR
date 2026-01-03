@@ -21,15 +21,23 @@ A comprehensive training management platform for MDDRC (Malaysian Defensive Driv
 
 ### January 2, 2026 - HR & Payroll System Complete
 - **HR Module with Full Payroll Features**:
-  - **Staff Management**: Add/Edit staff with salary, allowances, bank details, statutory info
+  - **Staff Management**: Add/Edit staff with salary, allowances, bank details, NRIC, statutory info
   - **Payroll Period Management**: Open/Close monthly periods (closed = read-only)
-  - **Payslip Generation**: Auto-calculates EPF, SOCSO, EIS with age-based rules
-  - **Pay Advice**: For session workers (trainers/coordinators)
-  - **YTD Tracking**: Year-to-date totals on payslips
+  - **Payslip Generation**: 
+    - Auto-calculates EPF, SOCSO, EIS with **age-based rules from NRIC**
+    - **Editable statutory values** - can override auto-calculated amounts
+    - YTD (Year-to-date) tracking
+    - Printable payslip with company branding
+  - **Pay Advice**: For session workers (trainers/coordinators) with printable output
+  - **Statutory Rates Upload**: Upload EPF/SOCSO/EIS rate tables via Excel
+
+- **NRIC-Based Age Calculation**:
+  - First 6 digits of NRIC = YYMMDD (date of birth)
+  - System auto-detects if 60+ and adjusts rates accordingly
 
 - **Statutory Calculation Rules**:
   - **EPF**: 11% employee / 13% employer (below 60); 0% / 4% (60+)
-  - **SOCSO**: 0.5% employee / 1.75% employer (below 60); 0% / 1.25% (60+)
+  - **SOCSO**: 0.5% employee / 1.75% employer (below 60); 0% / 1.25% employer only (60+)
   - **EIS**: 0.2% each (below 60); 0% (60+)
   - Wage ceiling: RM6,000 for SOCSO/EIS
 
