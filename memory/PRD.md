@@ -136,9 +136,11 @@ A comprehensive training management platform for MDDRC (Malaysian Defensive Driv
 ---
 
 ## Key Files Reference
-- `backend/server.py` - Main FastAPI server (HR APIs, 11000+ lines)
-- `frontend/src/pages/FinanceDashboard.jsx` - Finance interface with HR tab
+- `backend/server.py` - Main FastAPI server (HR APIs, P&L, Petty Cash - 12000+ lines)
+- `frontend/src/pages/FinanceDashboard.jsx` - Finance interface with HR, P&L, Petty Cash tabs
 - `frontend/src/components/HRModule.jsx` - HR module with Staff, Payroll, EA Forms
+- `frontend/src/components/ProfitLossLedger.jsx` - P&L monthly overview and manual entries
+- `frontend/src/components/PettyCash.jsx` - Petty cash management with approvals
 - `frontend/src/components/MyPayroll.jsx` - Self-service payroll portal
 - `frontend/src/components/PayslipPrint.jsx` - Payslip print component
 - `frontend/src/components/PayAdvicePrint.jsx` - Pay advice print component
