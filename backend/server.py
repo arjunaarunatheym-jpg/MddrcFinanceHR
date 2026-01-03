@@ -5626,11 +5626,11 @@ async def upload_final_pdf_report(
 async def get_supervisor_reports(current_user: User = Depends(get_current_user)):
     """Get all submitted reports for sessions assigned to supervisor"""
     
-    if current_user.role not in ["supervisor", "admin"]:
+    if current_user.role not in ["supervisor", "pic_supervisor", "admin"]:
         raise HTTPException(status_code=403, detail="Only supervisors and admins can access this")
     
     # Get sessions assigned to supervisor
-    if current_user.role == "supervisor":
+    if current_user.role in ["supervisor", "pic_supervisor"]:
         sessions = await db.sessions.find({"supervisor_id": current_user.id}, {"_id": 0}).to_list(100)
     else:
         # Admin can see all
