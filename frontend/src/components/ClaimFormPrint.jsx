@@ -257,31 +257,31 @@ const ClaimFormPrint = ({ session, onClose }) => {
 
           {/* Course Particulars */}
           <div className="section">
-            <div className="section-header">COURSE PARTICULARS</div>
-            <div className="info-grid">
-              <div className="info-item info-full">
-                <span className="info-label">CLIENT</span>
-                <div className="info-value">{costingData.company_name}</div>
+            <div className="section-header" style={{ background: '#1e40af', color: 'white', padding: '5px 10px', fontWeight: 'bold', fontSize: '10px' }}>COURSE PARTICULARS</div>
+            <div className="info-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '15px', padding: '15px', border: '1px solid #000', borderTop: 'none' }}>
+              <div className="info-item" style={{ gridColumn: 'span 2' }}>
+                <span className="info-label" style={{ fontWeight: 'bold', fontSize: '9px', color: '#333', display: 'block', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>CLIENT</span>
+                <div className="info-value" style={{ borderBottom: '1px solid #ccc', padding: '8px 10px', minHeight: '28px', fontSize: '11px', background: '#f9fafb' }}>{costingData.company_name}</div>
               </div>
               <div className="info-item">
-                <span className="info-label">TRAINING START</span>
-                <div className="info-value">{formatDate(session.start_date)}</div>
+                <span className="info-label" style={{ fontWeight: 'bold', fontSize: '9px', color: '#333', display: 'block', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>TRAINING START</span>
+                <div className="info-value" style={{ borderBottom: '1px solid #ccc', padding: '8px 10px', minHeight: '28px', fontSize: '11px', background: '#f9fafb' }}>{formatDate(session.start_date)}</div>
               </div>
               <div className="info-item">
-                <span className="info-label">TRAINING END</span>
-                <div className="info-value">{formatDate(session.end_date)}</div>
+                <span className="info-label" style={{ fontWeight: 'bold', fontSize: '9px', color: '#333', display: 'block', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>TRAINING END</span>
+                <div className="info-value" style={{ borderBottom: '1px solid #ccc', padding: '8px 10px', minHeight: '28px', fontSize: '11px', background: '#f9fafb' }}>{formatDate(session.end_date)}</div>
               </div>
               <div className="info-item">
-                <span className="info-label">TOTAL PARTICIPANTS</span>
-                <div className="info-value">{costingData.pax}</div>
+                <span className="info-label" style={{ fontWeight: 'bold', fontSize: '9px', color: '#333', display: 'block', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>TOTAL PARTICIPANTS</span>
+                <div className="info-value" style={{ borderBottom: '1px solid #ccc', padding: '8px 10px', minHeight: '28px', fontSize: '11px', background: '#f9fafb' }}>{costingData.pax}</div>
               </div>
               <div className="info-item">
-                <span className="info-label">NO. OF DAYS</span>
-                <div className="info-value">{days}</div>
+                <span className="info-label" style={{ fontWeight: 'bold', fontSize: '9px', color: '#333', display: 'block', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>NO. OF DAYS</span>
+                <div className="info-value" style={{ borderBottom: '1px solid #ccc', padding: '8px 10px', minHeight: '28px', fontSize: '11px', background: '#f9fafb' }}>{days}</div>
               </div>
-              <div className="info-item info-full">
-                <span className="info-label">PROGRAM</span>
-                <div className="info-value">{session.name}</div>
+              <div className="info-item" style={{ gridColumn: 'span 2' }}>
+                <span className="info-label" style={{ fontWeight: 'bold', fontSize: '9px', color: '#333', display: 'block', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>PROGRAM</span>
+                <div className="info-value" style={{ borderBottom: '1px solid #ccc', padding: '8px 10px', minHeight: '28px', fontSize: '11px', background: '#f9fafb' }}>{session.name}</div>
               </div>
             </div>
           </div>
