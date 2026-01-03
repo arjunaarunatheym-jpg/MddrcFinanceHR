@@ -19,6 +19,30 @@ A comprehensive training management platform for MDDRC (Malaysian Defensive Driv
 
 ## What's Been Implemented
 
+### January 3, 2026 - P0, P1, P2 Features Complete
+
+#### EA Forms Generation (P0)
+- **EA Forms Tab** in HR Module: Admin can select staff member and year to generate annual remuneration statement
+- Displays: Employee Particulars, Annual Gross Income, Annual Deductions (Employee), Employer Contributions, Monthly Breakdown
+- **Printable EA Form** with bilingual format (English/Malay) following Malaysian tax form standards
+- Backend API: `/hr/ea-form/{staff_id}/{year}`
+
+#### Self-Service Payroll Portal (P0)
+- **MyPayroll Component** for staff to view their own payroll documents
+- Integrated into: TrainerDashboard, CoordinatorDashboard, MarketingDashboard
+- Features: Payslips tab, Pay Advice tab, EA Form tab (self-service)
+- Backend APIs: `/hr/my-payslips`, `/hr/my-pay-advice`, `/hr/my-ea-form/{year}`
+
+#### Statutory Rates Upload (P1)
+- Complete Excel upload functionality for EPF, SOCSO, EIS rate tables
+- Download template functionality for each rate type
+- Rate type selector with visual display of uploaded records
+
+#### Mobile-Friendly UI (P2)
+- Responsive TabsList components across all dashboards
+- Flex-wrap enabled for tabs on smaller viewports
+- Improved spacing and sizing for mobile devices
+
 ### January 2, 2026 - HR & Payroll System Complete
 - **HR Module with Full Payroll Features**:
   - **Staff Management**: Add/Edit staff with salary, allowances, bank details, NRIC, statutory info
@@ -29,7 +53,6 @@ A comprehensive training management platform for MDDRC (Malaysian Defensive Driv
     - YTD (Year-to-date) tracking
     - Printable payslip with company branding
   - **Pay Advice**: For session workers (trainers/coordinators) with printable output
-  - **Statutory Rates Upload**: Upload EPF/SOCSO/EIS rate tables via Excel
 
 - **NRIC-Based Age Calculation**:
   - First 6 digits of NRIC = YYMMDD (date of birth)
