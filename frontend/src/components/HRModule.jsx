@@ -1238,7 +1238,6 @@ const HRModule = () => {
               </Button>
             </div>
           </DialogHeader>
-          </DialogHeader>
           {viewPayslip && (
             <div className="space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded">
