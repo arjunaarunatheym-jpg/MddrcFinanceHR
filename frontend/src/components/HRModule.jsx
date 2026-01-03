@@ -622,6 +622,11 @@ const HRModule = () => {
           </div>
         </TabsContent>
 
+        {/* EA Forms Tab */}
+        <TabsContent value="ea-forms">
+          <EAFormsTab staff={staff} companySettings={companySettings} />
+        </TabsContent>
+
         {/* Statutory Rates Tab */}
         <TabsContent value="rates">
           <Card>
