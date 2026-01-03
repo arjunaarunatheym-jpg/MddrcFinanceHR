@@ -8771,6 +8771,13 @@ async def get_session_costing(session_id: str, current_user: User = Depends(get_
     final_profit = gross_revenue - total_expenses
     profit_percentage = (final_profit / gross_revenue * 100) if gross_revenue > 0 else 0
     
+    # Update stored marketing commission if it doesn't match calculated amount
+    if marketing and marketing.get("id") and marketing_amount != marketing.get("calculated_amount", 0):
+        await db.marketing_commissions.update_one(
+            {"id": marketing["id"]},
+            {"$set": {"calculated_amount": marketing_amount, "updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+    
     # Get company name
     company = await db.companies.find_one({"id": session.get("company_id")}, {"_id": 0, "name": 1})
     
