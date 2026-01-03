@@ -187,7 +187,15 @@ if not SECRET_KEY or SECRET_KEY == 'your-secret-key-change-in-production':
 ALGORITHM = "HS256"
 
 # Create the main app
-app = FastAPI()
+app = FastAPI(
+    title="MDDRC Training Management System",
+    description="Secure training management platform",
+    version="2.0.0"
+)
+
+# Add security middleware FIRST (before CORS)
+app.add_middleware(SecurityMiddleware)
+
 api_router = APIRouter(prefix="/api")
 
 # Static files directory
