@@ -11708,27 +11708,27 @@ async def get_profit_loss_report(
         except:
             pass
     
-    # Process trainer fees - use session_start_date for month attribution
-    for tf in trainer_fees:
+    # Process trainer fees - use session_date_map to get session's start_date
+    for tf in all_trainer_fees:
         try:
-            # Use session_start_date field (already filtered by year)
-            tf_date = tf.get("session_start_date", "")
-            if not tf_date:
+            session_id = tf.get("session_id")
+            session_date = session_date_map.get(session_id, "")
+            if not session_date or not session_date.startswith(str(year)):
                 continue
-            tf_month = int(tf_date[5:7]) if len(tf_date) >= 7 else 1
+            tf_month = int(session_date[5:7]) if len(session_date) >= 7 else 1
             amount = float(tf.get("fee_amount") or 0)
             monthly_data[tf_month]["expenses"]["session_workers"] += amount
         except:
             pass
     
-    # Process coordinator fees - use session_start_date for month attribution
-    for cf in coordinator_fees:
+    # Process coordinator fees - use session_date_map to get session's start_date
+    for cf in all_coordinator_fees:
         try:
-            # Use session_start_date field (already filtered by year)
-            cf_date = cf.get("session_start_date", "")
-            if not cf_date:
+            session_id = cf.get("session_id")
+            session_date = session_date_map.get(session_id, "")
+            if not session_date or not session_date.startswith(str(year)):
                 continue
-            cf_month = int(cf_date[5:7]) if len(cf_date) >= 7 else 1
+            cf_month = int(session_date[5:7]) if len(session_date) >= 7 else 1
             amount = float(cf.get("total_fee") or 0)
             monthly_data[cf_month]["expenses"]["session_workers"] += amount
         except:
