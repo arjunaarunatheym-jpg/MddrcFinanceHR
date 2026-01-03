@@ -18,10 +18,14 @@ CREDENTIALS = {
     "trainer_vijay": {"email": "vijay@mddrc.com.my", "password": "mddrc1"},
     "trainer_thinagaran": {"email": "Dheena8983@gmail.com", "password": "mddrc1"},
     "trainer_hisam": {"email": "hisam@gmail.com.my", "password": "mddrc1"},
-    "participant": {"ic_number": "900101-01-0001", "password": "mddrc1"},
+    "participant": {"email": "900101-01-0001", "password": "mddrc1"},  # IC number goes in email field
     "supervisor": {"email": "rapidkl@gmail.com", "password": "mddrc1"},
     "admin": {"email": "arjuna@mddrc.com.my", "password": "Dana102229"}
 }
+
+def get_token(response_json):
+    """Helper to extract token from login response"""
+    return response_json.get("access_token") or response_json.get("token")
 
 SESSION_ID = "d664b79d-91a1-4968-bd72-de82611cdb1f"
 
