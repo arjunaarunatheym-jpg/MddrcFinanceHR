@@ -840,19 +840,19 @@ const FinanceDashboard = ({ user, onLogout }) => {
 
       <main className="max-w-7xl mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="invoices">Invoices</TabsTrigger>
-            <TabsTrigger value="payables">Payables</TabsTrigger>
-            <TabsTrigger value="payments">Payments</TabsTrigger>
-            <TabsTrigger value="credit-notes">Credit Notes</TabsTrigger>
-            <TabsTrigger value="hr">
-              <Users className="w-4 h-4 mr-1" />
+          <TabsList className="mb-6 flex flex-wrap gap-1 h-auto w-full justify-start bg-gray-100 p-2 rounded-lg">
+            <TabsTrigger value="dashboard" className="text-xs sm:text-sm">Dashboard</TabsTrigger>
+            <TabsTrigger value="invoices" className="text-xs sm:text-sm">Invoices</TabsTrigger>
+            <TabsTrigger value="payables" className="text-xs sm:text-sm">Payables</TabsTrigger>
+            <TabsTrigger value="payments" className="text-xs sm:text-sm">Payments</TabsTrigger>
+            <TabsTrigger value="credit-notes" className="text-xs sm:text-sm">Credit Notes</TabsTrigger>
+            <TabsTrigger value="hr" className="text-xs sm:text-sm">
+              <Users className="w-4 h-4 mr-1 hidden sm:inline" />
               HR & Payroll
             </TabsTrigger>
-            <TabsTrigger value="audit">Audit Log</TabsTrigger>
-            <TabsTrigger value="settings">
-              <Settings className="w-4 h-4 mr-1" />
+            <TabsTrigger value="audit" className="text-xs sm:text-sm">Audit Log</TabsTrigger>
+            <TabsTrigger value="settings" className="text-xs sm:text-sm">
+              <Settings className="w-4 h-4 mr-1 hidden sm:inline" />
               Settings
             </TabsTrigger>
           </TabsList>
