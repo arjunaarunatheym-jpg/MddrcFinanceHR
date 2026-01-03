@@ -1268,33 +1268,60 @@ async def register_user(user_data: UserCreate, current_user: User = Depends(get_
     return user_obj
 
 @api_router.post("/auth/login", response_model=TokenResponse)
-async def login(user_data: UserLogin):
-    # Allow login with email OR IC number
-    # Build query dynamically to handle users without email
-    query_conditions = [{"id_number": user_data.email}]  # Always allow IC as username
+async def login(user_data: UserLogin, request: Request):
+    """Secure login with rate limiting and lockout protection"""
+    client_ip = request.client.host if request.client else "unknown"
     
-    # Only check email if the input looks like an email (contains @)
+    # Check for login lockout
+    is_locked, remaining = check_login_lockout(client_ip)
+    if is_locked:
+        logging.warning(f"Locked out IP attempted login: {client_ip}")
+        raise HTTPException(
+            status_code=429, 
+            detail=f"Too many failed attempts. Try again in {remaining} seconds."
+        )
+    
+    # Check for malicious input
+    if is_malicious_input(user_data.email) or is_malicious_input(user_data.password):
+        logging.warning(f"Malicious login attempt from IP: {client_ip}")
+        record_failed_login(client_ip)
+        raise HTTPException(status_code=400, detail="Invalid input detected")
+    
+    # Allow login with email OR IC number
+    query_conditions = [{"id_number": user_data.email}]
+    
     if "@" in user_data.email:
         query_conditions.append({"email": user_data.email})
     
     user_doc = await db.users.find_one({
         "$or": query_conditions
     }, {"_id": 0})
+    
     if not user_doc:
+        record_failed_login(client_ip)
+        # Use generic message to prevent user enumeration
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    # Check for both 'password' and 'hashed_password' field names
     password_hash = user_doc.get('password') or user_doc.get('hashed_password')
     if not password_hash:
+        record_failed_login(client_ip)
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
     if not verify_password(user_data.password, password_hash):
+        record_failed_login(client_ip)
+        logging.info(f"Failed login attempt for user: {user_data.email} from IP: {client_ip}")
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
     if not user_doc.get('is_active', True):
         raise HTTPException(status_code=401, detail="Account is inactive")
     
+    # Clear failed attempts on successful login
+    clear_failed_logins(client_ip)
+    
     token = create_access_token({"sub": user_doc['id']})
+    
+    # Log successful login
+    logging.info(f"Successful login: {user_data.email} from IP: {client_ip}")
     
     if isinstance(user_doc.get('created_at'), str):
         user_doc['created_at'] = datetime.fromisoformat(user_doc['created_at'])
