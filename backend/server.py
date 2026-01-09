@@ -8756,27 +8756,18 @@ async def get_session_costing(session_id: str, current_user: User = Depends(get_
     # Calculate profit (before marketing commission)
     gross_revenue = invoice_total - tax_amount
     total_expenses_before_marketing = trainer_fees_total + coordinator_fee_total + cash_expenses_actual
-    profit_before_marketing = gross_revenue - total_expenses_before_marketing
     
-    # Calculate marketing commission from profit
+    # Use STORED marketing commission amount - don't recalculate
+    # The commission should only be calculated once when costing is saved
     marketing_amount = 0.0
     if marketing:
-        if marketing.get("commission_type") == "percentage":
-            marketing_amount = profit_before_marketing * (marketing.get("commission_rate", 0) / 100)
-        else:
-            marketing_amount = marketing.get("fixed_amount", 0)
+        # Use the stored calculated_amount if available, otherwise use fixed_amount
+        marketing_amount = marketing.get("calculated_amount") or marketing.get("fixed_amount") or 0.0
     
     # Final profit
     total_expenses = total_expenses_before_marketing + marketing_amount
     final_profit = gross_revenue - total_expenses
     profit_percentage = (final_profit / gross_revenue * 100) if gross_revenue > 0 else 0
-    
-    # Update stored marketing commission if it doesn't match calculated amount
-    if marketing and marketing.get("id") and marketing_amount != marketing.get("calculated_amount", 0):
-        await db.marketing_commissions.update_one(
-            {"id": marketing["id"]},
-            {"$set": {"calculated_amount": marketing_amount, "updated_at": datetime.now(timezone.utc).isoformat()}}
-        )
     
     # Get company name
     company = await db.companies.find_one({"id": session.get("company_id")}, {"_id": 0, "name": 1})
