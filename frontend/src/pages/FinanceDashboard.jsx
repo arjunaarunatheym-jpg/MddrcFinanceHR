@@ -745,7 +745,7 @@ const FinanceDashboard = ({ user, onLogout }) => {
           <div class="detail-box">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
               <div><div class="detail-label">Invoice No:</div><div class="detail-value">${invoice.invoice_number}</div></div>
-              <div><div class="detail-label">Date:</div><div class="detail-value">${invoice.issued_at ? new Date(invoice.issued_at).toLocaleDateString('en-MY') : new Date().toLocaleDateString('en-MY')}</div></div>
+              <div><div class="detail-label">Date:</div><div class="detail-value">${invoice.invoice_date ? new Date(invoice.invoice_date).toLocaleDateString('en-MY') : (invoice.issued_at ? new Date(invoice.issued_at).toLocaleDateString('en-MY') : new Date().toLocaleDateString('en-MY'))}</div></div>
               ${invoice.your_reference ? `<div style="grid-column: span 2;"><div class="detail-label">Your Ref:</div><div class="detail-value">${invoice.your_reference}</div></div>` : ''}
             </div>
           </div>
