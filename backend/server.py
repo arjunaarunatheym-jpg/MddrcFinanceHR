@@ -9060,6 +9060,9 @@ async def save_marketing_commission(session_id: str, marketing_data: dict, curre
     else:
         calculated_amount = fixed_amount
     
+    # Get session start_date for P&L filtering
+    session = await db.sessions.find_one({"id": session_id}, {"_id": 0, "start_date": 1, "invoice_id": 1})
+    
     # Upsert marketing commission
     await db.marketing_commissions.update_one(
         {"session_id": session_id},
@@ -9074,6 +9077,8 @@ async def save_marketing_commission(session_id: str, marketing_data: dict, curre
             "session_name": costing.get("session_name"),
             "company_name": costing.get("company_name"),
             "training_dates": costing.get("training_dates"),
+            "session_start_date": session.get("start_date") if session else None,
+            "invoice_id": session.get("invoice_id") if session else None,
             "status": "pending",
             "updated_at": get_malaysia_time().isoformat()
         }},
