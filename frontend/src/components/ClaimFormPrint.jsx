@@ -31,7 +31,7 @@ const ClaimFormPrint = ({ session, onClose }) => {
         setCostingData(prev => ({
           ...prev,
           invoice_number: sessionInvoice.invoice_number,
-          invoice_date: sessionInvoice.created_at
+          invoice_date: sessionInvoice.invoice_date || sessionInvoice.created_at
         }));
       }
     } catch (error) {
