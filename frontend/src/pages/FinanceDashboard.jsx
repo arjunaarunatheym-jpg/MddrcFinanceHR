@@ -1291,6 +1291,7 @@ const FinanceDashboard = ({ user, onLogout }) => {
                       <thead className="bg-gray-50">
                         <tr>
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Invoice #</th>
+                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Date</th>
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Company</th>
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Session</th>
                           <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">Amount</th>
@@ -1302,6 +1303,7 @@ const FinanceDashboard = ({ user, onLogout }) => {
                         {filteredInvoices.map((invoice) => (
                           <tr key={invoice.id} className="hover:bg-gray-50">
                             <td className="px-4 py-3 text-sm font-medium">{invoice.invoice_number}</td>
+                            <td className="px-4 py-3 text-sm text-gray-600">{invoice.invoice_date ? new Date(invoice.invoice_date).toLocaleDateString('en-MY') : '-'}</td>
                             <td className="px-4 py-3 text-sm">{invoice.company_name || '-'}</td>
                             <td className="px-4 py-3 text-sm">{invoice.session_name || '-'}</td>
                             <td className="px-4 py-3 text-sm text-right font-medium">RM {invoice.total_amount?.toLocaleString()}</td>
