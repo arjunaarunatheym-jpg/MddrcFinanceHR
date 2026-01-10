@@ -8670,7 +8670,7 @@ async def get_pending_coordinator_fees(current_user: User = Depends(get_current_
 
 @api_router.get("/finance/payables/marketing-commissions")
 async def get_pending_marketing_commissions(current_user: User = Depends(get_current_user)):
-    """Get all marketing commissions"""
+    """Get all marketing commissions - calculated on-the-fly to match Profit Summary"""
     if current_user.role not in ["admin", "super_admin", "finance"]:
         raise HTTPException(status_code=403, detail="Access denied")
     
@@ -8682,14 +8682,52 @@ async def get_pending_marketing_commissions(current_user: User = Depends(get_cur
     
     result = []
     for comm in comms:
-        if comm.get("session_id") not in session_map:
+        session_id = comm.get("session_id")
+        if session_id not in session_map:
             await db.marketing_commissions.delete_one({"id": comm.get("id")})
             continue
-            
+        
+        # Calculate the commission amount on-the-fly (same logic as Profit Summary)
+        # Get session costing data
+        invoice = await db.invoices.find_one({"session_id": session_id}, {"_id": 0, "total_amount": 1, "tax_amount": 1})
+        invoice_total = invoice.get("total_amount", 0) if invoice else 0
+        tax_amount = invoice.get("tax_amount", 0) if invoice else 0
+        gross_revenue = invoice_total - tax_amount
+        
+        # Get expenses
+        trainer_fees = await db.trainer_fees.find({"session_id": session_id}, {"_id": 0, "fee_amount": 1}).to_list(100)
+        trainer_fees_total = sum(f.get("fee_amount", 0) for f in trainer_fees)
+        
+        coord_fee = await db.coordinator_fees.find_one({"session_id": session_id}, {"_id": 0, "total_fee": 1})
+        coordinator_fee_total = coord_fee.get("total_fee", 0) if coord_fee else 0
+        
+        expenses = await db.session_expenses.find({"session_id": session_id}, {"_id": 0, "actual_amount": 1, "estimated_amount": 1}).to_list(100)
+        cash_expenses_actual = sum(e.get("actual_amount", 0) for e in expenses)
+        cash_expenses_estimated = sum(e.get("estimated_amount", 0) for e in expenses)
+        cash_expenses = cash_expenses_actual if cash_expenses_actual > 0 else cash_expenses_estimated
+        
+        # Calculate profit before marketing
+        total_expenses_before_marketing = trainer_fees_total + coordinator_fee_total + cash_expenses
+        profit_before_marketing = gross_revenue - total_expenses_before_marketing
+        
+        # Calculate marketing commission
+        if comm.get("commission_type") == "percentage":
+            calculated_amount = profit_before_marketing * (comm.get("commission_rate", 0) / 100)
+        else:
+            calculated_amount = comm.get("fixed_amount") or 0.0
+        
+        # Update the stored value if it differs (keep DB in sync)
+        if abs(calculated_amount - (comm.get("calculated_amount") or 0)) > 0.01:
+            await db.marketing_commissions.update_one(
+                {"id": comm.get("id")},
+                {"$set": {"calculated_amount": calculated_amount, "updated_at": get_malaysia_time().isoformat()}}
+            )
+        
         user = await db.users.find_one({"id": comm.get("marketing_user_id")}, {"_id": 0, "full_name": 1})
         comm["marketing_user_name"] = user.get("full_name") if user else "Unknown"
-        comm["session_name"] = session_map.get(comm.get("session_id"), {}).get("name", "Unknown Session")
-        comm["session_start_date"] = session_map.get(comm.get("session_id"), {}).get("start_date")
+        comm["session_name"] = session_map.get(session_id, {}).get("name", "Unknown Session")
+        comm["session_start_date"] = session_map.get(session_id, {}).get("start_date")
+        comm["calculated_amount"] = calculated_amount  # Use the calculated value, not stored
         result.append(comm)
     
     return result
