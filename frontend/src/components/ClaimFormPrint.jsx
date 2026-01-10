@@ -216,10 +216,23 @@ const ClaimFormPrint = ({ session, onClose }) => {
   const trainerFeesTotal = costingData.trainer_fees_total || 0;
   const coordFeeTotal = costingData.coordinator_fee_total || 0;
   const cashExpenses = costingData.cash_expenses_actual || costingData.cash_expenses_estimated || 0;
-  const marketingAmount = costingData.marketing_commission || 0;
-  const totalExpenses = costingData.total_expenses || 0;
-  const profit = costingData.profit || 0;
-  const profitPct = costingData.profit_percentage || 0;
+  
+  // Calculate marketing commission and profit the same way as Profit Summary
+  // (based on profit AFTER expenses, not from stored values)
+  const profitBeforeMarketing = grossRevenue - trainerFeesTotal - coordFeeTotal - cashExpenses;
+  
+  let marketingAmount = 0;
+  if (costingData.marketing) {
+    if (costingData.marketing.commission_type === 'percentage') {
+      marketingAmount = profitBeforeMarketing * (costingData.marketing.commission_rate || 0) / 100;
+    } else {
+      marketingAmount = costingData.marketing.fixed_amount || 0;
+    }
+  }
+  
+  const totalExpenses = trainerFeesTotal + coordFeeTotal + cashExpenses + marketingAmount;
+  const profit = grossRevenue - totalExpenses;
+  const profitPct = grossRevenue > 0 ? (profit / grossRevenue * 100) : 0;
   const marketingName = costingData.marketing?.marketing_user_name || costingData.marketing?.full_name || 'N/A';
 
   return (
