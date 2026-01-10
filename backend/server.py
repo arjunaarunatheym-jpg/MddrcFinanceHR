@@ -8755,14 +8755,19 @@ async def get_session_costing(session_id: str, current_user: User = Depends(get_
     
     # Calculate profit (before marketing commission)
     gross_revenue = invoice_total - tax_amount
-    total_expenses_before_marketing = trainer_fees_total + coordinator_fee_total + cash_expenses_actual
+    # Use actual expenses if > 0, otherwise use estimated
+    cash_expenses_used = cash_expenses_actual if cash_expenses_actual > 0 else cash_expenses_estimated
+    total_expenses_before_marketing = trainer_fees_total + coordinator_fee_total + cash_expenses_used
+    profit_before_marketing = gross_revenue - total_expenses_before_marketing
     
-    # Use STORED marketing commission amount - don't recalculate
-    # The commission should only be calculated once when costing is saved
+    # Calculate marketing commission on-the-fly using stored rate/type
+    # This ensures consistency with Profit Summary display
     marketing_amount = 0.0
     if marketing:
-        # Use the stored calculated_amount if available, otherwise use fixed_amount
-        marketing_amount = marketing.get("calculated_amount") or marketing.get("fixed_amount") or 0.0
+        if marketing.get("commission_type") == "percentage":
+            marketing_amount = profit_before_marketing * (marketing.get("commission_rate", 0) / 100)
+        else:
+            marketing_amount = marketing.get("fixed_amount") or 0.0
     
     # Final profit
     total_expenses = total_expenses_before_marketing + marketing_amount
