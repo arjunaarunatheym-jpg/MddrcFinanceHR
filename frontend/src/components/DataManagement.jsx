@@ -103,6 +103,8 @@ const DataManagement = ({ user }) => {
       loadInvoices();
     } else if (activeMainTab === "payment-management" && hasFinanceAccess) {
       loadPayments();
+    } else if (activeMainTab === "creditnote-management" && hasFinanceAccess) {
+      loadCreditNotes();
     } else if (activeMainTab === "audit-trail" && hasFinanceAccess) {
       loadAuditTrail();
     }
