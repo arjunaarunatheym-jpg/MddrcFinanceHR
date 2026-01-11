@@ -1536,6 +1536,41 @@ const HRModule = () => {
           onClose={() => setPrintPayAdvice(null)} 
         />
       )}
+
+      {/* Unlock Pay Advice Dialog */}
+      <Dialog open={unlockPayAdviceDialog.open} onOpenChange={(open) => setUnlockPayAdviceDialog({ ...unlockPayAdviceDialog, open })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Unlock Pay Advice</DialogTitle>
+            <DialogDescription>
+              Enter a reason to unlock this pay advice. This action will be logged for audit purposes.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="unlock-reason">Reason (required, minimum 5 characters)</Label>
+            <textarea
+              id="unlock-reason"
+              className="w-full mt-2 p-3 border rounded-md min-h-[100px]"
+              placeholder="Enter reason for unlocking this pay advice..."
+              value={unlockPayAdviceDialog.reason}
+              onChange={(e) => setUnlockPayAdviceDialog({ ...unlockPayAdviceDialog, reason: e.target.value })}
+              data-testid="unlock-pay-advice-reason"
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setUnlockPayAdviceDialog({ open: false, id: null, reason: '' })}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={confirmUnlockPayAdvice} 
+              disabled={unlockPayAdviceDialog.reason.trim().length < 5}
+              data-testid="confirm-unlock-pay-advice"
+            >
+              Unlock Pay Advice
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
