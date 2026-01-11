@@ -9062,6 +9062,285 @@ async def mark_coordinator_fee_paid(fee_id: str, current_user: User = Depends(ge
     
     return {"message": "Coordinator fee marked as paid"}
 
+# ============ PAYABLES PERIOD MANAGEMENT ============
+
+class PayablesPeriodCreate(BaseModel):
+    year: int
+    month: int
+
+@api_router.get("/finance/payables/periods")
+async def get_payables_periods(current_user: User = Depends(get_current_user)):
+    """Get all payables periods with open/closed status"""
+    if current_user.role not in ["admin", "super_admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    periods = await db.payables_periods.find({}, {"_id": 0}).sort([("year", -1), ("month", -1)]).to_list(100)
+    return periods
+
+@api_router.post("/finance/payables/periods")
+async def create_payables_period(period: PayablesPeriodCreate, current_user: User = Depends(get_current_user)):
+    """Create a new payables period (opens it)"""
+    if current_user.role not in ["admin", "super_admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    existing = await db.payables_periods.find_one({"year": period.year, "month": period.month}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail="Period already exists")
+    
+    now = get_malaysia_time()
+    new_period = {
+        "id": str(uuid.uuid4()),
+        "year": period.year,
+        "month": period.month,
+        "status": "open",
+        "opened_at": now.isoformat(),
+        "opened_by": current_user.id,
+        "created_at": now.isoformat()
+    }
+    
+    await db.payables_periods.insert_one({**new_period, "_id": new_period["id"]})
+    return new_period
+
+@api_router.post("/finance/payables/periods/{period_id}/close")
+async def close_payables_period(period_id: str, current_user: User = Depends(get_current_user)):
+    """Close a payables period - no more changes allowed after closing"""
+    if current_user.role not in ["admin", "super_admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    period = await db.payables_periods.find_one({"id": period_id}, {"_id": 0})
+    if not period:
+        raise HTTPException(status_code=404, detail="Period not found")
+    
+    if period.get("status") == "closed":
+        raise HTTPException(status_code=400, detail="Period is already closed")
+    
+    now = get_malaysia_time()
+    await db.payables_periods.update_one(
+        {"id": period_id},
+        {"$set": {
+            "status": "closed",
+            "closed_at": now.isoformat(),
+            "closed_by": current_user.id,
+            "updated_at": now.isoformat()
+        }}
+    )
+    
+    return {"message": "Period closed successfully"}
+
+@api_router.post("/finance/payables/periods/{period_id}/reopen")
+async def reopen_payables_period(period_id: str, reason: str = "", current_user: User = Depends(get_current_user)):
+    """Reopen a closed payables period - requires admin and reason"""
+    if current_user.role not in ["admin", "super_admin"]:
+        raise HTTPException(status_code=403, detail="Only Admin can reopen periods")
+    
+    if not reason or len(reason.strip()) < 5:
+        raise HTTPException(status_code=400, detail="Reason is required (minimum 5 characters)")
+    
+    period = await db.payables_periods.find_one({"id": period_id}, {"_id": 0})
+    if not period:
+        raise HTTPException(status_code=404, detail="Period not found")
+    
+    if period.get("status") == "open":
+        raise HTTPException(status_code=400, detail="Period is already open")
+    
+    now = get_malaysia_time()
+    await db.payables_periods.update_one(
+        {"id": period_id},
+        {"$set": {
+            "status": "open",
+            "reopened_at": now.isoformat(),
+            "reopened_by": current_user.id,
+            "reopen_reason": reason,
+            "updated_at": now.isoformat()
+        }}
+    )
+    
+    # Create audit trail
+    await create_audit_trail_entry(
+        action="Payables Period Reopened",
+        record_reference=f"{period['year']}-{str(period['month']).zfill(2)}",
+        entity_type="payables_period",
+        entity_id=period_id,
+        changed_by=current_user,
+        reason=reason,
+        field_changed="status",
+        from_value="closed",
+        to_value="open"
+    )
+    
+    return {"message": "Period reopened successfully"}
+
+@api_router.get("/finance/payables/period-status")
+async def get_period_status(year: int, month: int, current_user: User = Depends(get_current_user)):
+    """Check if a specific period is open or closed"""
+    period = await db.payables_periods.find_one({"year": year, "month": month}, {"_id": 0})
+    if not period:
+        return {"status": "open", "exists": False}  # If no period record, assume open
+    return {"status": period.get("status", "open"), "exists": True, "period": period}
+
+# ============ PAYABLES EXCEL EXPORT ============
+
+@api_router.get("/finance/payables/export-excel")
+async def export_payables_excel(year: int, month: int, current_user: User = Depends(get_current_user)):
+    """Export payables for a specific month as Excel format data"""
+    if current_user.role not in ["admin", "super_admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Define date range for the month
+    start_date = datetime(year, month, 1)
+    if month == 12:
+        end_date = datetime(year + 1, 1, 1) - timedelta(days=1)
+    else:
+        end_date = datetime(year, month + 1, 1) - timedelta(days=1)
+    end_date = end_date.replace(hour=23, minute=59, second=59)
+    
+    # Collect all payables from all sources
+    payables_data = []
+    
+    # 1. Trainer fees - get from same endpoint trainers see
+    trainer_fees = await db.trainer_fees.find({}, {"_id": 0}).to_list(1000)
+    for fee in trainer_fees:
+        # Get session info
+        session = await db.sessions.find_one({"id": fee.get("session_id")}, {"_id": 0, "name": 1, "start_date": 1, "company_id": 1})
+        if not session:
+            continue
+        
+        # Check if session is in the target month
+        session_date = session.get("start_date")
+        if session_date:
+            try:
+                if isinstance(session_date, str):
+                    session_dt = datetime.fromisoformat(session_date.replace('Z', '+00:00'))
+                else:
+                    session_dt = session_date
+                if session_dt.year != year or session_dt.month != month:
+                    continue
+            except:
+                continue
+        else:
+            continue
+        
+        # Get company info
+        company = await db.companies.find_one({"id": session.get("company_id")}, {"_id": 0, "name": 1})
+        company_name = company.get("name") if company else "-"
+        
+        # Get invoice info
+        invoice = await db.invoices.find_one({"session_id": fee.get("session_id")}, {"_id": 0, "invoice_number": 1})
+        invoice_number = invoice.get("invoice_number") if invoice else "-"
+        
+        payables_data.append({
+            "name": fee.get("trainer_name", "Unknown").upper(),
+            "invoice_number": invoice_number,
+            "training_date": session_date,
+            "position": fee.get("trainer_role", "Trainer").title(),
+            "company": company_name,
+            "details": session.get("name", "-"),
+            "amount": fee.get("fee_amount", 0),
+            "status": fee.get("status", "pending"),
+            "type": "trainer"
+        })
+    
+    # 2. Coordinator fees
+    coord_fees = await db.coordinator_fees.find({}, {"_id": 0}).to_list(1000)
+    for fee in coord_fees:
+        session = await db.sessions.find_one({"id": fee.get("session_id")}, {"_id": 0, "name": 1, "start_date": 1, "company_id": 1})
+        if not session:
+            continue
+        
+        session_date = session.get("start_date")
+        if session_date:
+            try:
+                if isinstance(session_date, str):
+                    session_dt = datetime.fromisoformat(session_date.replace('Z', '+00:00'))
+                else:
+                    session_dt = session_date
+                if session_dt.year != year or session_dt.month != month:
+                    continue
+            except:
+                continue
+        else:
+            continue
+        
+        company = await db.companies.find_one({"id": session.get("company_id")}, {"_id": 0, "name": 1})
+        company_name = company.get("name") if company else "-"
+        
+        invoice = await db.invoices.find_one({"session_id": fee.get("session_id")}, {"_id": 0, "invoice_number": 1})
+        invoice_number = invoice.get("invoice_number") if invoice else "-"
+        
+        payables_data.append({
+            "name": fee.get("coordinator_name", "Unknown").upper(),
+            "invoice_number": invoice_number,
+            "training_date": session_date,
+            "position": "Coordinator",
+            "company": company_name,
+            "details": session.get("name", "-"),
+            "amount": fee.get("total_fee", 0),
+            "status": fee.get("status", "pending"),
+            "type": "coordinator"
+        })
+    
+    # 3. Marketing commissions
+    mkt_comm = await db.marketing_commissions.find({}, {"_id": 0}).to_list(1000)
+    for comm in mkt_comm:
+        session = await db.sessions.find_one({"id": comm.get("session_id")}, {"_id": 0, "name": 1, "start_date": 1, "company_id": 1})
+        if not session:
+            continue
+        
+        session_date = session.get("start_date")
+        if session_date:
+            try:
+                if isinstance(session_date, str):
+                    session_dt = datetime.fromisoformat(session_date.replace('Z', '+00:00'))
+                else:
+                    session_dt = session_date
+                if session_dt.year != year or session_dt.month != month:
+                    continue
+            except:
+                continue
+        else:
+            continue
+        
+        company = await db.companies.find_one({"id": session.get("company_id")}, {"_id": 0, "name": 1})
+        company_name = company.get("name") if company else "-"
+        
+        invoice = await db.invoices.find_one({"session_id": comm.get("session_id")}, {"_id": 0, "invoice_number": 1})
+        invoice_number = invoice.get("invoice_number") if invoice else "-"
+        
+        payables_data.append({
+            "name": comm.get("user_name", "Unknown").upper(),
+            "invoice_number": invoice_number,
+            "training_date": session_date,
+            "position": "Marketing",
+            "company": company_name,
+            "details": session.get("name", "-"),
+            "amount": comm.get("calculated_amount", 0),
+            "status": comm.get("status", "pending"),
+            "type": "marketing"
+        })
+    
+    # Sort by name, then by date
+    payables_data.sort(key=lambda x: (x["name"], x.get("training_date", "")))
+    
+    # Group by name and calculate totals
+    grouped_data = {}
+    for item in payables_data:
+        name = item["name"]
+        if name not in grouped_data:
+            grouped_data[name] = {"items": [], "total": 0}
+        grouped_data[name]["items"].append(item)
+        grouped_data[name]["total"] += item["amount"]
+    
+    # Calculate grand total
+    grand_total = sum(g["total"] for g in grouped_data.values())
+    
+    return {
+        "period": f"{year}-{str(month).zfill(2)}",
+        "period_name": datetime(year, month, 1).strftime("%B %Y"),
+        "data": grouped_data,
+        "grand_total": grand_total,
+        "generated_at": get_malaysia_time().isoformat()
+    }
+
 # ============ PAYABLES LIST ENDPOINTS ============
 
 @api_router.get("/finance/payables/trainer-fees")
