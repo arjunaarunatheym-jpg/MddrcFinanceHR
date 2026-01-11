@@ -11988,7 +11988,7 @@ async def get_pay_advice_list(
 
 @api_router.post("/hr/pay-advice/generate")
 async def generate_pay_advice(data: dict, current_user: User = Depends(get_current_user)):
-    """Generate pay advice for a person based on their session work"""
+    """Generate pay advice for a session worker based on their session work"""
     if current_user.role not in ["admin", "finance"]:
         raise HTTPException(status_code=403, detail="Access denied")
     
@@ -11999,74 +11999,153 @@ async def generate_pay_advice(data: dict, current_user: User = Depends(get_curre
     if not user_id or not year or not month:
         raise HTTPException(status_code=400, detail="user_id, year, and month are required")
     
-    # Check period status
-    period = await db.payroll_periods.find_one({"year": year, "month": month})
-    if period and period.get("status") == "closed":
-        raise HTTPException(status_code=400, detail="Cannot generate pay advice for closed period")
+    # Check if pay advice already exists for this user/period
+    existing = await db.pay_advice.find_one({"user_id": user_id, "year": year, "month": month}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail="Pay advice already exists for this period. Delete it first to regenerate.")
+    
+    # Check period status (use payables_periods)
+    period = await db.payables_periods.find_one({"year": year, "month": month})
     
     # Get user details
     user = await db.users.find_one({"id": user_id}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Find all sessions in this month where user worked as trainer/coordinator
-    month_start = f"{year}-{str(month).zfill(2)}-01"
-    month_end = f"{year}-{str(month).zfill(2)}-31"
+    # Date range for the month
+    start_date = datetime(year, month, 1)
+    if month == 12:
+        end_date = datetime(year + 1, 1, 1) - timedelta(days=1)
+    else:
+        end_date = datetime(year, month + 1, 1) - timedelta(days=1)
+    end_date = end_date.replace(hour=23, minute=59, second=59)
     
-    # Get trainer fees for this user in this period
-    trainer_fees = await db.trainer_fees.find({
-        "trainer_id": user_id,
-        "created_at": {"$gte": month_start, "$lte": month_end + "T23:59:59"}
-    }, {"_id": 0}).to_list(100)
-    
-    # Get coordinator fees for this user
-    coord_fees = await db.coordinator_fees.find({
-        "coordinator_id": user_id,
-        "created_at": {"$gte": month_start, "$lte": month_end + "T23:59:59"}
-    }, {"_id": 0}).to_list(100)
-    
-    # Build session details
+    # Build session details from all sources
     session_details = []
     total_amount = 0
     
+    # 1. Get trainer fees - filter by session date
+    trainer_fees = await db.trainer_fees.find({"trainer_id": user_id}, {"_id": 0}).to_list(500)
     for fee in trainer_fees:
         session = await db.sessions.find_one({"id": fee.get("session_id")}, {"_id": 0, "name": 1, "start_date": 1, "company_id": 1})
-        company = await db.companies.find_one({"id": session.get("company_id")}, {"_id": 0, "name": 1}) if session else None
+        if not session:
+            continue
+        
+        # Check if session is in the target month
+        session_date = session.get("start_date")
+        if session_date:
+            try:
+                if isinstance(session_date, str):
+                    session_dt = datetime.fromisoformat(session_date.replace('Z', '+00:00'))
+                else:
+                    session_dt = session_date
+                if session_dt.year != year or session_dt.month != month:
+                    continue
+            except:
+                continue
+        else:
+            continue
+        
+        company = await db.companies.find_one({"id": session.get("company_id")}, {"_id": 0, "name": 1})
         
         session_details.append({
             "session_id": fee.get("session_id"),
-            "session_name": session.get("name") if session else "Unknown",
+            "session_name": session.get("name"),
             "company_name": company.get("name") if company else "Unknown",
-            "session_date": session.get("start_date") if session else None,
-            "role": fee.get("role", "trainer"),
+            "session_date": session_date,
+            "role": fee.get("trainer_role", "Trainer"),
             "amount": fee.get("fee_amount", 0),
+            "status": fee.get("status", "pending"),
             "remark": fee.get("remark", "")
         })
         total_amount += fee.get("fee_amount", 0)
     
+    # 2. Get coordinator fees - filter by session date
+    coord_fees = await db.coordinator_fees.find({"coordinator_id": user_id}, {"_id": 0}).to_list(500)
     for fee in coord_fees:
         session = await db.sessions.find_one({"id": fee.get("session_id")}, {"_id": 0, "name": 1, "start_date": 1, "company_id": 1})
-        company = await db.companies.find_one({"id": session.get("company_id")}, {"_id": 0, "name": 1}) if session else None
+        if not session:
+            continue
+        
+        session_date = session.get("start_date")
+        if session_date:
+            try:
+                if isinstance(session_date, str):
+                    session_dt = datetime.fromisoformat(session_date.replace('Z', '+00:00'))
+                else:
+                    session_dt = session_date
+                if session_dt.year != year or session_dt.month != month:
+                    continue
+            except:
+                continue
+        else:
+            continue
+        
+        company = await db.companies.find_one({"id": session.get("company_id")}, {"_id": 0, "name": 1})
         
         session_details.append({
             "session_id": fee.get("session_id"),
-            "session_name": session.get("name") if session else "Unknown",
+            "session_name": session.get("name"),
             "company_name": company.get("name") if company else "Unknown",
-            "session_date": session.get("start_date") if session else None,
-            "role": "coordinator",
+            "session_date": session_date,
+            "role": "Coordinator",
             "amount": fee.get("total_fee", 0),
+            "status": fee.get("status", "pending"),
             "remark": f"{fee.get('num_days', 1)} day(s) @ RM{fee.get('daily_rate', 50)}/day"
         })
         total_amount += fee.get("total_fee", 0)
     
+    # 3. Get marketing commissions - filter by session date
+    mkt_comm = await db.marketing_commissions.find({"user_id": user_id}, {"_id": 0}).to_list(500)
+    for comm in mkt_comm:
+        session = await db.sessions.find_one({"id": comm.get("session_id")}, {"_id": 0, "name": 1, "start_date": 1, "company_id": 1})
+        if not session:
+            continue
+        
+        session_date = session.get("start_date")
+        if session_date:
+            try:
+                if isinstance(session_date, str):
+                    session_dt = datetime.fromisoformat(session_date.replace('Z', '+00:00'))
+                else:
+                    session_dt = session_date
+                if session_dt.year != year or session_dt.month != month:
+                    continue
+            except:
+                continue
+        else:
+            continue
+        
+        company = await db.companies.find_one({"id": session.get("company_id")}, {"_id": 0, "name": 1})
+        
+        session_details.append({
+            "session_id": comm.get("session_id"),
+            "session_name": session.get("name"),
+            "company_name": company.get("name") if company else "Unknown",
+            "session_date": session_date,
+            "role": "Marketing",
+            "amount": comm.get("calculated_amount", 0),
+            "status": comm.get("status", "pending"),
+            "remark": f"{comm.get('commission_type', 'Commission')} @ {comm.get('commission_percentage', 0)}%"
+        })
+        total_amount += comm.get("calculated_amount", 0)
+    
+    if not session_details:
+        raise HTTPException(status_code=400, detail="No session work found for this user in this period")
+    
+    # Sort by session date
+    session_details.sort(key=lambda x: x.get("session_date", ""))
+    
     # Create pay advice
+    now = get_malaysia_time()
     pay_advice = {
         "id": str(uuid.uuid4()),
+        "advice_number": f"PA/MDDRC/{year}/{str(month).zfill(2)}/{str(uuid.uuid4())[:4].upper()}",
         "user_id": user_id,
         "period_id": period["id"] if period else None,
         "year": year,
         "month": month,
-        "period_name": f"{year}-{str(month).zfill(2)}",
+        "period_name": f"{datetime(year, month, 1).strftime('%B %Y')}",
         
         # User info
         "full_name": user.get("full_name"),
@@ -12080,16 +12159,17 @@ async def generate_pay_advice(data: dict, current_user: User = Depends(get_curre
         "session_details": session_details,
         "total_sessions": len(session_details),
         "gross_amount": total_amount,
-        "deductions": 0,  # Can add deductions if needed
+        "deductions": 0,
         "nett_amount": total_amount,
         
         "is_locked": False,
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "created_by": current_user.email
+        "created_at": now.isoformat(),
+        "created_by": current_user.id,
+        "created_by_name": current_user.full_name or current_user.email
     }
     
-    await db.pay_advice.insert_one(pay_advice)
-    return {"id": pay_advice["id"], "message": "Pay advice generated", "total_amount": total_amount}
+    await db.pay_advice.insert_one({**pay_advice, "_id": pay_advice["id"]})
+    return {"id": pay_advice["id"], "message": "Pay advice generated successfully", "total_sessions": len(session_details), "total_amount": total_amount}
 
 @api_router.get("/hr/pay-advice/{advice_id}")
 async def get_pay_advice(advice_id: str, current_user: User = Depends(get_current_user)):
