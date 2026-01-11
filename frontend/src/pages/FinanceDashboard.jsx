@@ -568,6 +568,229 @@ const FinanceDashboard = ({ user, onLogout }) => {
     });
   };
 
+  // Credit Note Workflow Functions
+  const handleApproveCN = async (cnId) => {
+    try {
+      await axiosInstance.post(`/finance/credit-notes/${cnId}/approve`);
+      toast.success('Credit note approved');
+      loadCreditNotes();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to approve credit note');
+    }
+  };
+
+  const handleIssueCN = async (cnId) => {
+    try {
+      await axiosInstance.post(`/finance/credit-notes/${cnId}/issue`);
+      toast.success('Credit note issued');
+      loadCreditNotes();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to issue credit note');
+    }
+  };
+
+  // Print Credit Note
+  const handlePrintCreditNote = async (cn) => {
+    let settings = companySettings;
+    let logoUrl = companySettings.logo_url;
+    
+    if (!logoUrl) {
+      try {
+        const appSettings = await axiosInstance.get('/settings');
+        logoUrl = appSettings.data?.logo_url;
+      } catch (e) {}
+    }
+    
+    const primaryColor = settings.primary_color || '#1a365d';
+    const secondaryColor = settings.secondary_color || '#dc2626';
+    const tagline = settings.tagline || 'Towards a Nation of Safe Drivers';
+    
+    // Build custom fields HTML
+    const headerCustomFields = (settings.invoice_custom_fields || [])
+      .filter(f => f.position === 'Header' || f.position === 'header')
+      .map(f => ` • ${f.label}: ${f.value}`)
+      .join('');
+    const footerCustomFields = (settings.invoice_custom_fields || [])
+      .filter(f => f.position === 'Footer' || f.position === 'footer')
+      .map(f => `<p><strong>${f.label}:</strong> ${f.value}</p>`)
+      .join('');
+    
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Credit Note ${cn.cn_number}</title>
+        <style>
+          @page { size: A4; margin: 10mm; }
+          @media print { 
+            body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          }
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body { 
+            font-family: Arial, sans-serif; 
+            font-size: 11px;
+            padding: 20px; 
+            max-width: 210mm;
+            margin: 0 auto; 
+            line-height: 1.4;
+          }
+          
+          .header { 
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid ${secondaryColor};
+            margin-bottom: 15px;
+          }
+          .logo-img { width: 90px; height: auto; flex-shrink: 0; }
+          .company-details { flex: 1; }
+          .company-name { font-size: 16px; font-weight: bold; color: ${primaryColor}; margin-bottom: 3px; }
+          .company-info { font-size: 10px; color: #444; line-height: 1.4; }
+          
+          .cn-title { 
+            font-size: 20px; 
+            font-weight: bold; 
+            text-align: center; 
+            color: white; 
+            background: ${secondaryColor};
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 4px;
+          }
+          
+          .details-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 15px; 
+            margin-bottom: 20px;
+          }
+          .detail-box { 
+            padding: 12px; 
+            border: 1px solid #ddd; 
+            border-radius: 4px;
+            font-size: 10px;
+          }
+          .detail-label { 
+            font-weight: bold; 
+            font-size: 9px; 
+            color: #666; 
+            margin-bottom: 3px; 
+            text-transform: uppercase;
+          }
+          .detail-value { font-size: 11px; margin-bottom: 3px; }
+          
+          .amount-box {
+            text-align: center;
+            padding: 30px;
+            background: #fef2f2;
+            border: 2px solid ${secondaryColor};
+            border-radius: 8px;
+            margin: 20px 0;
+          }
+          .amount-label { font-size: 14px; color: #666; margin-bottom: 10px; }
+          .amount-value { font-size: 32px; font-weight: bold; color: ${secondaryColor}; }
+          
+          .reason-box {
+            padding: 15px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            margin-bottom: 20px;
+          }
+          
+          .footer { 
+            margin-top: 30px; 
+            font-size: 9px; 
+            color: #555;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+          }
+          .footer p { margin-bottom: 3px; }
+          
+          .tagline { 
+            font-style: italic;
+            color: ${primaryColor}; 
+            font-size: 11px; 
+            text-align: center; 
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+          }
+          
+          .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            background: ${cn.status === 'issued' ? '#22c55e' : cn.status === 'approved' ? '#3b82f6' : '#eab308'};
+            color: white;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          ${logoUrl ? `<img src="${logoUrl}" class="logo-img" alt="Logo" />` : ''}
+          <div class="company-details">
+            <div class="company-name">${settings.company_name || 'MDDRC SDN BHD'}</div>
+            <div class="company-info">
+              ${settings.company_reg_no ? `(${settings.company_reg_no})` : ''}
+              ${settings.address_line1 ? ` • ${settings.address_line1}` : ''}${settings.address_line2 ? `, ${settings.address_line2}` : ''}<br>
+              ${settings.city || ''}${settings.postcode ? ` ${settings.postcode}` : ''}${settings.state ? `, ${settings.state}` : ''}
+              ${settings.phone ? ` • Tel: ${settings.phone}` : ''}${settings.email ? ` • ${settings.email}` : ''}
+              ${headerCustomFields}
+            </div>
+          </div>
+        </div>
+        
+        <div class="cn-title">CREDIT NOTE</div>
+        
+        <div class="details-grid">
+          <div class="detail-box">
+            <div class="detail-label">Credit Note To:</div>
+            <div class="detail-value" style="font-weight: bold; font-size: 13px;">${cn.company_name || '-'}</div>
+            ${cn.session_name ? `<div class="detail-value">Session: ${cn.session_name}</div>` : ''}
+          </div>
+          <div class="detail-box">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <div><div class="detail-label">CN Number:</div><div class="detail-value" style="color: ${secondaryColor}; font-weight: bold;">${cn.cn_number}</div></div>
+              <div><div class="detail-label">Date:</div><div class="detail-value">${cn.issued_at ? new Date(cn.issued_at).toLocaleDateString('en-MY') : new Date(cn.created_at).toLocaleDateString('en-MY')}</div></div>
+              <div><div class="detail-label">Invoice Ref:</div><div class="detail-value">${cn.invoice_number || '-'}</div></div>
+              <div><div class="detail-label">Status:</div><span class="status-badge">${cn.status}</span></div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="reason-box">
+          <div class="detail-label">Reason / Description:</div>
+          <div class="detail-value" style="font-size: 12px; margin-top: 5px;">${cn.reason || 'HRDCorp Levy Deduction'}</div>
+          <div class="detail-value">${cn.description || ''}</div>
+          ${cn.base_amount ? `<div class="detail-value" style="margin-top: 10px;">Base Amount: RM ${cn.base_amount?.toLocaleString('en-MY', {minimumFractionDigits: 2})} × ${cn.percentage || 4}%</div>` : ''}
+        </div>
+        
+        <div class="amount-box">
+          <div class="amount-label">Credit Note Amount</div>
+          <div class="amount-value">- RM ${cn.amount?.toLocaleString('en-MY', {minimumFractionDigits: 2})}</div>
+        </div>
+        
+        <div class="footer">
+          <p>This credit note is issued in relation to the above-referenced invoice.</p>
+          <p>${settings.invoice_footer_note || 'Thank you for your business!'}</p>
+          ${footerCustomFields}
+        </div>
+        
+        <div class="tagline">"${tagline}"</div>
+        
+        <script>window.onload = function() { window.print(); }</script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   // Print invoice
   // Print invoice with company settings
   const handlePrintInvoice = async (invoice) => {
