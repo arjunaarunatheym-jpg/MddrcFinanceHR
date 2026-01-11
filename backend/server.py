@@ -8224,6 +8224,254 @@ async def issue_credit_note(cn_id: str, current_user: User = Depends(get_current
     
     return {"message": "Credit note issued", "cn_number": credit_note.get("cn_number")}
 
+# Credit Note Management Endpoints (similar to Invoice Management)
+
+class BackdateCreditNoteRequest(BaseModel):
+    new_date: str  # YYYY-MM-DD format
+    reason: str
+
+class EditCreditNoteRequest(BaseModel):
+    company_name: Optional[str] = None
+    reason: Optional[str] = None
+    description: Optional[str] = None
+    amount: Optional[float] = None
+    percentage: Optional[float] = None
+    edit_reason: str  # Mandatory reason for edit
+
+@api_router.put("/finance/admin/credit-notes/{cn_id}/backdate")
+async def backdate_credit_note(
+    cn_id: str,
+    request: BackdateCreditNoteRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Backdate a credit note - Admin/Finance only"""
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Only Admin and Finance can backdate credit notes")
+    
+    if not request.reason or len(request.reason.strip()) < 5:
+        raise HTTPException(status_code=400, detail="Reason is required (minimum 5 characters)")
+    
+    # Get the credit note
+    credit_note = await db.credit_notes.find_one({"id": cn_id}, {"_id": 0})
+    if not credit_note:
+        raise HTTPException(status_code=404, detail="Credit note not found")
+    
+    company_name = credit_note.get("company_name", "Unknown")
+    amount = credit_note.get("amount", 0)
+    record_ref = f"{credit_note.get('cn_number')} - {company_name} - RM {amount:,.2f}"
+    
+    # Get old date
+    old_created_at = credit_note.get("created_at")
+    if isinstance(old_created_at, datetime):
+        old_date = old_created_at.strftime("%Y-%m-%d")
+    elif isinstance(old_created_at, str):
+        old_date = old_created_at[:10]
+    else:
+        old_date = "Unknown"
+    
+    # Parse new date
+    try:
+        new_datetime = datetime.strptime(request.new_date, "%Y-%m-%d")
+        new_datetime = new_datetime.replace(tzinfo=MALAYSIA_TZ)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+    
+    # Create audit trail entry
+    await create_audit_trail_entry(
+        action="Credit Note Backdated",
+        record_reference=record_ref,
+        entity_type="credit_note",
+        entity_id=cn_id,
+        changed_by=current_user,
+        reason=request.reason,
+        field_changed="created_at",
+        from_value=old_date,
+        to_value=request.new_date
+    )
+    
+    # Update the credit note date
+    await db.credit_notes.update_one(
+        {"id": cn_id},
+        {"$set": {
+            "created_at": new_datetime.isoformat(),
+            "cn_date": request.new_date,
+            "updated_at": get_malaysia_time().isoformat()
+        }}
+    )
+    
+    return {"message": "Credit note backdated successfully", "old_date": old_date, "new_date": request.new_date}
+
+@api_router.put("/finance/admin/credit-notes/{cn_id}/edit")
+async def edit_credit_note_admin(
+    cn_id: str,
+    request: EditCreditNoteRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Edit credit note details - Admin/Finance only with audit trail"""
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Only Admin and Finance can edit credit notes")
+    
+    if not request.edit_reason or len(request.edit_reason.strip()) < 5:
+        raise HTTPException(status_code=400, detail="Edit reason is required (minimum 5 characters)")
+    
+    # Get the credit note
+    credit_note = await db.credit_notes.find_one({"id": cn_id}, {"_id": 0})
+    if not credit_note:
+        raise HTTPException(status_code=404, detail="Credit note not found")
+    
+    record_ref = f"{credit_note.get('cn_number')} - {credit_note.get('company_name', 'Unknown')}"
+    
+    # Build update dict and track changes
+    update_dict = {"updated_at": get_malaysia_time().isoformat()}
+    changes = []
+    
+    if request.company_name is not None and request.company_name != credit_note.get("company_name"):
+        changes.append(("company_name", credit_note.get("company_name"), request.company_name))
+        update_dict["company_name"] = request.company_name
+    
+    if request.reason is not None and request.reason != credit_note.get("reason"):
+        changes.append(("reason", credit_note.get("reason"), request.reason))
+        update_dict["reason"] = request.reason
+    
+    if request.description is not None and request.description != credit_note.get("description"):
+        changes.append(("description", credit_note.get("description"), request.description))
+        update_dict["description"] = request.description
+    
+    if request.amount is not None and request.amount != credit_note.get("amount"):
+        changes.append(("amount", str(credit_note.get("amount")), str(request.amount)))
+        update_dict["amount"] = request.amount
+    
+    if request.percentage is not None and request.percentage != credit_note.get("percentage"):
+        changes.append(("percentage", str(credit_note.get("percentage")), str(request.percentage)))
+        update_dict["percentage"] = request.percentage
+    
+    if not changes:
+        return {"message": "No changes detected"}
+    
+    # Create audit trail entries for each change
+    for field, from_val, to_val in changes:
+        await create_audit_trail_entry(
+            action="Credit Note Edited",
+            record_reference=record_ref,
+            entity_type="credit_note",
+            entity_id=cn_id,
+            changed_by=current_user,
+            reason=request.edit_reason,
+            field_changed=field,
+            from_value=str(from_val) if from_val else "",
+            to_value=str(to_val) if to_val else ""
+        )
+    
+    # Update the credit note
+    await db.credit_notes.update_one({"id": cn_id}, {"$set": update_dict})
+    
+    return {"message": "Credit note updated successfully", "changes": len(changes)}
+
+@api_router.put("/finance/admin/credit-notes/{cn_id}/void")
+async def void_credit_note(
+    cn_id: str,
+    reason: str = "",
+    current_user: User = Depends(get_current_user)
+):
+    """Void a credit note - Admin/Finance only"""
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Only Admin and Finance can void credit notes")
+    
+    if not reason or len(reason.strip()) < 5:
+        raise HTTPException(status_code=400, detail="Reason is required (minimum 5 characters)")
+    
+    # Get the credit note
+    credit_note = await db.credit_notes.find_one({"id": cn_id}, {"_id": 0})
+    if not credit_note:
+        raise HTTPException(status_code=404, detail="Credit note not found")
+    
+    if credit_note.get("status") == "voided":
+        raise HTTPException(status_code=400, detail="Credit note is already voided")
+    
+    record_ref = f"{credit_note.get('cn_number')} - {credit_note.get('company_name', 'Unknown')}"
+    
+    # Create audit trail entry
+    await create_audit_trail_entry(
+        action="Credit Note Voided",
+        record_reference=record_ref,
+        entity_type="credit_note",
+        entity_id=cn_id,
+        changed_by=current_user,
+        reason=reason,
+        field_changed="status",
+        from_value=credit_note.get("status"),
+        to_value="voided"
+    )
+    
+    # Update the credit note status
+    await db.credit_notes.update_one(
+        {"id": cn_id},
+        {"$set": {
+            "status": "voided",
+            "voided_by": current_user.id,
+            "voided_at": get_malaysia_time().isoformat(),
+            "void_reason": reason,
+            "updated_at": get_malaysia_time().isoformat()
+        }}
+    )
+    
+    return {"message": "Credit note voided successfully"}
+
+@api_router.put("/finance/admin/credit-notes/{cn_id}/number")
+async def edit_credit_note_number(
+    cn_id: str,
+    year: int,
+    month: int,
+    sequence: int,
+    reason: str = "",
+    current_user: User = Depends(get_current_user)
+):
+    """Edit credit note number - Admin/Finance only"""
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Only Admin and Finance can edit credit note numbers")
+    
+    if not reason or len(reason.strip()) < 5:
+        raise HTTPException(status_code=400, detail="Reason is required (minimum 5 characters)")
+    
+    # Get the credit note
+    credit_note = await db.credit_notes.find_one({"id": cn_id}, {"_id": 0})
+    if not credit_note:
+        raise HTTPException(status_code=404, detail="Credit note not found")
+    
+    old_number = credit_note.get("cn_number")
+    new_number = f"CN/MDDRC/{year}/{str(month).zfill(2)}/{str(sequence).zfill(4)}"
+    
+    # Check if new number already exists
+    existing = await db.credit_notes.find_one({"cn_number": new_number, "id": {"$ne": cn_id}}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail=f"Credit note number {new_number} already exists")
+    
+    record_ref = f"{old_number} → {new_number}"
+    
+    # Create audit trail entry
+    await create_audit_trail_entry(
+        action="Credit Note Number Changed",
+        record_reference=record_ref,
+        entity_type="credit_note",
+        entity_id=cn_id,
+        changed_by=current_user,
+        reason=reason,
+        field_changed="cn_number",
+        from_value=old_number,
+        to_value=new_number
+    )
+    
+    # Update the credit note number
+    await db.credit_notes.update_one(
+        {"id": cn_id},
+        {"$set": {
+            "cn_number": new_number,
+            "updated_at": get_malaysia_time().isoformat()
+        }}
+    )
+    
+    return {"message": "Credit note number updated successfully", "old_number": old_number, "new_number": new_number}
+
 @api_router.post("/finance/session/{session_id}/credit-note")
 async def create_session_credit_note(session_id: str, cn_data: dict, current_user: User = Depends(get_current_user)):
     """Create a credit note for a session (typically for HRDCorp deduction)"""
