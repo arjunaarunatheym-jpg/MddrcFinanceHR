@@ -314,3 +314,27 @@ A comprehensive training management platform for MDDRC (Malaysian Defensive Driv
     - Footer with company info
 - **Files Modified**: `backend/server.py`, `frontend/src/pages/FinanceDashboard.jsx`
 
+
+### Credit Note Management in Data Tab (P1 - COMPLETED)
+- **Problem**: Credit Notes had no editing capabilities like Invoices; no backdate, void, or audit trail
+- **Solution**:
+  - Added new **Credit Notes** tab in Data Management (between Invoices and Payments)
+  - Backend endpoints added:
+    - `PUT /api/finance/admin/credit-notes/{cn_id}/backdate` - Change CN date with reason
+    - `PUT /api/finance/admin/credit-notes/{cn_id}/edit` - Edit details with reason
+    - `PUT /api/finance/admin/credit-notes/{cn_id}/void` - Void CN with reason
+    - `PUT /api/finance/admin/credit-notes/{cn_id}/number` - Change CN number with reason
+  - All changes logged to Audit Trail with:
+    - Action type (Backdated, Edited, Voided, Number Changed)
+    - Record reference (CN number, company, amount)
+    - Field changed with old → new values
+    - User who made the change
+    - Mandatory reason
+    - Timestamp
+  - Frontend features:
+    - Search by CN number, company, invoice
+    - Filter by status (All, Draft, Approved, Issued, Voided)
+    - Action buttons: Edit Number (#), Backdate (📅), Edit Details (✏️), Void (🚫)
+    - Modal dialogs for each action with mandatory reason field
+- **Files Modified**: `backend/server.py`, `frontend/src/components/DataManagement.jsx`
+
