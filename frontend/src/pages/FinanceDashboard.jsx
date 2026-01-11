@@ -206,10 +206,10 @@ const FinanceDashboard = ({ user, onLogout }) => {
       .map(([key, value]) => ({ key, ...value }));
   };
 
-  const loadInvoices = async () => {
+  const loadInvoices = async (year = selectedYear) => {
     setLoading(true);
     try {
-      const response = await axiosInstance.get('/finance/invoices');
+      const response = await axiosInstance.get(`/finance/invoices${year ? `?year=${year}` : ''}`);
       setInvoices(response.data);
     } catch (error) {
       toast.error('Failed to load invoices');
