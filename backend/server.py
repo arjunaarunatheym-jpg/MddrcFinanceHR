@@ -8172,6 +8172,58 @@ async def update_credit_note(cn_id: str, update_data: dict, current_user: User =
     
     return await db.credit_notes.find_one({"id": cn_id}, {"_id": 0})
 
+@api_router.post("/finance/credit-notes/{cn_id}/approve")
+async def approve_credit_note(cn_id: str, current_user: User = Depends(get_current_user)):
+    """Approve a credit note"""
+    if current_user.role not in ["admin", "super_admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Only Finance can approve credit notes")
+    
+    credit_note = await db.credit_notes.find_one({"id": cn_id}, {"_id": 0})
+    if not credit_note:
+        raise HTTPException(status_code=404, detail="Credit note not found")
+    
+    if credit_note.get("status") != "draft":
+        raise HTTPException(status_code=400, detail="Only draft credit notes can be approved")
+    
+    now = get_malaysia_time()
+    update_dict = {
+        "status": "approved",
+        "approved_by": current_user.id,
+        "approved_at": now.isoformat(),
+        "updated_at": now.isoformat()
+    }
+    
+    await db.credit_notes.update_one({"id": cn_id}, {"$set": update_dict})
+    await log_finance_action("credit_note", cn_id, "approved", current_user.id, credit_note, update_dict)
+    
+    return {"message": "Credit note approved", "cn_number": credit_note.get("cn_number")}
+
+@api_router.post("/finance/credit-notes/{cn_id}/issue")
+async def issue_credit_note(cn_id: str, current_user: User = Depends(get_current_user)):
+    """Issue a credit note (typically after payment received)"""
+    if current_user.role not in ["admin", "super_admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Only Finance can issue credit notes")
+    
+    credit_note = await db.credit_notes.find_one({"id": cn_id}, {"_id": 0})
+    if not credit_note:
+        raise HTTPException(status_code=404, detail="Credit note not found")
+    
+    if credit_note.get("status") not in ["draft", "approved"]:
+        raise HTTPException(status_code=400, detail="Credit note must be draft or approved to be issued")
+    
+    now = get_malaysia_time()
+    update_dict = {
+        "status": "issued",
+        "issued_by": current_user.id,
+        "issued_at": now.isoformat(),
+        "updated_at": now.isoformat()
+    }
+    
+    await db.credit_notes.update_one({"id": cn_id}, {"$set": update_dict})
+    await log_finance_action("credit_note", cn_id, "issued", current_user.id, credit_note, update_dict)
+    
+    return {"message": "Credit note issued", "cn_number": credit_note.get("cn_number")}
+
 @api_router.post("/finance/session/{session_id}/credit-note")
 async def create_session_credit_note(session_id: str, cn_data: dict, current_user: User = Depends(get_current_user)):
     """Create a credit note for a session (typically for HRDCorp deduction)"""
