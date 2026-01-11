@@ -25,7 +25,7 @@ import sys
 from datetime import datetime
 
 # Configuration
-BASE_URL = "https://hrpay-portal-2.preview.emergentagent.com/api"
+BASE_URL = "https://finance-hub-455.preview.emergentagent.com/api"
 USER_EMAIL = "maaman@gmail.com"
 USER_PASSWORD = "mddrc1"
 

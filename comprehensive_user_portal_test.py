@@ -25,7 +25,7 @@ from datetime import datetime, timedelta
 import uuid
 
 # Configuration
-BASE_URL = "https://hrpay-portal-2.preview.emergentagent.com/api"
+BASE_URL = "https://finance-hub-455.preview.emergentagent.com/api"
 
 # Test Credentials
 TEST_CREDENTIALS = {

@@ -11,7 +11,7 @@ import json
 from datetime import datetime
 import uuid
 
-BASE_URL = "https://hrpay-portal-2.preview.emergentagent.com/api"
+BASE_URL = "https://finance-hub-455.preview.emergentagent.com/api"
 
 # Test credentials
 CREDENTIALS = {

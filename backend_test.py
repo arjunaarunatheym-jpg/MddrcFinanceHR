@@ -28,7 +28,7 @@ from typing import Dict, List, Optional
 import uuid
 
 # Configuration from frontend/.env
-BASE_URL = "https://hrpay-portal-2.preview.emergentagent.com/api"
+BASE_URL = "https://finance-hub-455.preview.emergentagent.com/api"
 
 # Test credentials
 ADMIN_EMAIL = "arjuna@mddrc.com.my"
