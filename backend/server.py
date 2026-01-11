@@ -7850,9 +7850,10 @@ async def create_auto_invoice_for_session(session_data: dict, created_by: str):
 async def get_invoices(
     status: Optional[str] = None,
     company_id: Optional[str] = None,
+    year: Optional[int] = None,
     current_user: User = Depends(get_current_user)
 ):
-    """Get all invoices"""
+    """Get all invoices with optional year filter"""
     if current_user.role not in ["admin", "super_admin", "finance"]:
         raise HTTPException(status_code=403, detail="Access denied")
     
@@ -7861,6 +7862,16 @@ async def get_invoices(
         query["status"] = status
     if company_id:
         query["company_id"] = company_id
+    
+    # Add year filter
+    if year:
+        start_date = datetime(year, 1, 1)
+        end_date = datetime(year, 12, 31, 23, 59, 59)
+        query["$or"] = [
+            {"invoice_date": {"$gte": start_date.isoformat(), "$lte": end_date.isoformat()}},
+            {"$and": [{"invoice_date": {"$exists": False}}, {"created_at": {"$gte": start_date, "$lte": end_date}}]},
+            {"$and": [{"invoice_date": None}, {"created_at": {"$gte": start_date, "$lte": end_date}}]}
+        ]
     
     invoices = await db.invoices.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
     return invoices
