@@ -205,20 +205,21 @@ const TestManagement = ({ program, onBack }) => {
               <DialogHeader>
                 <DialogTitle>Bulk Upload Test Questions</DialogTitle>
                 <DialogDescription>
-                  Upload an Excel file (.xlsx or .xls) with test questions
+                  Upload questions for: <strong>{program.name}</strong>
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="bg-blue-50 p-4 rounded-lg space-y-2">
                   <p className="text-sm font-medium text-blue-900">Excel Format Required:</p>
                   <ul className="text-sm text-blue-700 space-y-1">
-                    <li>• <strong>Program Name</strong> - Must match existing program</li>
-                    <li>• <strong>Question Type</strong> - Use &quot;pre_test&quot; or &quot;post_test&quot;</li>
                     <li>• <strong>Question Text</strong> - The question</li>
                     <li>• <strong>Option A, B, C, D</strong> - Answer choices</li>
                     <li>• <strong>Correct Answer</strong> - Enter A, B, C, or D</li>
-                    <li>• <strong>Points</strong> - Number of points (e.g., 5)</li>
+                    <li>• <strong>Points</strong> - Number of points (optional, default: 5)</li>
                   </ul>
+                  <p className="text-xs text-blue-600 mt-2">
+                    Questions will automatically be used for both Pre-Test (in order) and Post-Test (shuffled).
+                  </p>
                 </div>
                 
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
