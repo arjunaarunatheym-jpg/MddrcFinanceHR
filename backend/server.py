@@ -3158,11 +3158,16 @@ async def delete_test(test_id: str, current_user: User = Depends(get_current_use
 @api_router.post("/tests/bulk-upload")
 async def bulk_upload_test_questions(
     file: UploadFile = File(...),
+    program_id: str = Form(None),
     current_user: User = Depends(get_current_user)
 ):
     """Bulk upload test questions from Excel file
     
-    Expected columns: Program Name, Question Type, Question Text, Option A, Option B, Option C, Option D, Correct Answer, Points
+    Simplified format (when program_id is provided):
+    - Question Text, Option A, Option B, Option C, Option D, Correct Answer, Points
+    
+    Legacy format (when program_id not provided):
+    - Program Name, Question Type, Question Text, Option A, Option B, Option C, Option D, Correct Answer, Points
     """
     if current_user.role not in ["admin", "assistant_admin"]:
         raise HTTPException(status_code=403, detail="Permission denied")
@@ -3189,21 +3194,42 @@ async def bulk_upload_test_questions(
         # Normalize column names
         df.columns = df.columns.str.strip()
         
-        # Map alternative column names
-        column_mappings = {
-            'Program Name': ['Program Name', 'PROGRAM NAME', 'Program', 'PROGRAM'],
-            'Question Type': ['Question Type', 'QUESTION TYPE', 'Type', 'TYPE'],
-            'Question Text': ['Question Text', 'QUESTION TEXT', 'Question', 'QUESTION'],
-            'Option A': ['Option A', 'OPTION A', 'A'],
-            'Option B': ['Option B', 'OPTION B', 'B'],
-            'Option C': ['Option C', 'OPTION C', 'C'],
-            'Option D': ['Option D', 'OPTION D', 'D'],
-            'Correct Answer': ['Correct Answer', 'CORRECT ANSWER', 'Answer', 'ANSWER', 'Correct'],
-            'Points': ['Points', 'POINTS', 'Score', 'SCORE']
-        }
+        # Check if we're using the simplified format (program_id provided)
+        use_simplified_format = program_id is not None
+        
+        if use_simplified_format:
+            # Verify program exists
+            program = await db.programs.find_one({"id": program_id}, {"_id": 0})
+            if not program:
+                raise HTTPException(status_code=404, detail="Program not found")
+            
+            # Simplified column mappings - no Program Name or Question Type needed
+            column_mappings = {
+                'Question Text': ['Question Text', 'QUESTION TEXT', 'Question', 'QUESTION'],
+                'Option A': ['Option A', 'OPTION A', 'A'],
+                'Option B': ['Option B', 'OPTION B', 'B'],
+                'Option C': ['Option C', 'OPTION C', 'C'],
+                'Option D': ['Option D', 'OPTION D', 'D'],
+                'Correct Answer': ['Correct Answer', 'CORRECT ANSWER', 'Answer', 'ANSWER', 'Correct'],
+                'Points': ['Points', 'POINTS', 'Score', 'SCORE']
+            }
+        else:
+            # Legacy column mappings
+            column_mappings = {
+                'Program Name': ['Program Name', 'PROGRAM NAME', 'Program', 'PROGRAM'],
+                'Question Type': ['Question Type', 'QUESTION TYPE', 'Type', 'TYPE'],
+                'Question Text': ['Question Text', 'QUESTION TEXT', 'Question', 'QUESTION'],
+                'Option A': ['Option A', 'OPTION A', 'A'],
+                'Option B': ['Option B', 'OPTION B', 'B'],
+                'Option C': ['Option C', 'OPTION C', 'C'],
+                'Option D': ['Option D', 'OPTION D', 'D'],
+                'Correct Answer': ['Correct Answer', 'CORRECT ANSWER', 'Answer', 'ANSWER', 'Correct'],
+                'Points': ['Points', 'POINTS', 'Score', 'SCORE']
+            }
         
         # Find and rename columns
         final_columns = {}
+        missing_required = []
         for standard_name, alternatives in column_mappings.items():
             found = False
             for alt in alternatives:
@@ -3211,11 +3237,15 @@ async def bulk_upload_test_questions(
                     final_columns[alt] = standard_name
                     found = True
                     break
-            if not found:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Missing required column: {standard_name}"
-                )
+            # Points is optional
+            if not found and standard_name != 'Points':
+                missing_required.append(standard_name)
+        
+        if missing_required:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Missing required column(s): {', '.join(missing_required)}"
+            )
         
         df.rename(columns=final_columns, inplace=True)
         
@@ -3224,21 +3254,75 @@ async def bulk_upload_test_questions(
         for idx, row in df.iterrows():
             row_num = idx + 2
             
-            if pd.isna(row['Program Name']) or str(row['Program Name']).strip() == '':
-                errors.append(f"Row {row_num}: Missing Program Name")
-            if pd.isna(row['Question Type']) or str(row['Question Type']).strip() == '':
-                errors.append(f"Row {row_num}: Missing Question Type")
-            elif str(row['Question Type']).lower() not in ['pre_test', 'post_test', 'pre', 'post']:
-                errors.append(f"Row {row_num}: Question Type must be 'pre_test' or 'post_test'")
-            if pd.isna(row['Question Text']) or str(row['Question Text']).strip() == '':
+            if not use_simplified_format:
+                if pd.isna(row.get('Program Name')) or str(row.get('Program Name', '')).strip() == '':
+                    errors.append(f"Row {row_num}: Missing Program Name")
+                if pd.isna(row.get('Question Type')) or str(row.get('Question Type', '')).strip() == '':
+                    errors.append(f"Row {row_num}: Missing Question Type")
+                elif str(row.get('Question Type', '')).lower() not in ['pre_test', 'post_test', 'pre', 'post']:
+                    errors.append(f"Row {row_num}: Question Type must be 'pre_test' or 'post_test'")
+            
+            if pd.isna(row.get('Question Text')) or str(row.get('Question Text', '')).strip() == '':
                 errors.append(f"Row {row_num}: Missing Question Text")
-            if pd.isna(row['Correct Answer']) or str(row['Correct Answer']).strip() == '':
+            if pd.isna(row.get('Correct Answer')) or str(row.get('Correct Answer', '')).strip() == '':
                 errors.append(f"Row {row_num}: Missing Correct Answer")
+            elif str(row.get('Correct Answer', '')).strip().upper() not in ['A', 'B', 'C', 'D']:
+                errors.append(f"Row {row_num}: Correct Answer must be A, B, C, or D")
         
         if errors:
-            raise HTTPException(status_code=400, detail="Validation errors:\n" + "\n".join(errors))
+            raise HTTPException(status_code=400, detail="Validation errors:\n" + "\n".join(errors[:10]))
         
         # Process questions
+        if use_simplified_format:
+            # Simplified flow: All questions go to this program for both pre and post tests
+            questions_list = []
+            for idx, row in df.iterrows():
+                correct_answer = str(row['Correct Answer']).strip().upper()
+                correct_index = {'A': 0, 'B': 1, 'C': 2, 'D': 3}.get(correct_answer, 0)
+                
+                questions_list.append({
+                    "question_text": str(row['Question Text']).strip(),
+                    "options": [
+                        str(row.get('Option A', '')).strip() if pd.notna(row.get('Option A')) else "",
+                        str(row.get('Option B', '')).strip() if pd.notna(row.get('Option B')) else "",
+                        str(row.get('Option C', '')).strip() if pd.notna(row.get('Option C')) else "",
+                        str(row.get('Option D', '')).strip() if pd.notna(row.get('Option D')) else ""
+                    ],
+                    "correct_answer": correct_index,
+                    "points": int(row['Points']) if 'Points' in df.columns and pd.notna(row.get('Points')) else 5
+                })
+            
+            # Delete existing tests for this program
+            await db.tests.delete_many({"program_id": program_id})
+            
+            # Create pre and post tests with same questions
+            now = get_malaysia_time().isoformat()
+            
+            await db.tests.insert_one({
+                "id": str(uuid.uuid4()),
+                "program_id": program_id,
+                "title": f"{program['name']} - Pre-Test",
+                "test_type": "pre",
+                "questions": questions_list,
+                "created_at": now
+            })
+            
+            await db.tests.insert_one({
+                "id": str(uuid.uuid4()),
+                "program_id": program_id,
+                "title": f"{program['name']} - Post-Test",
+                "test_type": "post",
+                "questions": questions_list,
+                "created_at": now
+            })
+            
+            return {
+                "message": "Questions uploaded successfully",
+                "total_uploaded": len(questions_list),
+                "program": program['name']
+            }
+        
+        # Legacy flow for backward compatibility
         added_questions = []
         programs_not_found = []
         
@@ -3246,8 +3330,8 @@ async def bulk_upload_test_questions(
             program_name = str(row['Program Name']).strip()
             
             # Find program
-            program = await db.programs.find_one({"name": program_name}, {"_id": 0})
-            if not program:
+            prog = await db.programs.find_one({"name": program_name}, {"_id": 0})
+            if not prog:
                 if program_name not in programs_not_found:
                     programs_not_found.append(program_name)
                 continue
@@ -3259,11 +3343,14 @@ async def bulk_upload_test_questions(
             elif question_type == 'post':
                 question_type = 'post_test'
             
+            correct_answer = str(row['Correct Answer']).strip().upper()
+            correct_index = {'A': 0, 'B': 1, 'C': 2, 'D': 3}.get(correct_answer, 0)
+            
             # Create test question
             test_id = str(uuid.uuid4())
             test_data = {
                 "id": test_id,
-                "program_id": program["id"],
+                "program_id": prog["id"],
                 "test_type": question_type,
                 "questions": [
                     {
@@ -3274,8 +3361,8 @@ async def bulk_upload_test_questions(
                             str(row['Option C']).strip() if pd.notna(row['Option C']) else "",
                             str(row['Option D']).strip() if pd.notna(row['Option D']) else ""
                         ],
-                        "correct_answer": str(row['Correct Answer']).strip().upper(),
-                        "points": int(row['Points']) if pd.notna(row['Points']) else 5
+                        "correct_answer": correct_index,
+                        "points": int(row['Points']) if 'Points' in df.columns and pd.notna(row.get('Points')) else 5
                     }
                 ],
                 "created_at": datetime.now(timezone.utc).isoformat()
@@ -3283,7 +3370,7 @@ async def bulk_upload_test_questions(
             
             # Check if test already exists for this program and type
             existing_test = await db.tests.find_one(
-                {"program_id": program["id"], "test_type": question_type},
+                {"program_id": prog["id"], "test_type": question_type},
                 {"_id": 0}
             )
             
