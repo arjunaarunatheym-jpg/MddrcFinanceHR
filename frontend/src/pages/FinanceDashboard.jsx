@@ -740,7 +740,7 @@ const FinanceDashboard = ({ user, onLogout }) => {
               ${settings.address_line1 ? ` • ${settings.address_line1}` : ''}${settings.address_line2 ? `, ${settings.address_line2}` : ''}<br>
               ${settings.city || ''}${settings.postcode ? ` ${settings.postcode}` : ''}${settings.state ? `, ${settings.state}` : ''}
               ${settings.phone ? ` • Tel: ${settings.phone}` : ''}${settings.email ? ` • ${settings.email}` : ''}
-              ${(settings.invoice_custom_fields || []).filter(f => f.position === 'Header' || f.position === 'header').map(f => ` • ${f.label}: ${f.value}`).join('')}
+              ${headerCustomFields}
             </div>
           </div>
         </div>
