@@ -1881,6 +1881,138 @@ const DataManagement = ({ user }) => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Credit Note Edit Number Dialog */}
+      <Dialog open={editCnNumberDialog.open} onOpenChange={(open) => setEditCnNumberDialog({ ...editCnNumberDialog, open })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Credit Note Number</DialogTitle>
+            <DialogDescription>
+              Change the CN number for: {editCnNumberDialog.cn?.cn_number}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label>Year</Label>
+                <Input type="number" value={editCnNumberForm.year} onChange={(e) => setEditCnNumberForm({ ...editCnNumberForm, year: parseInt(e.target.value) || 2026 })} />
+              </div>
+              <div>
+                <Label>Month</Label>
+                <Input type="number" min={1} max={12} value={editCnNumberForm.month} onChange={(e) => setEditCnNumberForm({ ...editCnNumberForm, month: parseInt(e.target.value) || 1 })} />
+              </div>
+              <div>
+                <Label>Sequence</Label>
+                <Input type="number" min={1} value={editCnNumberForm.sequence} onChange={(e) => setEditCnNumberForm({ ...editCnNumberForm, sequence: parseInt(e.target.value) || 1 })} />
+              </div>
+            </div>
+            <div>
+              <Label>New CN Number Preview</Label>
+              <p className="text-sm font-mono p-2 bg-muted rounded">CN/MDDRC/{editCnNumberForm.year}/{String(editCnNumberForm.month).padStart(2, '0')}/{String(editCnNumberForm.sequence).padStart(4, '0')}</p>
+            </div>
+            <div>
+              <Label>Reason for Change (required)</Label>
+              <Textarea placeholder="Explain why this CN number needs to be changed..." value={editCnNumberForm.reason} onChange={(e) => setEditCnNumberForm({ ...editCnNumberForm, reason: e.target.value })} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditCnNumberDialog({ open: false, cn: null })}>Cancel</Button>
+            <Button onClick={handleEditCnNumber} disabled={!editCnNumberForm.reason}>Update Number</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Credit Note Backdate Dialog */}
+      <Dialog open={backdateCnDialog.open} onOpenChange={(open) => setBackdateCnDialog({ ...backdateCnDialog, open })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Backdate Credit Note</DialogTitle>
+            <DialogDescription>
+              Change the date for CN: {backdateCnDialog.cn?.cn_number}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div>
+              <Label>New Date</Label>
+              <Input type="date" value={backdateCnForm.newDate} onChange={(e) => setBackdateCnForm({ ...backdateCnForm, newDate: e.target.value })} />
+            </div>
+            <div>
+              <Label>Reason for Backdating (required)</Label>
+              <Textarea placeholder="Explain why this credit note needs to be backdated..." value={backdateCnForm.reason} onChange={(e) => setBackdateCnForm({ ...backdateCnForm, reason: e.target.value })} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBackdateCnDialog({ open: false, cn: null })}>Cancel</Button>
+            <Button onClick={handleBackdateCreditNote} disabled={!backdateCnForm.newDate || !backdateCnForm.reason}>Backdate CN</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Credit Note Edit Dialog */}
+      <Dialog open={editCnDialog.open} onOpenChange={(open) => setEditCnDialog({ ...editCnDialog, open })}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Credit Note Details</DialogTitle>
+            <DialogDescription>
+              Modify details for CN: {editCnDialog.cn?.cn_number}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div>
+              <Label>Company Name</Label>
+              <Input value={editCnForm.companyName} onChange={(e) => setEditCnForm({ ...editCnForm, companyName: e.target.value })} />
+            </div>
+            <div>
+              <Label>Reason</Label>
+              <Input value={editCnForm.reason} onChange={(e) => setEditCnForm({ ...editCnForm, reason: e.target.value })} />
+            </div>
+            <div>
+              <Label>Description</Label>
+              <Textarea value={editCnForm.description} onChange={(e) => setEditCnForm({ ...editCnForm, description: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Amount (RM)</Label>
+                <Input type="number" step="0.01" value={editCnForm.amount} onChange={(e) => setEditCnForm({ ...editCnForm, amount: parseFloat(e.target.value) || 0 })} />
+              </div>
+              <div>
+                <Label>Percentage (%)</Label>
+                <Input type="number" step="0.1" value={editCnForm.percentage} onChange={(e) => setEditCnForm({ ...editCnForm, percentage: parseFloat(e.target.value) || 0 })} />
+              </div>
+            </div>
+            <div>
+              <Label>Reason for Edit (required)</Label>
+              <Textarea placeholder="Explain why this credit note needs to be edited..." value={editCnForm.editReason} onChange={(e) => setEditCnForm({ ...editCnForm, editReason: e.target.value })} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditCnDialog({ open: false, cn: null })}>Cancel</Button>
+            <Button onClick={handleEditCreditNote} disabled={!editCnForm.editReason}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Credit Note Void Dialog */}
+      <Dialog open={voidCnDialog.open} onOpenChange={(open) => setVoidCnDialog({ ...voidCnDialog, open })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Void Credit Note</DialogTitle>
+            <DialogDescription>
+              This will permanently void CN: {voidCnDialog.cn?.cn_number}. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div>
+              <Label>Reason for Voiding (required)</Label>
+              <Textarea placeholder="Explain why this credit note needs to be voided..." value={voidCnForm.reason} onChange={(e) => setVoidCnForm({ ...voidCnForm, reason: e.target.value })} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setVoidCnDialog({ open: false, cn: null })}>Cancel</Button>
+            <Button variant="destructive" onClick={handleVoidCreditNote} disabled={!voidCnForm.reason}>Void Credit Note</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
