@@ -589,6 +589,187 @@ const FinanceDashboard = ({ user, onLogout }) => {
     }
   };
 
+  // Print Payables Report
+  const handlePrintPayables = async () => {
+    let settings = companySettings;
+    let logoUrl = companySettings.logo_url;
+    
+    if (!logoUrl) {
+      try {
+        const appSettings = await axiosInstance.get('/settings');
+        logoUrl = appSettings.data?.logo_url;
+      } catch (e) {}
+    }
+    
+    const primaryColor = settings.primary_color || '#1a365d';
+    const today = new Date().toLocaleDateString('en-MY', { year: 'numeric', month: 'long', day: 'numeric' });
+    
+    // Calculate totals
+    const trainerTotal = payables.trainer_fees.filter(f => f.status !== 'paid').reduce((sum, f) => sum + (f.fee_amount || 0), 0);
+    const coordTotal = payables.coordinator_fees.filter(f => f.status !== 'paid').reduce((sum, f) => sum + (f.total_fee || 0), 0);
+    const marketingTotal = payables.marketing_commissions.filter(f => f.status !== 'paid').reduce((sum, f) => sum + (f.calculated_amount || 0), 0);
+    const grandTotal = trainerTotal + coordTotal + marketingTotal;
+    
+    // Build rows for each category
+    const buildRows = (items, type) => {
+      return items.filter(f => f.status !== 'paid').map(item => {
+        let name = '', session = '', amount = 0, role = '';
+        if (type === 'trainer') {
+          name = item.trainer_name || 'Unknown';
+          session = item.session_name || '-';
+          amount = item.fee_amount || 0;
+          role = item.trainer_role || 'Trainer';
+        } else if (type === 'coordinator') {
+          name = item.coordinator_name || 'Unknown';
+          session = item.session_name || '-';
+          amount = item.total_fee || 0;
+          role = 'Coordinator';
+        } else if (type === 'marketing') {
+          name = item.user_name || 'Unknown';
+          session = item.session_name || '-';
+          amount = item.calculated_amount || 0;
+          role = 'Marketing';
+        }
+        return `<tr>
+          <td style="padding: 8px; border-bottom: 1px solid #eee;">${name}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #eee;">${role}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #eee;">${session}</td>
+          <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">RM ${amount.toLocaleString('en-MY', {minimumFractionDigits: 2})}</td>
+        </tr>`;
+      }).join('');
+    };
+    
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Payables Report - ${today}</title>
+        <style>
+          @page { size: A4; margin: 15mm; }
+          @media print { body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } }
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body { font-family: Arial, sans-serif; font-size: 11px; padding: 20px; max-width: 210mm; margin: 0 auto; line-height: 1.4; }
+          
+          .header { display: flex; align-items: center; gap: 15px; padding-bottom: 15px; border-bottom: 3px solid ${primaryColor}; margin-bottom: 15px; }
+          .logo-img { width: 80px; height: auto; }
+          .company-name { font-size: 16px; font-weight: bold; color: ${primaryColor}; }
+          .company-info { font-size: 10px; color: #444; }
+          
+          .report-title { font-size: 18px; font-weight: bold; text-align: center; color: ${primaryColor}; margin: 20px 0; padding: 10px; background: #f8fafc; border-radius: 4px; }
+          .report-date { text-align: center; font-size: 11px; color: #666; margin-bottom: 20px; }
+          
+          .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+          .summary-card { padding: 12px; border-radius: 6px; text-align: center; }
+          .summary-card.blue { background: #dbeafe; }
+          .summary-card.green { background: #dcfce7; }
+          .summary-card.purple { background: #f3e8ff; }
+          .summary-card.yellow { background: #fef9c3; }
+          .summary-label { font-size: 10px; color: #555; margin-bottom: 4px; }
+          .summary-value { font-size: 14px; font-weight: bold; }
+          
+          .section-title { font-size: 13px; font-weight: bold; margin: 20px 0 10px; padding: 8px; background: #f1f5f9; border-left: 4px solid ${primaryColor}; }
+          
+          table { width: 100%; border-collapse: collapse; font-size: 10px; }
+          th { background: #f8fafc; padding: 10px 8px; text-align: left; font-weight: 600; border-bottom: 2px solid #e2e8f0; }
+          th:last-child { text-align: right; }
+          
+          .category-total { background: #f8fafc; font-weight: bold; }
+          .grand-total { background: ${primaryColor}; color: white; font-weight: bold; font-size: 12px; }
+          .grand-total td { padding: 12px 8px; }
+          
+          .footer { margin-top: 30px; font-size: 9px; color: #666; border-top: 1px solid #ddd; padding-top: 15px; }
+          .signature-area { margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+          .signature-box { text-align: center; }
+          .signature-line { border-top: 1px solid #333; width: 150px; margin: 30px auto 5px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          ${logoUrl ? `<img src="${logoUrl}" class="logo-img" alt="Logo" />` : ''}
+          <div>
+            <div class="company-name">${settings.company_name || 'MDDRC SDN BHD'}</div>
+            <div class="company-info">${settings.address_line1 || ''} ${settings.city || ''} ${settings.postcode || ''}</div>
+          </div>
+        </div>
+        
+        <div class="report-title">STAFF PAYABLES REPORT</div>
+        <div class="report-date">Generated on ${today}</div>
+        
+        <div class="summary-grid">
+          <div class="summary-card blue">
+            <div class="summary-label">Trainer Fees</div>
+            <div class="summary-value">RM ${trainerTotal.toLocaleString('en-MY', {minimumFractionDigits: 2})}</div>
+          </div>
+          <div class="summary-card green">
+            <div class="summary-label">Coordinator Fees</div>
+            <div class="summary-value">RM ${coordTotal.toLocaleString('en-MY', {minimumFractionDigits: 2})}</div>
+          </div>
+          <div class="summary-card purple">
+            <div class="summary-label">Marketing Commission</div>
+            <div class="summary-value">RM ${marketingTotal.toLocaleString('en-MY', {minimumFractionDigits: 2})}</div>
+          </div>
+          <div class="summary-card yellow">
+            <div class="summary-label">TOTAL PAYABLE</div>
+            <div class="summary-value">RM ${grandTotal.toLocaleString('en-MY', {minimumFractionDigits: 2})}</div>
+          </div>
+        </div>
+        
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Role</th>
+              <th>Session/Training</th>
+              <th>Amount (RM)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${payables.trainer_fees.filter(f => f.status !== 'paid').length > 0 ? `
+              <tr class="category-total"><td colspan="4" style="padding: 8px; background: #dbeafe; font-weight: bold;">Trainer Fees</td></tr>
+              ${buildRows(payables.trainer_fees, 'trainer')}
+            ` : ''}
+            
+            ${payables.coordinator_fees.filter(f => f.status !== 'paid').length > 0 ? `
+              <tr class="category-total"><td colspan="4" style="padding: 8px; background: #dcfce7; font-weight: bold;">Coordinator Fees</td></tr>
+              ${buildRows(payables.coordinator_fees, 'coordinator')}
+            ` : ''}
+            
+            ${payables.marketing_commissions.filter(f => f.status !== 'paid').length > 0 ? `
+              <tr class="category-total"><td colspan="4" style="padding: 8px; background: #f3e8ff; font-weight: bold;">Marketing Commission</td></tr>
+              ${buildRows(payables.marketing_commissions, 'marketing')}
+            ` : ''}
+            
+            <tr class="grand-total">
+              <td colspan="3">GRAND TOTAL</td>
+              <td style="text-align: right;">RM ${grandTotal.toLocaleString('en-MY', {minimumFractionDigits: 2})}</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <div class="signature-area">
+          <div class="signature-box">
+            <div class="signature-line"></div>
+            <div>Prepared By</div>
+          </div>
+          <div class="signature-box">
+            <div class="signature-line"></div>
+            <div>Approved By</div>
+          </div>
+        </div>
+        
+        <div class="footer">
+          <p>This report shows all pending payables as of ${today}.</p>
+          <p>Monthly closing: 1st-31st | Payment release: 15th of following month</p>
+        </div>
+        
+        <script>window.onload = function() { window.print(); }</script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   // Print Credit Note
   const handlePrintCreditNote = async (cn) => {
     let settings = companySettings;
