@@ -79,8 +79,10 @@ const ProfitLossLedger = () => {
       loadMarketingSubledger();
     } else if (activeTab === 'payroll-subledger' && !payrollSubledger) {
       loadPayrollSubledger();
+    } else if (activeTab === 'general-ledger') {
+      loadGeneralLedger();
     }
-  }, [activeTab]);
+  }, [activeTab, selectedMonth]);
 
   const loadData = async () => {
     setLoading(true);
@@ -99,10 +101,22 @@ const ProfitLossLedger = () => {
       setTrainerSubledger(null);
       setMarketingSubledger(null);
       setPayrollSubledger(null);
+      setGeneralLedger(null);
     } catch (error) {
       toast.error('Failed to load profit/loss data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadGeneralLedger = async () => {
+    try {
+      let url = `/finance/general-ledger?year=${selectedYear}`;
+      if (selectedMonth) url += `&month=${selectedMonth}`;
+      const res = await axiosInstance.get(url);
+      setGeneralLedger(res.data);
+    } catch (error) {
+      toast.error('Failed to load general ledger');
     }
   };
 
