@@ -81,6 +81,10 @@ const FinanceDashboard = ({ user, onLogout }) => {
   const [creditNotes, setCreditNotes] = useState([]);
   const [showCNDialog, setShowCNDialog] = useState(false);
   const [payables, setPayables] = useState({ trainer_fees: [], coordinator_fees: [], marketing_commissions: [] });
+  const [payablesPeriods, setPayablesPeriods] = useState([]);
+  const [payablesYear, setPayablesYear] = useState(new Date().getFullYear());
+  const [payablesMonth, setPayablesMonth] = useState(new Date().getMonth() + 1);
+  const [currentPeriodStatus, setCurrentPeriodStatus] = useState({ status: 'open', exists: false });
   
   // Invoice Edit State
   const [editingInvoice, setEditingInvoice] = useState(null);
