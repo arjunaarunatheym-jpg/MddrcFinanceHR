@@ -338,3 +338,40 @@ A comprehensive training management platform for MDDRC (Malaysian Defensive Driv
     - Modal dialogs for each action with mandatory reason field
 - **Files Modified**: `backend/server.py`, `frontend/src/components/DataManagement.jsx`
 
+
+### Recent Payments Auto-Load Fix (P1 - COMPLETED)
+- **Problem**: Recording a payment didn't show in "Recent Payments" section until manual refresh
+- **Solution**: 
+  - Added `GET /api/finance/payments` endpoint to fetch all payments with invoice info
+  - Added useEffect to auto-load payments when Payments tab is activated
+- **Files Modified**: `backend/server.py`, `frontend/src/pages/FinanceDashboard.jsx`
+
+### Admin Finance Tab Year Filter (P1 - COMPLETED)
+- **Problem**: Admin Dashboard's Finance tab showed all-time invoices without year filtering
+- **Solution**:
+  - Added `financeYear` state and year selector dropdown
+  - Created `loadFinanceSummaryByYear()` function that calls `/api/finance/dashboard?year=YYYY`
+  - Dashboard cards now filter by selected year
+  - Year selector shows current year ± 2 years
+- **Files Modified**: `frontend/src/pages/AdminDashboard.jsx`
+
+### Payables Print Feature (P1 - COMPLETED)
+- **Problem**: No way to print payables report for accounting purposes
+- **Solution**:
+  - Added Print button to Payables tab header
+  - Created `handlePrintPayables()` function that generates professional printout with:
+    - Company header with logo
+    - Summary cards (Trainer Fees, Coordinator Fees, Marketing Commission, Total)
+    - Detailed table with Name, Role, Session, Amount columns
+    - Category subtotals (color-coded by type)
+    - Grand total row
+    - Signature areas (Prepared By, Approved By)
+    - Footer with report date and payment policy
+- **Files Modified**: `frontend/src/pages/FinanceDashboard.jsx`
+
+### Staff Portal Payables Verification (VERIFIED)
+- Trainers can view their pending income via `/api/finance/income/trainer/{id}`
+- Coordinators can view via `/api/finance/income/coordinator/{id}`
+- Marketing can view via `/api/finance/income/marketing/{id}`
+- All endpoints return correct amounts matching the Payables tab
+
