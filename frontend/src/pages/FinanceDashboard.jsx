@@ -983,7 +983,7 @@ const FinanceDashboard = ({ user, onLogout }) => {
                     <SelectValue placeholder="Select Year" />
                   </SelectTrigger>
                   <SelectContent>
-                    {(availableYears.length > 0 ? availableYears : [new Date().getFullYear(), new Date().getFullYear() - 1, new Date().getFullYear() - 2]).map(year => (
+                    {availableYears.map(year => (
                       <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
                     ))}
                   </SelectContent>
