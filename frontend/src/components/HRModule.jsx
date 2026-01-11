@@ -895,37 +895,101 @@ const HRModule = () => {
 
         {/* Pay Advice Tab */}
         <TabsContent value="pay-advice">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">Pay Advice (Session Workers)</h3>
-            <Button onClick={() => setPayAdviceDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="w-4 h-4 mr-2" /> Generate Pay Advice
-            </Button>
+          <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+            <div>
+              <h3 className="text-lg font-semibold">Pay Advice (Session Workers)</h3>
+              <p className="text-sm text-gray-500">Generate and manage pay advice for trainers, coordinators, and marketing</p>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {/* Period Selector */}
+              <Select value={payAdviceForm.month?.toString()} onValueChange={(v) => setPayAdviceForm({ ...payAdviceForm, month: parseInt(v) })}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="Month" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[1,2,3,4,5,6,7,8,9,10,11,12].map(m => (
+                    <SelectItem key={m} value={m.toString()}>{getMonthName(m)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={payAdviceForm.year?.toString()} onValueChange={(v) => setPayAdviceForm({ ...payAdviceForm, year: parseInt(v) })}>
+                <SelectTrigger className="w-[100px]">
+                  <SelectValue placeholder="Year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[2026, 2025, 2024].map(y => (
+                    <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button onClick={handleBulkGeneratePayAdvice} className="bg-green-600 hover:bg-green-700">
+                <RefreshCw className="w-4 h-4 mr-2" /> Bulk Generate
+              </Button>
+              <Button onClick={handleBulkLockPayAdvice} variant="outline" className="border-orange-300 text-orange-600">
+                <Lock className="w-4 h-4 mr-2" /> Lock All
+              </Button>
+              <Button onClick={() => setPayAdviceDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="w-4 h-4 mr-2" /> Individual
+              </Button>
+            </div>
+          </div>
+          
+          {/* Filter by period */}
+          <div className="mb-4">
+            <p className="text-sm text-gray-600">
+              Showing: <span className="font-medium">{getMonthName(payAdviceForm.month)} {payAdviceForm.year}</span>
+              {' • '}{payAdviceList.filter(pa => pa.year === payAdviceForm.year && pa.month === payAdviceForm.month).length} records
+            </p>
           </div>
           
           <div className="grid gap-3">
-            {payAdviceList.length === 0 ? (
+            {payAdviceList.filter(pa => pa.year === payAdviceForm.year && pa.month === payAdviceForm.month).length === 0 ? (
               <Card className="p-8 text-center text-gray-500">
                 <DollarSign className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>No pay advice generated yet</p>
+                <p>No pay advice for {getMonthName(payAdviceForm.month)} {payAdviceForm.year}</p>
+                <p className="text-sm mt-2">Click "Bulk Generate" to create pay advice for all session workers</p>
               </Card>
             ) : (
-              payAdviceList.map((pa) => (
-                <Card key={pa.id} className={pa.is_locked ? 'bg-gray-50' : ''}>
+              payAdviceList.filter(pa => pa.year === payAdviceForm.year && pa.month === payAdviceForm.month).map((pa) => (
+                <Card key={pa.id} className={pa.is_locked ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}>
                   <CardContent className="p-4">
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center flex-wrap gap-2">
                       <div>
-                        <h4 className="font-semibold">{pa.full_name}</h4>
-                        <p className="text-sm text-gray-500">{getMonthName(pa.month)} {pa.year} • {pa.total_sessions} session(s)</p>
-                        <Badge className="bg-green-100 text-green-700 mt-1">Total: RM {pa.nett_amount?.toLocaleString()}</Badge>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold">{pa.full_name}</h4>
+                          {pa.is_locked ? (
+                            <Badge className="bg-green-100 text-green-700"><Lock className="w-3 h-3 mr-1" /> Locked</Badge>
+                          ) : (
+                            <Badge className="bg-yellow-100 text-yellow-700">Draft</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-500">
+                          {pa.advice_number || `PA/${pa.year}/${pa.month}`} • {pa.total_sessions} session(s)
+                        </p>
+                        <div className="flex gap-2 mt-1">
+                          <Badge className="bg-blue-100 text-blue-700">Gross: RM {pa.gross_amount?.toLocaleString()}</Badge>
+                          <Badge className="bg-green-100 text-green-700">Nett: RM {pa.nett_amount?.toLocaleString()}</Badge>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        {pa.is_locked && <Lock className="w-4 h-4 text-gray-400" />}
                         <Button size="sm" variant="outline" onClick={() => setViewPayAdvice(pa)}>
                           <Eye className="w-4 h-4 mr-1" /> View
                         </Button>
-                        {!pa.is_locked && (
-                          <Button size="sm" variant="destructive" onClick={() => handleDeletePayAdvice(pa.id)}>
-                            <Trash2 className="w-4 h-4" />
+                        <Button size="sm" variant="outline" onClick={() => setPrintPayAdvice(pa)}>
+                          <Printer className="w-4 h-4 mr-1" /> Print
+                        </Button>
+                        {!pa.is_locked ? (
+                          <>
+                            <Button size="sm" variant="outline" className="text-green-600" onClick={() => handleLockPayAdvice(pa.id)}>
+                              <Lock className="w-4 h-4" />
+                            </Button>
+                            <Button size="sm" variant="destructive" onClick={() => handleDeletePayAdvice(pa.id)}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </>
+                        ) : (
+                          <Button size="sm" variant="ghost" className="text-orange-600" onClick={() => handleUnlockPayAdvice(pa.id)}>
+                            <Unlock className="w-4 h-4" />
                           </Button>
                         )}
                       </div>
