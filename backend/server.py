@@ -12905,6 +12905,551 @@ async def get_profit_loss_report(
         }
     }
 
+
+@api_router.get("/finance/profit-loss/by-programme")
+async def get_profit_loss_by_programme(
+    year: int = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get Profit/Loss report broken down by programme (dynamic).
+    
+    Income and direct costs are grouped by programme.
+    Overhead costs (payroll, petty cash, manual) are shown separately.
+    """
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    now = get_malaysia_time()
+    year = year or now.year
+    start_date = f"{year}-01-01"
+    end_date = f"{year}-12-31"
+    
+    # Get all programmes
+    programmes = await db.programs.find({}, {"_id": 0, "id": 1, "name": 1, "category": 1}).to_list(100)
+    programme_map = {p["id"]: p for p in programmes}
+    
+    # Get sessions for the year with their programme info
+    sessions = await db.sessions.find({
+        "start_date": {"$gte": start_date, "$lte": end_date}
+    }, {"_id": 0}).to_list(10000)
+    
+    # Build session lookup maps
+    session_to_programme = {}  # session_id -> programme_id
+    session_to_invoice = {}    # session_id -> invoice_id
+    invoice_to_session = {}    # invoice_id -> session_id
+    
+    for s in sessions:
+        sid = s.get("id")
+        session_to_programme[sid] = s.get("program_id")
+        if s.get("invoice_id"):
+            session_to_invoice[sid] = s.get("invoice_id")
+            invoice_to_session[s.get("invoice_id")] = sid
+    
+    # Initialize programme data structure
+    programme_data = {}
+    for prog in programmes:
+        programme_data[prog["id"]] = {
+            "programme_id": prog["id"],
+            "programme_name": prog.get("name", "Unknown"),
+            "category": prog.get("category", ""),
+            "income": 0,
+            "expenses": {
+                "trainer_fees": 0,
+                "coordinator_fees": 0,
+                "marketing_commissions": 0,
+                "session_expenses": 0,
+                "total": 0
+            },
+            "gross_profit": 0,
+            "gross_margin_pct": 0,
+            "session_count": 0
+        }
+    
+    # Add "Other/Unassigned" category for income without programme
+    programme_data["_other"] = {
+        "programme_id": "_other",
+        "programme_name": "Other / Unassigned",
+        "category": "Other",
+        "income": 0,
+        "expenses": {
+            "trainer_fees": 0,
+            "coordinator_fees": 0,
+            "marketing_commissions": 0,
+            "session_expenses": 0,
+            "total": 0
+        },
+        "gross_profit": 0,
+        "gross_margin_pct": 0,
+        "session_count": 0
+    }
+    
+    # Count sessions per programme
+    for s in sessions:
+        prog_id = s.get("program_id") or "_other"
+        if prog_id in programme_data:
+            programme_data[prog_id]["session_count"] += 1
+    
+    # Process invoices (INCOME) - attribute to programme via session
+    invoices = await db.invoices.find({
+        "status": {"$in": ["approved", "issued", "paid"]}
+    }, {"_id": 0}).to_list(10000)
+    
+    for inv in invoices:
+        try:
+            amount = float(inv.get("total_amount") or inv.get("amount") or 0)
+            inv_id = inv.get("id")
+            
+            # Find programme via session
+            session_id = invoice_to_session.get(inv_id)
+            prog_id = session_to_programme.get(session_id, "_other") if session_id else "_other"
+            
+            # Verify session is in our year
+            if session_id and session_id in session_to_programme:
+                if prog_id in programme_data:
+                    programme_data[prog_id]["income"] += amount
+                else:
+                    programme_data["_other"]["income"] += amount
+            else:
+                # Fallback: check invoice date
+                inv_date = inv.get("created_at", "")[:10]
+                if inv_date.startswith(str(year)):
+                    programme_data["_other"]["income"] += amount
+        except:
+            pass
+    
+    # Process trainer fees - attribute to programme via session
+    trainer_fees = await db.trainer_fees.find({}, {"_id": 0}).to_list(10000)
+    for tf in trainer_fees:
+        try:
+            session_id = tf.get("session_id")
+            if session_id not in session_to_programme:
+                continue
+            prog_id = session_to_programme.get(session_id) or "_other"
+            if prog_id in programme_data:
+                programme_data[prog_id]["expenses"]["trainer_fees"] += float(tf.get("fee_amount") or 0)
+        except:
+            pass
+    
+    # Process coordinator fees
+    coordinator_fees = await db.coordinator_fees.find({}, {"_id": 0}).to_list(10000)
+    for cf in coordinator_fees:
+        try:
+            session_id = cf.get("session_id")
+            if session_id not in session_to_programme:
+                continue
+            prog_id = session_to_programme.get(session_id) or "_other"
+            if prog_id in programme_data:
+                programme_data[prog_id]["expenses"]["coordinator_fees"] += float(cf.get("total_fee") or 0)
+        except:
+            pass
+    
+    # Process marketing commissions
+    marketing_comms = await db.marketing_commissions.find({
+        "status": {"$in": ["approved", "paid"]}
+    }, {"_id": 0}).to_list(10000)
+    for mc in marketing_comms:
+        try:
+            session_id = mc.get("session_id")
+            if session_id not in session_to_programme:
+                continue
+            prog_id = session_to_programme.get(session_id) or "_other"
+            if prog_id in programme_data:
+                programme_data[prog_id]["expenses"]["marketing_commissions"] += float(mc.get("calculated_amount") or 0)
+        except:
+            pass
+    
+    # Process session expenses (F&B, venue, etc.)
+    session_expenses = await db.session_expenses.find({}, {"_id": 0}).to_list(10000)
+    for exp in session_expenses:
+        try:
+            session_id = exp.get("session_id")
+            if session_id not in session_to_programme:
+                continue
+            prog_id = session_to_programme.get(session_id) or "_other"
+            if prog_id in programme_data:
+                amount = float(exp.get("actual_amount") or exp.get("estimated_amount") or exp.get("amount") or 0)
+                programme_data[prog_id]["expenses"]["session_expenses"] += amount
+        except:
+            pass
+    
+    # Calculate totals and margins
+    total_income = 0
+    total_direct_expenses = 0
+    
+    for prog_id, data in programme_data.items():
+        # Calculate total direct expenses
+        data["expenses"]["total"] = (
+            data["expenses"]["trainer_fees"] +
+            data["expenses"]["coordinator_fees"] +
+            data["expenses"]["marketing_commissions"] +
+            data["expenses"]["session_expenses"]
+        )
+        
+        # Calculate gross profit and margin
+        data["gross_profit"] = data["income"] - data["expenses"]["total"]
+        data["gross_margin_pct"] = round((data["gross_profit"] / data["income"] * 100), 2) if data["income"] > 0 else 0
+        
+        total_income += data["income"]
+        total_direct_expenses += data["expenses"]["total"]
+    
+    # Get overhead costs (not tied to programmes)
+    payslips = await db.hr_payslips.find({"year": year}, {"_id": 0}).to_list(1000)
+    overhead_payroll = sum(
+        float(ps.get("gross_salary", 0)) + float(ps.get("epf_employer", 0)) + 
+        float(ps.get("socso_employer", 0)) + float(ps.get("eis_employer", 0))
+        for ps in payslips
+    )
+    
+    petty_cash = await db.petty_cash_transactions.find({
+        "date": {"$gte": start_date, "$lte": end_date},
+        "type": "expense",
+        "status": "approved"
+    }, {"_id": 0}).to_list(1000)
+    overhead_petty_cash = sum(float(pc.get("amount", 0)) for pc in petty_cash)
+    
+    manual_expenses = await db.manual_expenses.find({
+        "date": {"$gte": start_date, "$lte": end_date}
+    }, {"_id": 0}).to_list(1000)
+    overhead_manual = sum(float(exp.get("amount", 0)) for exp in manual_expenses)
+    
+    # Manual income (other income streams)
+    manual_income = await db.manual_income.find({
+        "date": {"$gte": start_date, "$lte": end_date}
+    }, {"_id": 0}).to_list(1000)
+    other_income = sum(float(inc.get("amount", 0)) for inc in manual_income)
+    
+    total_overhead = overhead_payroll + overhead_petty_cash + overhead_manual
+    total_expenses = total_direct_expenses + total_overhead
+    net_profit = total_income + other_income - total_expenses
+    
+    # Filter out programmes with no activity
+    active_programmes = [data for data in programme_data.values() if data["income"] > 0 or data["expenses"]["total"] > 0]
+    active_programmes.sort(key=lambda x: x["income"], reverse=True)
+    
+    return {
+        "year": year,
+        "programmes": active_programmes,
+        "summary": {
+            "total_programme_income": total_income,
+            "other_income": other_income,
+            "total_income": total_income + other_income,
+            "total_direct_costs": total_direct_expenses,
+            "gross_profit": total_income - total_direct_expenses,
+            "gross_margin_pct": round((total_income - total_direct_expenses) / total_income * 100, 2) if total_income > 0 else 0,
+            "overhead": {
+                "payroll": overhead_payroll,
+                "petty_cash": overhead_petty_cash,
+                "manual": overhead_manual,
+                "total": total_overhead
+            },
+            "total_expenses": total_expenses,
+            "net_profit": net_profit,
+            "net_margin_pct": round(net_profit / (total_income + other_income) * 100, 2) if (total_income + other_income) > 0 else 0
+        }
+    }
+
+
+@api_router.get("/finance/subledger/trainers")
+async def get_trainer_subledger(
+    year: int = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get Trainer & Coordinator Sub-ledger - aggregated by person"""
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    now = get_malaysia_time()
+    year = year or now.year
+    start_date = f"{year}-01-01"
+    end_date = f"{year}-12-31"
+    
+    # Get sessions for the year
+    sessions = await db.sessions.find({
+        "start_date": {"$gte": start_date, "$lte": end_date}
+    }, {"_id": 0, "id": 1, "start_date": 1, "program_id": 1}).to_list(10000)
+    session_ids = {s["id"] for s in sessions}
+    session_map = {s["id"]: s for s in sessions}
+    
+    # Get programmes
+    programmes = await db.programs.find({}, {"_id": 0, "id": 1, "name": 1}).to_list(100)
+    programme_map = {p["id"]: p.get("name", "Unknown") for p in programmes}
+    
+    # Get all users for name lookup
+    users = await db.users.find({}, {"_id": 0, "id": 1, "full_name": 1}).to_list(1000)
+    user_map = {u["id"]: u.get("full_name", "Unknown") for u in users}
+    
+    # Get trainer fees for sessions in this year
+    trainer_fees = await db.trainer_fees.find({}, {"_id": 0}).to_list(10000)
+    
+    # Aggregate by trainer
+    trainer_data = {}
+    for tf in trainer_fees:
+        session_id = tf.get("session_id")
+        if session_id not in session_ids:
+            continue
+        
+        trainer_id = tf.get("trainer_id")
+        if not trainer_id:
+            continue
+        
+        if trainer_id not in trainer_data:
+            trainer_data[trainer_id] = {
+                "user_id": trainer_id,
+                "name": user_map.get(trainer_id, tf.get("trainer_name", "Unknown")),
+                "role": "Trainer",
+                "total_earned": 0,
+                "total_paid": 0,
+                "balance": 0,
+                "sessions": []
+            }
+        
+        session = session_map.get(session_id, {})
+        amount = float(tf.get("fee_amount") or 0)
+        is_paid = tf.get("status") == "paid"
+        
+        trainer_data[trainer_id]["total_earned"] += amount
+        if is_paid:
+            trainer_data[trainer_id]["total_paid"] += amount
+        
+        trainer_data[trainer_id]["sessions"].append({
+            "session_id": session_id,
+            "date": session.get("start_date", ""),
+            "programme": programme_map.get(session.get("program_id"), "Unknown"),
+            "amount": amount,
+            "status": tf.get("status", "pending")
+        })
+    
+    # Get coordinator fees
+    coordinator_fees = await db.coordinator_fees.find({}, {"_id": 0}).to_list(10000)
+    
+    coordinator_data = {}
+    for cf in coordinator_fees:
+        session_id = cf.get("session_id")
+        if session_id not in session_ids:
+            continue
+        
+        coord_id = cf.get("coordinator_id")
+        if not coord_id:
+            continue
+        
+        if coord_id not in coordinator_data:
+            coordinator_data[coord_id] = {
+                "user_id": coord_id,
+                "name": user_map.get(coord_id, cf.get("coordinator_name", "Unknown")),
+                "role": "Coordinator",
+                "total_earned": 0,
+                "total_paid": 0,
+                "balance": 0,
+                "sessions": []
+            }
+        
+        session = session_map.get(session_id, {})
+        amount = float(cf.get("total_fee") or 0)
+        is_paid = cf.get("status") == "paid"
+        
+        coordinator_data[coord_id]["total_earned"] += amount
+        if is_paid:
+            coordinator_data[coord_id]["total_paid"] += amount
+        
+        coordinator_data[coord_id]["sessions"].append({
+            "session_id": session_id,
+            "date": session.get("start_date", ""),
+            "programme": programme_map.get(session.get("program_id"), "Unknown"),
+            "amount": amount,
+            "status": cf.get("status", "pending")
+        })
+    
+    # Calculate balances
+    for data in trainer_data.values():
+        data["balance"] = data["total_earned"] - data["total_paid"]
+        data["sessions"].sort(key=lambda x: x["date"], reverse=True)
+    
+    for data in coordinator_data.values():
+        data["balance"] = data["total_earned"] - data["total_paid"]
+        data["sessions"].sort(key=lambda x: x["date"], reverse=True)
+    
+    trainers = sorted(trainer_data.values(), key=lambda x: x["total_earned"], reverse=True)
+    coordinators = sorted(coordinator_data.values(), key=lambda x: x["total_earned"], reverse=True)
+    
+    return {
+        "year": year,
+        "trainers": trainers,
+        "coordinators": coordinators,
+        "totals": {
+            "trainer_earned": sum(t["total_earned"] for t in trainers),
+            "trainer_paid": sum(t["total_paid"] for t in trainers),
+            "trainer_balance": sum(t["balance"] for t in trainers),
+            "coordinator_earned": sum(c["total_earned"] for c in coordinators),
+            "coordinator_paid": sum(c["total_paid"] for c in coordinators),
+            "coordinator_balance": sum(c["balance"] for c in coordinators)
+        }
+    }
+
+
+@api_router.get("/finance/subledger/marketing")
+async def get_marketing_subledger(
+    year: int = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get Marketing Commission Sub-ledger - aggregated by marketer"""
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    now = get_malaysia_time()
+    year = year or now.year
+    start_date = f"{year}-01-01"
+    end_date = f"{year}-12-31"
+    
+    # Get sessions for the year
+    sessions = await db.sessions.find({
+        "start_date": {"$gte": start_date, "$lte": end_date}
+    }, {"_id": 0, "id": 1, "start_date": 1, "program_id": 1, "company_name": 1}).to_list(10000)
+    session_ids = {s["id"] for s in sessions}
+    session_map = {s["id"]: s for s in sessions}
+    
+    # Get programmes
+    programmes = await db.programs.find({}, {"_id": 0, "id": 1, "name": 1}).to_list(100)
+    programme_map = {p["id"]: p.get("name", "Unknown") for p in programmes}
+    
+    # Get users
+    users = await db.users.find({}, {"_id": 0, "id": 1, "full_name": 1}).to_list(1000)
+    user_map = {u["id"]: u.get("full_name", "Unknown") for u in users}
+    
+    # Get marketing commissions
+    commissions = await db.marketing_commissions.find({}, {"_id": 0}).to_list(10000)
+    
+    marketer_data = {}
+    for mc in commissions:
+        session_id = mc.get("session_id")
+        if session_id not in session_ids:
+            continue
+        
+        marketer_id = mc.get("marketing_user_id") or mc.get("user_id")
+        if not marketer_id:
+            continue
+        
+        if marketer_id not in marketer_data:
+            marketer_data[marketer_id] = {
+                "user_id": marketer_id,
+                "name": user_map.get(marketer_id, mc.get("marketer_name", "Unknown")),
+                "total_commission": 0,
+                "total_paid": 0,
+                "balance": 0,
+                "clients": []
+            }
+        
+        session = session_map.get(session_id, {})
+        amount = float(mc.get("calculated_amount") or 0)
+        is_paid = mc.get("status") == "paid"
+        
+        marketer_data[marketer_id]["total_commission"] += amount
+        if is_paid:
+            marketer_data[marketer_id]["total_paid"] += amount
+        
+        marketer_data[marketer_id]["clients"].append({
+            "session_id": session_id,
+            "date": session.get("start_date", ""),
+            "client": session.get("company_name", "Unknown"),
+            "programme": programme_map.get(session.get("program_id"), "Unknown"),
+            "commission_rate": mc.get("commission_rate", 0),
+            "amount": amount,
+            "status": mc.get("status", "pending")
+        })
+    
+    # Calculate balances
+    for data in marketer_data.values():
+        data["balance"] = data["total_commission"] - data["total_paid"]
+        data["clients"].sort(key=lambda x: x["date"], reverse=True)
+    
+    marketers = sorted(marketer_data.values(), key=lambda x: x["total_commission"], reverse=True)
+    
+    return {
+        "year": year,
+        "marketers": marketers,
+        "totals": {
+            "total_commission": sum(m["total_commission"] for m in marketers),
+            "total_paid": sum(m["total_paid"] for m in marketers),
+            "total_balance": sum(m["balance"] for m in marketers)
+        }
+    }
+
+
+@api_router.get("/finance/subledger/payroll")
+async def get_payroll_subledger(
+    year: int = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get Staff Payroll Register - aggregated by employee"""
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    now = get_malaysia_time()
+    year = year or now.year
+    
+    # Get payslips for the year
+    payslips = await db.hr_payslips.find({"year": year}, {"_id": 0}).to_list(1000)
+    
+    # Get staff info
+    staff = await db.hr_staff.find({}, {"_id": 0}).to_list(1000)
+    staff_map = {s["id"]: s for s in staff}
+    
+    employee_data = {}
+    for ps in payslips:
+        staff_id = ps.get("staff_id")
+        if not staff_id:
+            continue
+        
+        if staff_id not in employee_data:
+            staff_info = staff_map.get(staff_id, {})
+            employee_data[staff_id] = {
+                "staff_id": staff_id,
+                "name": ps.get("full_name") or staff_info.get("full_name", "Unknown"),
+                "employee_id": staff_info.get("employee_id", ""),
+                "designation": staff_info.get("designation", ""),
+                "total_gross": 0,
+                "total_epf": 0,
+                "total_socso": 0,
+                "total_eis": 0,
+                "total_net": 0,
+                "months": []
+            }
+        
+        employee_data[staff_id]["total_gross"] += float(ps.get("gross_salary", 0))
+        employee_data[staff_id]["total_epf"] += float(ps.get("epf_employee", 0))
+        employee_data[staff_id]["total_socso"] += float(ps.get("socso_employee", 0))
+        employee_data[staff_id]["total_eis"] += float(ps.get("eis_employee", 0))
+        employee_data[staff_id]["total_net"] += float(ps.get("nett_pay", 0))
+        
+        month_names = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        employee_data[staff_id]["months"].append({
+            "month": ps.get("month"),
+            "month_name": month_names[ps.get("month", 1)],
+            "gross": float(ps.get("gross_salary", 0)),
+            "epf": float(ps.get("epf_employee", 0)),
+            "socso": float(ps.get("socso_employee", 0)),
+            "eis": float(ps.get("eis_employee", 0)),
+            "net": float(ps.get("nett_pay", 0))
+        })
+    
+    # Sort months
+    for data in employee_data.values():
+        data["months"].sort(key=lambda x: x["month"])
+    
+    employees = sorted(employee_data.values(), key=lambda x: x["name"])
+    
+    return {
+        "year": year,
+        "employees": employees,
+        "totals": {
+            "total_gross": sum(e["total_gross"] for e in employees),
+            "total_epf": sum(e["total_epf"] for e in employees),
+            "total_socso": sum(e["total_socso"] for e in employees),
+            "total_eis": sum(e["total_eis"] for e in employees),
+            "total_net": sum(e["total_net"] for e in employees)
+        }
+    }
+
+
 @api_router.post("/finance/manual-income")
 async def add_manual_income(entry: ManualIncomeEntry, current_user: User = Depends(get_current_user)):
     """Add a one-off manual income entry"""
