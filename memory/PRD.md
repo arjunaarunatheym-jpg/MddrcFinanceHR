@@ -375,3 +375,40 @@ A comprehensive training management platform for MDDRC (Malaysian Defensive Driv
 - Marketing can view via `/api/finance/income/marketing/{id}`
 - All endpoints return correct amounts matching the Payables tab
 
+
+### Payables Excel Export & Period Management (P1 - COMPLETED)
+- **Problem**: No way to export payables to Excel format; no period closing to prevent changes
+- **Solution**:
+
+**1. Excel Export Feature**
+  - Added `GET /api/finance/payables/export-excel?year=YYYY&month=MM` endpoint
+  - Returns data grouped by staff name with session details
+  - Columns: NAME, INVOICE NUMBER, TRAINING DATE, POSITION, COMPANY, DETAILS, PRICE
+  - Includes subtotals per person and grand total
+  - Exports as CSV file (opens in Excel)
+  - Data comes from same endpoints trainers/coordinators/marketing see in their portals
+
+**2. Period Management (Open/Close)**
+  - Added `payables_periods` collection to track period status
+  - Endpoints:
+    - `GET /api/finance/payables/periods` - List all periods
+    - `POST /api/finance/payables/periods` - Create/open period
+    - `POST /api/finance/payables/periods/{id}/close` - Close period
+    - `POST /api/finance/payables/periods/{id}/reopen` - Reopen (admin only, requires reason)
+    - `GET /api/finance/payables/period-status?year=&month=` - Check period status
+  - When period is CLOSED:
+    - Red "CLOSED" badge displayed
+    - Warning banner shown
+    - Mark as Paid buttons are disabled
+    - Admin can reopen with mandatory reason (logged to audit trail)
+
+**3. Frontend UI Updates**
+  - Month/Year selector dropdowns
+  - OPEN/CLOSED status badge
+  - Close Period button (red, only when open)
+  - Reopen button (green, only when closed, admin only)
+  - Excel export button (green)
+  - Period status banner when closed
+
+- **Files Modified**: `backend/server.py`, `frontend/src/pages/FinanceDashboard.jsx`
+
