@@ -1080,17 +1080,23 @@ const FinanceDashboard = ({ user, onLogout }) => {
         notes: paymentForm.notes
       });
 
-      // If CN checkbox is checked, create credit note
+      // If CN checkbox is checked, create and issue credit note
       if (paymentForm.create_cn) {
         const selectedInvoice = pendingInvoices.find(inv => inv.id === paymentForm.invoice_id);
         if (selectedInvoice) {
-          await axiosInstance.post(`/finance/session/${selectedInvoice.session_id}/credit-note`, {
+          // Create the credit note
+          const cnResponse = await axiosInstance.post(`/finance/session/${selectedInvoice.session_id}/credit-note`, {
             reason: paymentForm.cn_reason,
             description: `${paymentForm.cn_percentage}% deduction`,
             percentage: parseFloat(paymentForm.cn_percentage),
             base_amount: selectedInvoice.total_amount
           });
-          toast.success('Credit Note created');
+          
+          // Auto-issue the credit note since payment is received
+          if (cnResponse.data.id) {
+            await axiosInstance.post(`/finance/credit-notes/${cnResponse.data.id}/issue`);
+          }
+          toast.success('Credit Note created and issued');
         }
       }
 
