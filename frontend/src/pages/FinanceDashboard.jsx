@@ -1328,10 +1328,16 @@ const FinanceDashboard = ({ user, onLogout }) => {
                       Monthly closing: 1st-31st | Payment release: 15th of following month
                     </CardDescription>
                   </div>
-                  <Button variant="outline" onClick={loadPayables}>
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Refresh
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={handlePrintPayables}>
+                      <Printer className="w-4 h-4 mr-2" />
+                      Print
+                    </Button>
+                    <Button variant="outline" onClick={loadPayables}>
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Refresh
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
