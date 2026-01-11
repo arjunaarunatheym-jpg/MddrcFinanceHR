@@ -3575,6 +3575,36 @@ const FinanceDashboard = ({ user, onLogout }) => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Reopen Period Dialog */}
+      <Dialog open={reopenDialog.open} onOpenChange={(open) => setReopenDialog({ ...reopenDialog, open })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reopen Payables Period</DialogTitle>
+            <DialogDescription>
+              Enter a reason to reopen the period {payablesYear}-{String(payablesMonth).padStart(2, '0')}. This action will be logged.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="reopen-reason">Reason (required, minimum 5 characters)</Label>
+            <textarea
+              id="reopen-reason"
+              className="w-full mt-2 p-3 border rounded-md min-h-[100px]"
+              placeholder="Enter reason for reopening this period..."
+              value={reopenDialog.reason}
+              onChange={(e) => setReopenDialog({ ...reopenDialog, reason: e.target.value })}
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setReopenDialog({ open: false, reason: '' })}>
+              Cancel
+            </Button>
+            <Button onClick={confirmReopenPeriod} disabled={reopenDialog.reason.trim().length < 5}>
+              Reopen Period
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
