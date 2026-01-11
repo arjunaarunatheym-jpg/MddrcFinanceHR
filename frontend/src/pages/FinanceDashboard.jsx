@@ -204,16 +204,21 @@ const FinanceDashboard = ({ user, onLogout }) => {
   };
 
   const handleReopenPeriod = async () => {
-    const reason = window.prompt('Enter reason for reopening this period (required):');
-    if (!reason || reason.trim().length < 5) {
+    // Open dialog instead of using window.prompt
+    setReopenDialog({ open: true, reason: '' });
+  };
+
+  const confirmReopenPeriod = async () => {
+    if (!reopenDialog.reason || reopenDialog.reason.trim().length < 5) {
       toast.error('Reason must be at least 5 characters');
       return;
     }
     
     try {
       if (currentPeriodStatus.period?.id) {
-        await axiosInstance.post(`/finance/payables/periods/${currentPeriodStatus.period.id}/reopen?reason=${encodeURIComponent(reason)}`);
+        await axiosInstance.post(`/finance/payables/periods/${currentPeriodStatus.period.id}/reopen?reason=${encodeURIComponent(reopenDialog.reason)}`);
         toast.success('Period reopened successfully');
+        setReopenDialog({ open: false, reason: '' });
         await loadPeriodStatus();
       }
     } catch (error) {
