@@ -316,6 +316,7 @@ const FinanceDashboard = ({ user, onLogout }) => {
           <div class="footer">
             <p>This is a computer-generated receipt. No signature required.</p>
             <p>${settings?.invoice_footer_note || 'Thank you for your business!'}</p>
+            ${(settings?.invoice_custom_fields || []).filter(f => f.position === 'Footer' || f.position === 'footer').map(f => `<p><strong>${f.label}:</strong> ${f.value}</p>`).join('')}
           </div>
           
           <script>window.onload = function() { window.print(); }</script>
