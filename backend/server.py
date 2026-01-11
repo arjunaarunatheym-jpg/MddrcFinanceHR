@@ -12372,7 +12372,7 @@ async def bulk_generate_pay_advice(year: int, month: int, current_user: User = D
                 total_amount += fee.get("total_fee", 0)
             
             # Marketing commission
-            for comm in await db.marketing_commissions.find({"user_id": user_id, "session_id": {"$in": session_ids}}, {"_id": 0}).to_list(100):
+            for comm in await db.marketing_commissions.find({"marketing_user_id": user_id, "session_id": {"$in": session_ids}}, {"_id": 0}).to_list(100):
                 session = await db.sessions.find_one({"id": comm.get("session_id")}, {"_id": 0, "name": 1, "start_date": 1, "company_id": 1})
                 company = await db.companies.find_one({"id": session.get("company_id")}, {"_id": 0, "name": 1}) if session else None
                 session_details.append({
