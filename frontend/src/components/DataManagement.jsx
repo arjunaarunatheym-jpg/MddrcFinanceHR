@@ -153,6 +153,30 @@ const DataManagement = ({ user }) => {
     }
   };
 
+  const loadCreditNotes = async () => {
+    setLoading(true);
+    try {
+      const response = await axiosInstance.get("/finance/credit-notes");
+      let filtered = response.data;
+      if (cnSearch) {
+        const search = cnSearch.toLowerCase();
+        filtered = filtered.filter(cn => 
+          cn.cn_number?.toLowerCase().includes(search) ||
+          cn.company_name?.toLowerCase().includes(search) ||
+          cn.invoice_number?.toLowerCase().includes(search)
+        );
+      }
+      if (cnStatusFilter && cnStatusFilter !== "all") {
+        filtered = filtered.filter(cn => cn.status === cnStatusFilter);
+      }
+      setCreditNotes(filtered);
+    } catch (error) {
+      toast.error("Failed to load credit notes");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const loadAuditTrail = async () => {
     setLoading(true);
     try {
