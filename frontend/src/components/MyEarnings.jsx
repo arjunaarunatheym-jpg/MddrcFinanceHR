@@ -185,10 +185,10 @@ const MyEarnings = ({ userId, userRoles = [] }) => {
                         {new Date(session.session_date || session.start_date).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="text-right font-semibold">
-                        {formatCurrency(session.fee_amount || session.amount)}
+                        {formatCurrency(session.fee_amount || session.amount || session.total_fee || session.calculated_amount)}
                       </TableCell>
                       <TableCell className="text-center">
-                        {session.payment_status === 'paid' ? (
+                        {(session.status === 'paid' || session.payment_status === 'paid') ? (
                           <Badge className="bg-green-100 text-green-700">
                             <CheckCircle className="w-3 h-3 mr-1" /> Paid
                           </Badge>
