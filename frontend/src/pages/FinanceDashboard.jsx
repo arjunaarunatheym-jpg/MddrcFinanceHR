@@ -112,6 +112,13 @@ const FinanceDashboard = ({ user, onLogout }) => {
     loadCompanySettings();
   }, []);
 
+  // Load payments when Payments tab is activated
+  useEffect(() => {
+    if (activeTab === 'payments') {
+      loadPayments();
+    }
+  }, [activeTab]);
+
   // Reload dashboard when year changes
   useEffect(() => {
     loadDashboard(selectedYear);
