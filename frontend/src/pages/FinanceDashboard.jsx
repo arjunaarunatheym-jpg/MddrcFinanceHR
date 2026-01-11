@@ -969,6 +969,26 @@ const FinanceDashboard = ({ user, onLogout }) => {
 
           {/* Dashboard Tab */}
           <TabsContent value="dashboard">
+            {/* Year Filter */}
+            <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <Label className="text-sm font-medium text-gray-700">Financial Year:</Label>
+                <Select value={selectedYear?.toString()} onValueChange={(val) => setSelectedYear(parseInt(val))}>
+                  <SelectTrigger className="w-[140px]" data-testid="year-selector">
+                    <SelectValue placeholder="Select Year" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(availableYears.length > 0 ? availableYears : [new Date().getFullYear(), new Date().getFullYear() - 1, new Date().getFullYear() - 2]).map(year => (
+                      <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="text-sm text-gray-500">
+                Showing data for <span className="font-semibold text-gray-800">{selectedYear}</span>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
               <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
                 <CardHeader className="pb-2">
