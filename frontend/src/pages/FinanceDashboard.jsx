@@ -574,6 +574,16 @@ const FinanceDashboard = ({ user, onLogout }) => {
     const secondaryColor = settings.secondary_color || '#4472C4';
     const tagline = settings.tagline || 'Towards a Nation of Safe Drivers';
     
+    // Build custom fields HTML
+    const headerCustomFields = (settings.invoice_custom_fields || [])
+      .filter(f => f.position === 'Header' || f.position === 'header')
+      .map(f => ` • ${f.label}: ${f.value}`)
+      .join('');
+    const footerCustomFields = (settings.invoice_custom_fields || [])
+      .filter(f => f.position === 'Footer' || f.position === 'footer')
+      .map(f => `<p><strong>${f.label}:</strong> ${f.value}</p>`)
+      .join('');
+    
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
       <!DOCTYPE html>
