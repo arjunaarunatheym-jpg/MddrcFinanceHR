@@ -289,6 +289,65 @@ const DataManagement = ({ user }) => {
     }
   };
 
+  // Credit Note Management Actions
+  const handleEditCreditNote = async () => {
+    try {
+      await axiosInstance.put(`/finance/admin/credit-notes/${editCnDialog.cn.id}/edit`, {
+        company_name: editCnForm.companyName || undefined,
+        reason: editCnForm.reason || undefined,
+        description: editCnForm.description || undefined,
+        amount: editCnForm.amount || undefined,
+        percentage: editCnForm.percentage || undefined,
+        edit_reason: editCnForm.editReason
+      });
+      toast.success("Credit note updated successfully");
+      setEditCnDialog({ open: false, cn: null });
+      setEditCnForm({ companyName: "", reason: "", description: "", amount: 0, percentage: 4, editReason: "" });
+      loadCreditNotes();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Failed to update credit note");
+    }
+  };
+
+  const handleBackdateCreditNote = async () => {
+    try {
+      await axiosInstance.put(`/finance/admin/credit-notes/${backdateCnDialog.cn.id}/backdate`, {
+        new_date: backdateCnForm.newDate,
+        reason: backdateCnForm.reason
+      });
+      toast.success("Credit note backdated successfully");
+      setBackdateCnDialog({ open: false, cn: null });
+      setBackdateCnForm({ newDate: "", reason: "" });
+      loadCreditNotes();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Failed to backdate credit note");
+    }
+  };
+
+  const handleVoidCreditNote = async () => {
+    try {
+      await axiosInstance.put(`/finance/admin/credit-notes/${voidCnDialog.cn.id}/void?reason=${encodeURIComponent(voidCnForm.reason)}`);
+      toast.success("Credit note voided successfully");
+      setVoidCnDialog({ open: false, cn: null });
+      setVoidCnForm({ reason: "" });
+      loadCreditNotes();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Failed to void credit note");
+    }
+  };
+
+  const handleEditCnNumber = async () => {
+    try {
+      await axiosInstance.put(`/finance/admin/credit-notes/${editCnNumberDialog.cn.id}/number?year=${editCnNumberForm.year}&month=${editCnNumberForm.month}&sequence=${editCnNumberForm.sequence}&reason=${encodeURIComponent(editCnNumberForm.reason)}`);
+      toast.success("Credit note number updated successfully");
+      setEditCnNumberDialog({ open: false, cn: null });
+      setEditCnNumberForm({ year: 2026, month: 1, sequence: 1, reason: "" });
+      loadCreditNotes();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Failed to update credit note number");
+    }
+  };
+
   // Settings Actions
   const handleResetSequence = async () => {
     try {
