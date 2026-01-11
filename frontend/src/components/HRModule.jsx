@@ -731,8 +731,13 @@ const HRModule = () => {
     }
   };
 
-  const handleUnlockPayAdvice = async (id) => {
-    const reason = window.prompt('Enter reason for unlocking (required):');
+  const handleUnlockPayAdvice = (id) => {
+    // Open dialog instead of using window.prompt
+    setUnlockPayAdviceDialog({ open: true, id, reason: '' });
+  };
+
+  const confirmUnlockPayAdvice = async () => {
+    const { id, reason } = unlockPayAdviceDialog;
     if (!reason || reason.trim().length < 5) {
       toast.error('Reason must be at least 5 characters');
       return;
@@ -740,6 +745,7 @@ const HRModule = () => {
     try {
       await axiosInstance.post(`/hr/pay-advice/${id}/unlock?reason=${encodeURIComponent(reason)}`);
       toast.success('Pay advice unlocked');
+      setUnlockPayAdviceDialog({ open: false, id: null, reason: '' });
       loadData();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to unlock');
