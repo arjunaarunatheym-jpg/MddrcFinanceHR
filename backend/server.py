@@ -12389,10 +12389,11 @@ async def get_profit_loss_report(
         "status": {"$in": ["approved", "paid"]}
     }, {"_id": 0}).to_list(10000)
     
-    # Get petty cash expenses
+    # Get petty cash expenses - only approved transactions
     petty_cash = await db.petty_cash_transactions.find({
         "date": {"$gte": start_date, "$lte": end_date},
-        "type": "expense"
+        "type": "expense",
+        "status": "approved"  # Only count approved petty cash
     }, {"_id": 0}).to_list(1000)
     
     # Get manual expense entries
