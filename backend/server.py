@@ -13450,6 +13450,696 @@ async def get_payroll_subledger(
     }
 
 
+# Chart of Accounts - Static configuration based on user's Excel template
+CHART_OF_ACCOUNTS = {
+    # Assets (1xxx)
+    "1001": {"name": "Cash at Bank", "type": "Asset"},
+    "1002": {"name": "Petty Cash", "type": "Asset"},
+    "1100": {"name": "Accounts Receivable", "type": "Asset"},
+    
+    # Liabilities (2xxx)
+    "2001": {"name": "Accounts Payable", "type": "Liability"},
+    "2100": {"name": "Trainer Payable", "type": "Liability"},
+    "2101": {"name": "Coordinator Payable", "type": "Liability"},
+    "2102": {"name": "Marketing Commission Payable", "type": "Liability"},
+    "2200": {"name": "EPF Payable", "type": "Liability"},
+    "2201": {"name": "SOCSO Payable", "type": "Liability"},
+    "2202": {"name": "EIS Payable", "type": "Liability"},
+    "2210": {"name": "Salary Payable", "type": "Liability"},
+    
+    # Income (4xxx) - Dynamic by programme
+    "4000": {"name": "Training Income - General", "type": "Income"},
+    "4001": {"name": "Training Income - Cars", "type": "Income"},
+    "4002": {"name": "Training Income - Motorcycles", "type": "Income"},
+    "4003": {"name": "Training Income - Heavy Vehicles", "type": "Income"},
+    "4004": {"name": "Training Income - Bus", "type": "Income"},
+    "4100": {"name": "Other Income", "type": "Income"},
+    
+    # Expenses (5xxx)
+    "5001": {"name": "Trainer Fees", "type": "Expense"},
+    "5002": {"name": "Coordinator Fees", "type": "Expense"},
+    "5003": {"name": "Marketing Commission", "type": "Expense"},
+    "5100": {"name": "Staff Salaries", "type": "Expense"},
+    "5101": {"name": "EPF - Employer", "type": "Expense"},
+    "5102": {"name": "SOCSO - Employer", "type": "Expense"},
+    "5103": {"name": "EIS - Employer", "type": "Expense"},
+    "5200": {"name": "F&B Expenses", "type": "Expense"},
+    "5201": {"name": "Venue Expenses", "type": "Expense"},
+    "5202": {"name": "HRDCorp Levy", "type": "Expense"},
+    "5300": {"name": "Petty Cash Expenses", "type": "Expense"},
+    "5400": {"name": "Other Expenses", "type": "Expense"},
+}
+
+
+@api_router.get("/finance/chart-of-accounts")
+async def get_chart_of_accounts(current_user: User = Depends(get_current_user)):
+    """Get the Chart of Accounts"""
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    accounts = []
+    for code, info in sorted(CHART_OF_ACCOUNTS.items()):
+        accounts.append({
+            "code": code,
+            "name": info["name"],
+            "type": info["type"]
+        })
+    return accounts
+
+
+@api_router.get("/finance/general-ledger")
+async def get_general_ledger(
+    year: int = None,
+    month: int = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get General Ledger with double-entry transactions.
+    
+    Every transaction has matching Debit and Credit entries.
+    Tags (session_id, programme, venue) are for reference only - not in GL.
+    """
+    if current_user.role not in ["admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    now = get_malaysia_time()
+    year = year or now.year
+    
+    if month:
+        start_date = f"{year}-{month:02d}-01"
+        if month == 12:
+            end_date = f"{year + 1}-01-01"
+        else:
+            end_date = f"{year}-{month + 1:02d}-01"
+    else:
+        start_date = f"{year}-01-01"
+        end_date = f"{year}-12-31"
+    
+    gl_entries = []
+    entry_id = 1
+    
+    # Get programmes for mapping
+    programmes = await db.programs.find({}, {"_id": 0, "id": 1, "name": 1}).to_list(100)
+    programme_map = {p["id"]: p.get("name", "Unknown") for p in programmes}
+    
+    # Get sessions for the year
+    sessions = await db.sessions.find({
+        "start_date": {"$gte": start_date, "$lte": end_date}
+    }, {"_id": 0}).to_list(10000)
+    session_map = {s.get("id"): s for s in sessions}
+    
+    # 1. INVOICES - DR Accounts Receivable, CR Training Income
+    invoices = await db.invoices.find({
+        "status": {"$in": ["approved", "issued", "paid"]}
+    }, {"_id": 0}).to_list(10000)
+    
+    for inv in invoices:
+        try:
+            # Check if invoice is in our date range (by session date or created date)
+            session_id = None
+            session = None
+            
+            # Find session linked to this invoice
+            for s in sessions:
+                if s.get("invoice_id") == inv.get("id"):
+                    session_id = s.get("id")
+                    session = s
+                    break
+            
+            if not session:
+                # Fallback to created_at date
+                inv_date = inv.get("created_at", "")[:10]
+                if not (inv_date >= start_date and inv_date <= end_date):
+                    continue
+            
+            amount = float(inv.get("total_amount") or inv.get("amount") or 0)
+            if amount <= 0:
+                continue
+            
+            trans_date = session.get("start_date") if session else inv.get("created_at", "")[:10]
+            ref = inv.get("invoice_number", f"INV-{inv.get('id', '')[:8]}")
+            programme = programme_map.get(session.get("program_id"), "General") if session else "General"
+            
+            # Determine income account based on programme
+            income_account = "4000"  # Default
+            prog_name = programme.lower() if programme else ""
+            if "car" in prog_name:
+                income_account = "4001"
+            elif "motorcycle" in prog_name or "motor" in prog_name:
+                income_account = "4002"
+            elif "heavy" in prog_name or "truck" in prog_name:
+                income_account = "4003"
+            elif "bus" in prog_name:
+                income_account = "4004"
+            
+            # Debit AR, Credit Income
+            gl_entries.append({
+                "entry_id": entry_id,
+                "date": trans_date,
+                "reference": ref,
+                "description": f"Invoice issued - {inv.get('company_name', 'Customer')}",
+                "account_code": "1100",
+                "account_name": CHART_OF_ACCOUNTS["1100"]["name"],
+                "debit": amount,
+                "credit": 0,
+                "tags": {"session_id": session_id, "programme": programme}
+            })
+            gl_entries.append({
+                "entry_id": entry_id,
+                "date": trans_date,
+                "reference": ref,
+                "description": f"Invoice issued - {inv.get('company_name', 'Customer')}",
+                "account_code": income_account,
+                "account_name": CHART_OF_ACCOUNTS[income_account]["name"],
+                "debit": 0,
+                "credit": amount,
+                "tags": {"session_id": session_id, "programme": programme}
+            })
+            entry_id += 1
+        except:
+            pass
+    
+    # 2. PAYMENTS RECEIVED - DR Bank, CR Accounts Receivable
+    payments = await db.payments.find({}, {"_id": 0}).to_list(10000)
+    for pmt in payments:
+        try:
+            pmt_date = pmt.get("payment_date", pmt.get("created_at", ""))[:10]
+            if not (pmt_date >= start_date and pmt_date <= end_date):
+                continue
+            
+            amount = float(pmt.get("amount", 0))
+            if amount <= 0:
+                continue
+            
+            ref = pmt.get("reference", f"PMT-{pmt.get('id', '')[:8]}")
+            
+            gl_entries.append({
+                "entry_id": entry_id,
+                "date": pmt_date,
+                "reference": ref,
+                "description": f"Payment received - {pmt.get('payment_method', 'Bank')}",
+                "account_code": "1001",
+                "account_name": CHART_OF_ACCOUNTS["1001"]["name"],
+                "debit": amount,
+                "credit": 0,
+                "tags": {}
+            })
+            gl_entries.append({
+                "entry_id": entry_id,
+                "date": pmt_date,
+                "reference": ref,
+                "description": f"Payment received - {pmt.get('payment_method', 'Bank')}",
+                "account_code": "1100",
+                "account_name": CHART_OF_ACCOUNTS["1100"]["name"],
+                "debit": 0,
+                "credit": amount,
+                "tags": {}
+            })
+            entry_id += 1
+        except:
+            pass
+    
+    # 3. TRAINER FEES - DR Trainer Fees Expense, CR Trainer Payable
+    session_ids = set(session_map.keys())
+    trainer_fees = await db.trainer_fees.find({}, {"_id": 0}).to_list(10000)
+    for tf in trainer_fees:
+        try:
+            session_id = tf.get("session_id")
+            if session_id not in session_ids:
+                continue
+            
+            session = session_map.get(session_id, {})
+            amount = float(tf.get("fee_amount", 0))
+            if amount <= 0:
+                continue
+            
+            trans_date = session.get("start_date", tf.get("created_at", "")[:10])
+            programme = programme_map.get(session.get("program_id"), "Unknown")
+            
+            gl_entries.append({
+                "entry_id": entry_id,
+                "date": trans_date,
+                "reference": f"TF-{session_id[:8]}",
+                "description": f"Trainer fee accrual - {tf.get('trainer_name', 'Trainer')}",
+                "account_code": "5001",
+                "account_name": CHART_OF_ACCOUNTS["5001"]["name"],
+                "debit": amount,
+                "credit": 0,
+                "tags": {"session_id": session_id, "programme": programme, "trainer_id": tf.get("trainer_id")}
+            })
+            gl_entries.append({
+                "entry_id": entry_id,
+                "date": trans_date,
+                "reference": f"TF-{session_id[:8]}",
+                "description": f"Trainer fee accrual - {tf.get('trainer_name', 'Trainer')}",
+                "account_code": "2100",
+                "account_name": CHART_OF_ACCOUNTS["2100"]["name"],
+                "debit": 0,
+                "credit": amount,
+                "tags": {"session_id": session_id, "programme": programme, "trainer_id": tf.get("trainer_id")}
+            })
+            entry_id += 1
+        except:
+            pass
+    
+    # 4. COORDINATOR FEES - DR Coordinator Fees Expense, CR Coordinator Payable
+    coordinator_fees = await db.coordinator_fees.find({}, {"_id": 0}).to_list(10000)
+    for cf in coordinator_fees:
+        try:
+            session_id = cf.get("session_id")
+            if session_id not in session_ids:
+                continue
+            
+            session = session_map.get(session_id, {})
+            amount = float(cf.get("total_fee", 0))
+            if amount <= 0:
+                continue
+            
+            trans_date = session.get("start_date", cf.get("created_at", "")[:10])
+            programme = programme_map.get(session.get("program_id"), "Unknown")
+            
+            gl_entries.append({
+                "entry_id": entry_id,
+                "date": trans_date,
+                "reference": f"CF-{session_id[:8]}",
+                "description": f"Coordinator fee accrual - {cf.get('coordinator_name', 'Coordinator')}",
+                "account_code": "5002",
+                "account_name": CHART_OF_ACCOUNTS["5002"]["name"],
+                "debit": amount,
+                "credit": 0,
+                "tags": {"session_id": session_id, "programme": programme}
+            })
+            gl_entries.append({
+                "entry_id": entry_id,
+                "date": trans_date,
+                "reference": f"CF-{session_id[:8]}",
+                "description": f"Coordinator fee accrual - {cf.get('coordinator_name', 'Coordinator')}",
+                "account_code": "2101",
+                "account_name": CHART_OF_ACCOUNTS["2101"]["name"],
+                "debit": 0,
+                "credit": amount,
+                "tags": {"session_id": session_id, "programme": programme}
+            })
+            entry_id += 1
+        except:
+            pass
+    
+    # 5. MARKETING COMMISSIONS - DR Marketing Expense, CR Marketing Payable
+    marketing_comms = await db.marketing_commissions.find({
+        "status": {"$in": ["approved", "paid"]}
+    }, {"_id": 0}).to_list(10000)
+    for mc in marketing_comms:
+        try:
+            session_id = mc.get("session_id")
+            if session_id not in session_ids:
+                continue
+            
+            session = session_map.get(session_id, {})
+            amount = float(mc.get("calculated_amount", 0))
+            if amount <= 0:
+                continue
+            
+            trans_date = session.get("start_date", mc.get("created_at", "")[:10])
+            programme = programme_map.get(session.get("program_id"), "Unknown")
+            
+            gl_entries.append({
+                "entry_id": entry_id,
+                "date": trans_date,
+                "reference": f"MC-{session_id[:8]}",
+                "description": f"Marketing commission - {mc.get('marketer_name', 'Marketer')}",
+                "account_code": "5003",
+                "account_name": CHART_OF_ACCOUNTS["5003"]["name"],
+                "debit": amount,
+                "credit": 0,
+                "tags": {"session_id": session_id, "programme": programme, "marketer_id": mc.get("marketing_user_id")}
+            })
+            gl_entries.append({
+                "entry_id": entry_id,
+                "date": trans_date,
+                "reference": f"MC-{session_id[:8]}",
+                "description": f"Marketing commission - {mc.get('marketer_name', 'Marketer')}",
+                "account_code": "2102",
+                "account_name": CHART_OF_ACCOUNTS["2102"]["name"],
+                "debit": 0,
+                "credit": amount,
+                "tags": {"session_id": session_id, "programme": programme, "marketer_id": mc.get("marketing_user_id")}
+            })
+            entry_id += 1
+        except:
+            pass
+    
+    # 6. PAYROLL - DR Salaries & Employer Contributions, CR Payables
+    payslips = await db.hr_payslips.find({"year": year}, {"_id": 0}).to_list(1000)
+    if month:
+        payslips = [p for p in payslips if p.get("month") == month]
+    
+    for ps in payslips:
+        try:
+            gross = float(ps.get("gross_salary", 0))
+            epf_er = float(ps.get("epf_employer", 0))
+            socso_er = float(ps.get("socso_employer", 0))
+            eis_er = float(ps.get("eis_employer", 0))
+            epf_ee = float(ps.get("epf_employee", 0))
+            socso_ee = float(ps.get("socso_employee", 0))
+            eis_ee = float(ps.get("eis_employee", 0))
+            net_pay = float(ps.get("nett_pay", 0))
+            
+            m = ps.get("month", 1)
+            trans_date = f"{year}-{m:02d}-28"  # End of month
+            ref = f"PAY-{year}{m:02d}"
+            emp_name = ps.get("full_name", "Staff")
+            
+            # DR Salaries (gross)
+            if gross > 0:
+                gl_entries.append({
+                    "entry_id": entry_id,
+                    "date": trans_date,
+                    "reference": ref,
+                    "description": f"Salary - {emp_name}",
+                    "account_code": "5100",
+                    "account_name": CHART_OF_ACCOUNTS["5100"]["name"],
+                    "debit": gross,
+                    "credit": 0,
+                    "tags": {"employee": emp_name}
+                })
+            
+            # DR Employer EPF
+            if epf_er > 0:
+                gl_entries.append({
+                    "entry_id": entry_id,
+                    "date": trans_date,
+                    "reference": ref,
+                    "description": f"EPF Employer - {emp_name}",
+                    "account_code": "5101",
+                    "account_name": CHART_OF_ACCOUNTS["5101"]["name"],
+                    "debit": epf_er,
+                    "credit": 0,
+                    "tags": {"employee": emp_name}
+                })
+            
+            # DR Employer SOCSO
+            if socso_er > 0:
+                gl_entries.append({
+                    "entry_id": entry_id,
+                    "date": trans_date,
+                    "reference": ref,
+                    "description": f"SOCSO Employer - {emp_name}",
+                    "account_code": "5102",
+                    "account_name": CHART_OF_ACCOUNTS["5102"]["name"],
+                    "debit": socso_er,
+                    "credit": 0,
+                    "tags": {"employee": emp_name}
+                })
+            
+            # DR Employer EIS
+            if eis_er > 0:
+                gl_entries.append({
+                    "entry_id": entry_id,
+                    "date": trans_date,
+                    "reference": ref,
+                    "description": f"EIS Employer - {emp_name}",
+                    "account_code": "5103",
+                    "account_name": CHART_OF_ACCOUNTS["5103"]["name"],
+                    "debit": eis_er,
+                    "credit": 0,
+                    "tags": {"employee": emp_name}
+                })
+            
+            # CR EPF Payable (employee + employer)
+            total_epf = epf_ee + epf_er
+            if total_epf > 0:
+                gl_entries.append({
+                    "entry_id": entry_id,
+                    "date": trans_date,
+                    "reference": ref,
+                    "description": f"EPF Payable - {emp_name}",
+                    "account_code": "2200",
+                    "account_name": CHART_OF_ACCOUNTS["2200"]["name"],
+                    "debit": 0,
+                    "credit": total_epf,
+                    "tags": {"employee": emp_name}
+                })
+            
+            # CR SOCSO Payable
+            total_socso = socso_ee + socso_er
+            if total_socso > 0:
+                gl_entries.append({
+                    "entry_id": entry_id,
+                    "date": trans_date,
+                    "reference": ref,
+                    "description": f"SOCSO Payable - {emp_name}",
+                    "account_code": "2201",
+                    "account_name": CHART_OF_ACCOUNTS["2201"]["name"],
+                    "debit": 0,
+                    "credit": total_socso,
+                    "tags": {"employee": emp_name}
+                })
+            
+            # CR EIS Payable
+            total_eis = eis_ee + eis_er
+            if total_eis > 0:
+                gl_entries.append({
+                    "entry_id": entry_id,
+                    "date": trans_date,
+                    "reference": ref,
+                    "description": f"EIS Payable - {emp_name}",
+                    "account_code": "2202",
+                    "account_name": CHART_OF_ACCOUNTS["2202"]["name"],
+                    "debit": 0,
+                    "credit": total_eis,
+                    "tags": {"employee": emp_name}
+                })
+            
+            # CR Salary Payable (net)
+            if net_pay > 0:
+                gl_entries.append({
+                    "entry_id": entry_id,
+                    "date": trans_date,
+                    "reference": ref,
+                    "description": f"Salary Payable - {emp_name}",
+                    "account_code": "2210",
+                    "account_name": CHART_OF_ACCOUNTS["2210"]["name"],
+                    "debit": 0,
+                    "credit": net_pay,
+                    "tags": {"employee": emp_name}
+                })
+            
+            entry_id += 1
+        except:
+            pass
+    
+    # 7. SESSION EXPENSES (F&B, Venue, etc.)
+    session_expenses = await db.session_expenses.find({}, {"_id": 0}).to_list(10000)
+    for exp in session_expenses:
+        try:
+            session_id = exp.get("session_id")
+            if session_id not in session_ids:
+                continue
+            
+            session = session_map.get(session_id, {})
+            amount = float(exp.get("actual_amount") or exp.get("estimated_amount") or exp.get("amount") or 0)
+            if amount <= 0:
+                continue
+            
+            trans_date = session.get("start_date", exp.get("created_at", "")[:10])
+            programme = programme_map.get(session.get("program_id"), "Unknown")
+            exp_type = exp.get("expense_type", "").lower()
+            
+            # Determine account based on expense type
+            if "f&b" in exp_type or "food" in exp_type or "beverage" in exp_type:
+                account = "5200"
+            elif "venue" in exp_type:
+                account = "5201"
+            elif "hrdc" in exp_type or "levy" in exp_type:
+                account = "5202"
+            else:
+                account = "5400"
+            
+            gl_entries.append({
+                "entry_id": entry_id,
+                "date": trans_date,
+                "reference": f"SE-{session_id[:8]}",
+                "description": f"Session expense - {exp.get('expense_type', 'Expense')}",
+                "account_code": account,
+                "account_name": CHART_OF_ACCOUNTS[account]["name"],
+                "debit": amount,
+                "credit": 0,
+                "tags": {"session_id": session_id, "programme": programme}
+            })
+            gl_entries.append({
+                "entry_id": entry_id,
+                "date": trans_date,
+                "reference": f"SE-{session_id[:8]}",
+                "description": f"Session expense - {exp.get('expense_type', 'Expense')}",
+                "account_code": "2001",
+                "account_name": CHART_OF_ACCOUNTS["2001"]["name"],
+                "debit": 0,
+                "credit": amount,
+                "tags": {"session_id": session_id, "programme": programme}
+            })
+            entry_id += 1
+        except:
+            pass
+    
+    # 8. PETTY CASH EXPENSES
+    petty_cash = await db.petty_cash_transactions.find({
+        "date": {"$gte": start_date, "$lte": end_date},
+        "type": "expense",
+        "status": "approved"
+    }, {"_id": 0}).to_list(1000)
+    
+    for pc in petty_cash:
+        try:
+            amount = float(pc.get("amount", 0))
+            if amount <= 0:
+                continue
+            
+            trans_date = pc.get("date", "")[:10]
+            
+            gl_entries.append({
+                "entry_id": entry_id,
+                "date": trans_date,
+                "reference": f"PC-{pc.get('id', '')[:8]}",
+                "description": f"Petty cash - {pc.get('description', 'Expense')}",
+                "account_code": "5300",
+                "account_name": CHART_OF_ACCOUNTS["5300"]["name"],
+                "debit": amount,
+                "credit": 0,
+                "tags": {"category": pc.get("category")}
+            })
+            gl_entries.append({
+                "entry_id": entry_id,
+                "date": trans_date,
+                "reference": f"PC-{pc.get('id', '')[:8]}",
+                "description": f"Petty cash - {pc.get('description', 'Expense')}",
+                "account_code": "1002",
+                "account_name": CHART_OF_ACCOUNTS["1002"]["name"],
+                "debit": 0,
+                "credit": amount,
+                "tags": {"category": pc.get("category")}
+            })
+            entry_id += 1
+        except:
+            pass
+    
+    # 9. MANUAL INCOME
+    manual_income = await db.manual_income.find({
+        "date": {"$gte": start_date, "$lte": end_date}
+    }, {"_id": 0}).to_list(1000)
+    
+    for mi in manual_income:
+        try:
+            amount = float(mi.get("amount", 0))
+            if amount <= 0:
+                continue
+            
+            trans_date = mi.get("date", "")[:10]
+            
+            gl_entries.append({
+                "entry_id": entry_id,
+                "date": trans_date,
+                "reference": f"MI-{mi.get('id', '')[:8]}",
+                "description": f"Other income - {mi.get('description', 'Income')}",
+                "account_code": "1001",
+                "account_name": CHART_OF_ACCOUNTS["1001"]["name"],
+                "debit": amount,
+                "credit": 0,
+                "tags": {"category": mi.get("category")}
+            })
+            gl_entries.append({
+                "entry_id": entry_id,
+                "date": trans_date,
+                "reference": f"MI-{mi.get('id', '')[:8]}",
+                "description": f"Other income - {mi.get('description', 'Income')}",
+                "account_code": "4100",
+                "account_name": CHART_OF_ACCOUNTS["4100"]["name"],
+                "debit": 0,
+                "credit": amount,
+                "tags": {"category": mi.get("category")}
+            })
+            entry_id += 1
+        except:
+            pass
+    
+    # 10. MANUAL EXPENSES
+    manual_expenses = await db.manual_expenses.find({
+        "date": {"$gte": start_date, "$lte": end_date}
+    }, {"_id": 0}).to_list(1000)
+    
+    for me in manual_expenses:
+        try:
+            amount = float(me.get("amount", 0))
+            if amount <= 0:
+                continue
+            
+            trans_date = me.get("date", "")[:10]
+            
+            gl_entries.append({
+                "entry_id": entry_id,
+                "date": trans_date,
+                "reference": f"ME-{me.get('id', '')[:8]}",
+                "description": f"Other expense - {me.get('description', 'Expense')}",
+                "account_code": "5400",
+                "account_name": CHART_OF_ACCOUNTS["5400"]["name"],
+                "debit": amount,
+                "credit": 0,
+                "tags": {"category": me.get("category")}
+            })
+            gl_entries.append({
+                "entry_id": entry_id,
+                "date": trans_date,
+                "reference": f"ME-{me.get('id', '')[:8]}",
+                "description": f"Other expense - {me.get('description', 'Expense')}",
+                "account_code": "1001",
+                "account_name": CHART_OF_ACCOUNTS["1001"]["name"],
+                "debit": 0,
+                "credit": amount,
+                "tags": {"category": me.get("category")}
+            })
+            entry_id += 1
+        except:
+            pass
+    
+    # Sort by date, then entry_id
+    gl_entries.sort(key=lambda x: (x["date"], x["entry_id"]))
+    
+    # Calculate totals
+    total_debit = sum(e["debit"] for e in gl_entries)
+    total_credit = sum(e["credit"] for e in gl_entries)
+    
+    # Generate trial balance (aggregated by account)
+    trial_balance = {}
+    for entry in gl_entries:
+        code = entry["account_code"]
+        if code not in trial_balance:
+            trial_balance[code] = {
+                "account_code": code,
+                "account_name": entry["account_name"],
+                "account_type": CHART_OF_ACCOUNTS.get(code, {}).get("type", "Unknown"),
+                "debit": 0,
+                "credit": 0
+            }
+        trial_balance[code]["debit"] += entry["debit"]
+        trial_balance[code]["credit"] += entry["credit"]
+    
+    # Calculate net balance per account
+    for code, bal in trial_balance.items():
+        bal["net"] = bal["debit"] - bal["credit"]
+    
+    trial_balance_list = sorted(trial_balance.values(), key=lambda x: x["account_code"])
+    
+    return {
+        "year": year,
+        "month": month,
+        "entries": gl_entries,
+        "trial_balance": trial_balance_list,
+        "totals": {
+            "total_debit": total_debit,
+            "total_credit": total_credit,
+            "is_balanced": abs(total_debit - total_credit) < 0.01
+        }
+    }
+
+
 @api_router.post("/finance/manual-income")
 async def add_manual_income(entry: ManualIncomeEntry, current_user: User = Depends(get_current_user)):
     """Add a one-off manual income entry"""
