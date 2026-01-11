@@ -8521,6 +8521,24 @@ async def create_session_credit_note(session_id: str, cn_data: dict, current_use
     
     return {"message": "Credit note created", "cn_number": cn_number, "id": credit_note["id"], "amount": cn_amount}
 
+@api_router.get("/finance/payments")
+async def get_payments(current_user: User = Depends(get_current_user)):
+    """Get all payments"""
+    if current_user.role not in ["admin", "super_admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    payments = await db.payments.find({}, {"_id": 0}).sort("payment_date", -1).to_list(100)
+    
+    # Enrich with invoice info
+    for payment in payments:
+        if payment.get("invoice_id"):
+            invoice = await db.invoices.find_one({"id": payment["invoice_id"]}, {"_id": 0, "invoice_number": 1, "company_name": 1})
+            if invoice:
+                payment["invoice_number"] = invoice.get("invoice_number")
+                payment["company_name"] = invoice.get("company_name")
+    
+    return payments
+
 @api_router.post("/finance/payments")
 async def record_payment(payment_data: PaymentCreate, current_user: User = Depends(get_current_user)):
     """Record payment"""
