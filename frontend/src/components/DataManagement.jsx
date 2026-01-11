@@ -1455,6 +1455,11 @@ const DataManagement = ({ user }) => {
                 <span className="hidden sm:inline">Invoices</span>
                 <span className="sm:hidden">Inv</span>
               </TabsTrigger>
+              <TabsTrigger value="creditnote-management" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 py-2">
+                <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-red-600" />
+                <span className="hidden sm:inline">Credit Notes</span>
+                <span className="sm:hidden">CN</span>
+              </TabsTrigger>
               <TabsTrigger value="payment-management" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 py-2">
                 <CreditCard className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Payments</span>
