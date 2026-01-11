@@ -85,6 +85,7 @@ const FinanceDashboard = ({ user, onLogout }) => {
   const [payablesYear, setPayablesYear] = useState(new Date().getFullYear());
   const [payablesMonth, setPayablesMonth] = useState(new Date().getMonth() + 1);
   const [currentPeriodStatus, setCurrentPeriodStatus] = useState({ status: 'open', exists: false });
+  const [reopenDialog, setReopenDialog] = useState({ open: false, reason: '' });
   
   // Invoice Edit State
   const [editingInvoice, setEditingInvoice] = useState(null);
