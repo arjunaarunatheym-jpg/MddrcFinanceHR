@@ -122,8 +122,11 @@ const FinanceDashboard = ({ user, onLogout }) => {
     try {
       const response = await axiosInstance.get(`/finance/dashboard${year ? `?year=${year}` : ''}`);
       setDashboard(response.data);
+      // Merge available years from API with default years (current + 2 previous)
       if (response.data.available_years && response.data.available_years.length > 0) {
-        setAvailableYears(response.data.available_years);
+        const defaultYears = [currentYear, currentYear - 1, currentYear - 2];
+        const mergedYears = [...new Set([...defaultYears, ...response.data.available_years])].sort((a, b) => b - a);
+        setAvailableYears(mergedYears);
       }
     } catch (error) {
       console.error('Failed to load dashboard:', error);
