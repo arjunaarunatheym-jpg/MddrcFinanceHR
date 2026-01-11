@@ -11,14 +11,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { 
   TrendingUp, TrendingDown, DollarSign, Calendar, Plus, Trash2, 
-  Loader2, Download, PieChart, BarChart3, ArrowUpRight, ArrowDownRight
+  Loader2, Download, PieChart, BarChart3, ArrowUpRight, ArrowDownRight,
+  Users, Briefcase, UserCheck, Building2, ChevronDown, ChevronRight
 } from 'lucide-react';
 
 const ProfitLossLedger = () => {
   const [loading, setLoading] = useState(true);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [reportData, setReportData] = useState(null);
+  const [programmeData, setProgrammeData] = useState(null);
+  const [trainerSubledger, setTrainerSubledger] = useState(null);
+  const [marketingSubledger, setMarketingSubledger] = useState(null);
+  const [payrollSubledger, setPayrollSubledger] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [expandedRows, setExpandedRows] = useState({});
   
   // Manual entry states
   const [showIncomeDialog, setShowIncomeDialog] = useState(false);
@@ -52,6 +58,19 @@ const ProfitLossLedger = () => {
     loadData();
   }, [selectedYear]);
 
+  useEffect(() => {
+    // Load sub-ledger data when those tabs are activated
+    if (activeTab === 'ceo-pnl' && !programmeData) {
+      loadProgrammeData();
+    } else if (activeTab === 'trainer-subledger' && !trainerSubledger) {
+      loadTrainerSubledger();
+    } else if (activeTab === 'marketing-subledger' && !marketingSubledger) {
+      loadMarketingSubledger();
+    } else if (activeTab === 'payroll-subledger' && !payrollSubledger) {
+      loadPayrollSubledger();
+    }
+  }, [activeTab]);
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -63,10 +82,52 @@ const ProfitLossLedger = () => {
       setReportData(reportRes.data);
       setManualIncome(incomeRes.data);
       setManualExpenses(expenseRes.data);
+      
+      // Reset sub-ledger data when year changes
+      setProgrammeData(null);
+      setTrainerSubledger(null);
+      setMarketingSubledger(null);
+      setPayrollSubledger(null);
     } catch (error) {
       toast.error('Failed to load profit/loss data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadProgrammeData = async () => {
+    try {
+      const res = await axiosInstance.get(`/finance/profit-loss/by-programme?year=${selectedYear}`);
+      setProgrammeData(res.data);
+    } catch (error) {
+      toast.error('Failed to load programme breakdown');
+    }
+  };
+
+  const loadTrainerSubledger = async () => {
+    try {
+      const res = await axiosInstance.get(`/finance/subledger/trainers?year=${selectedYear}`);
+      setTrainerSubledger(res.data);
+    } catch (error) {
+      toast.error('Failed to load trainer sub-ledger');
+    }
+  };
+
+  const loadMarketingSubledger = async () => {
+    try {
+      const res = await axiosInstance.get(`/finance/subledger/marketing?year=${selectedYear}`);
+      setMarketingSubledger(res.data);
+    } catch (error) {
+      toast.error('Failed to load marketing sub-ledger');
+    }
+  };
+
+  const loadPayrollSubledger = async () => {
+    try {
+      const res = await axiosInstance.get(`/finance/subledger/payroll?year=${selectedYear}`);
+      setPayrollSubledger(res.data);
+    } catch (error) {
+      toast.error('Failed to load payroll sub-ledger');
     }
   };
 
@@ -140,6 +201,10 @@ const ProfitLossLedger = () => {
       date: new Date().toISOString().split('T')[0],
       notes: ''
     });
+  };
+
+  const toggleRow = (id) => {
+    setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
   const formatCurrency = (val) => `RM ${(val || 0).toLocaleString('en-MY', { minimumFractionDigits: 2 })}`;
@@ -242,7 +307,23 @@ const ProfitLossLedger = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="flex flex-wrap gap-1 h-auto w-full justify-start bg-gray-100 p-2 rounded-lg">
           <TabsTrigger value="overview">Monthly Overview</TabsTrigger>
+          <TabsTrigger value="ceo-pnl" className="text-blue-600">
+            <Briefcase className="w-4 h-4 mr-1" />
+            CEO P&L
+          </TabsTrigger>
           <TabsTrigger value="expenses">Expense Breakdown</TabsTrigger>
+          <TabsTrigger value="trainer-subledger">
+            <Users className="w-4 h-4 mr-1" />
+            Trainers
+          </TabsTrigger>
+          <TabsTrigger value="marketing-subledger">
+            <UserCheck className="w-4 h-4 mr-1" />
+            Marketing
+          </TabsTrigger>
+          <TabsTrigger value="payroll-subledger">
+            <Building2 className="w-4 h-4 mr-1" />
+            Payroll
+          </TabsTrigger>
           <TabsTrigger value="manual-income">Manual Income</TabsTrigger>
           <TabsTrigger value="manual-expenses">Manual Expenses</TabsTrigger>
         </TabsList>
@@ -308,6 +389,164 @@ const ProfitLossLedger = () => {
           </Card>
         </TabsContent>
 
+        {/* CEO P&L Tab - Programme Breakdown */}
+        <TabsContent value="ceo-pnl">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Briefcase className="w-5 h-5 text-blue-600" />
+                CEO P&L View - {selectedYear}
+              </CardTitle>
+              <CardDescription>Profitability by programme with margins and insights</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {!programmeData ? (
+                <div className="flex items-center justify-center p-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Programme Breakdown Table */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b bg-blue-50">
+                          <th className="text-left p-3 font-semibold">Programme</th>
+                          <th className="text-center p-3 font-semibold">Sessions</th>
+                          <th className="text-right p-3 font-semibold text-green-600">Revenue</th>
+                          <th className="text-right p-3 font-semibold text-red-600">Direct Costs</th>
+                          <th className="text-right p-3 font-semibold text-blue-600">Gross Profit</th>
+                          <th className="text-center p-3 font-semibold">Margin %</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(programmeData?.programmes || []).map((prog) => (
+                          <React.Fragment key={prog.programme_id}>
+                            <tr 
+                              className="border-b hover:bg-gray-50 cursor-pointer"
+                              onClick={() => toggleRow(prog.programme_id)}
+                            >
+                              <td className="p-3 font-medium flex items-center gap-2">
+                                {expandedRows[prog.programme_id] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                                {prog.programme_name}
+                              </td>
+                              <td className="p-3 text-center">
+                                <Badge variant="outline">{prog.session_count}</Badge>
+                              </td>
+                              <td className="p-3 text-right text-green-600">{formatCurrency(prog.income)}</td>
+                              <td className="p-3 text-right text-red-600">{formatCurrency(prog.expenses.total)}</td>
+                              <td className={`p-3 text-right font-semibold ${prog.gross_profit >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
+                                {formatCurrency(prog.gross_profit)}
+                              </td>
+                              <td className="p-3 text-center">
+                                <Badge className={prog.gross_margin_pct >= 30 ? 'bg-green-100 text-green-700' : prog.gross_margin_pct >= 15 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}>
+                                  {prog.gross_margin_pct}%
+                                </Badge>
+                              </td>
+                            </tr>
+                            {expandedRows[prog.programme_id] && (
+                              <tr className="bg-gray-50">
+                                <td colSpan={6} className="p-4">
+                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                    <div className="bg-white p-3 rounded border">
+                                      <p className="text-gray-500 text-xs">Trainer Fees</p>
+                                      <p className="font-semibold">{formatCurrency(prog.expenses.trainer_fees)}</p>
+                                    </div>
+                                    <div className="bg-white p-3 rounded border">
+                                      <p className="text-gray-500 text-xs">Coordinator Fees</p>
+                                      <p className="font-semibold">{formatCurrency(prog.expenses.coordinator_fees)}</p>
+                                    </div>
+                                    <div className="bg-white p-3 rounded border">
+                                      <p className="text-gray-500 text-xs">Marketing Commission</p>
+                                      <p className="font-semibold">{formatCurrency(prog.expenses.marketing_commissions)}</p>
+                                    </div>
+                                    <div className="bg-white p-3 rounded border">
+                                      <p className="text-gray-500 text-xs">Session Expenses</p>
+                                      <p className="font-semibold">{formatCurrency(prog.expenses.session_expenses)}</p>
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="bg-blue-100 font-bold">
+                          <td className="p-3" colSpan={2}>PROGRAMME TOTAL</td>
+                          <td className="p-3 text-right text-green-700">{formatCurrency(programmeData?.summary?.total_programme_income)}</td>
+                          <td className="p-3 text-right text-red-700">{formatCurrency(programmeData?.summary?.total_direct_costs)}</td>
+                          <td className="p-3 text-right text-blue-700">{formatCurrency(programmeData?.summary?.gross_profit)}</td>
+                          <td className="p-3 text-center">
+                            <Badge className="bg-blue-600 text-white">{programmeData?.summary?.gross_margin_pct}%</Badge>
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+
+                  {/* Summary Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <Card className="bg-green-50 border-green-200">
+                      <CardContent className="pt-4">
+                        <p className="text-xs text-green-600 font-medium">Total Revenue</p>
+                        <p className="text-xl font-bold text-green-700">{formatCurrency(programmeData?.summary?.total_income)}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Programme: {formatCurrency(programmeData?.summary?.total_programme_income)} | 
+                          Other: {formatCurrency(programmeData?.summary?.other_income)}
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-red-50 border-red-200">
+                      <CardContent className="pt-4">
+                        <p className="text-xs text-red-600 font-medium">Total Expenses</p>
+                        <p className="text-xl font-bold text-red-700">{formatCurrency(programmeData?.summary?.total_expenses)}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Direct: {formatCurrency(programmeData?.summary?.total_direct_costs)} | 
+                          Overhead: {formatCurrency(programmeData?.summary?.overhead?.total)}
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-blue-50 border-blue-200">
+                      <CardContent className="pt-4">
+                        <p className="text-xs text-blue-600 font-medium">Net Profit</p>
+                        <p className={`text-xl font-bold ${programmeData?.summary?.net_profit >= 0 ? 'text-blue-700' : 'text-orange-700'}`}>
+                          {formatCurrency(programmeData?.summary?.net_profit)}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Net Margin: {programmeData?.summary?.net_margin_pct}%
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-purple-50 border-purple-200">
+                      <CardContent className="pt-4">
+                        <p className="text-xs text-purple-600 font-medium">Overhead Breakdown</p>
+                        <div className="text-xs mt-1 space-y-1">
+                          <div className="flex justify-between">
+                            <span>Payroll:</span>
+                            <span className="font-semibold">{formatCurrency(programmeData?.summary?.overhead?.payroll)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Petty Cash:</span>
+                            <span className="font-semibold">{formatCurrency(programmeData?.summary?.overhead?.petty_cash)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Manual:</span>
+                            <span className="font-semibold">{formatCurrency(programmeData?.summary?.overhead?.manual)}</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Expense Breakdown Tab */}
         <TabsContent value="expenses">
           <Card>
@@ -353,6 +592,350 @@ const ProfitLossLedger = () => {
                   );
                 })}
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Trainer Sub-ledger Tab */}
+        <TabsContent value="trainer-subledger">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-purple-600" />
+                Trainer & Coordinator Sub-ledger - {selectedYear}
+              </CardTitle>
+              <CardDescription>Earnings breakdown by trainer and coordinator</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {!trainerSubledger ? (
+                <div className="flex items-center justify-center p-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-purple-600" />
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Trainers */}
+                  <div>
+                    <h4 className="font-semibold text-purple-700 mb-3 flex items-center gap-2">
+                      <Users className="w-4 h-4" /> Trainers
+                    </h4>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b bg-purple-50">
+                            <th className="text-left p-3">Name</th>
+                            <th className="text-right p-3">Earned</th>
+                            <th className="text-right p-3">Paid</th>
+                            <th className="text-right p-3">Balance</th>
+                            <th className="w-10"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(trainerSubledger?.trainers || []).map((t) => (
+                            <React.Fragment key={t.user_id}>
+                              <tr className="border-b hover:bg-gray-50 cursor-pointer" onClick={() => toggleRow(`trainer-${t.user_id}`)}>
+                                <td className="p-3 font-medium flex items-center gap-2">
+                                  {expandedRows[`trainer-${t.user_id}`] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                                  {t.name}
+                                </td>
+                                <td className="p-3 text-right text-green-600">{formatCurrency(t.total_earned)}</td>
+                                <td className="p-3 text-right text-blue-600">{formatCurrency(t.total_paid)}</td>
+                                <td className={`p-3 text-right font-semibold ${t.balance > 0 ? 'text-orange-600' : 'text-gray-600'}`}>
+                                  {formatCurrency(t.balance)}
+                                </td>
+                                <td className="p-3">
+                                  <Badge variant="outline">{t.sessions?.length || 0}</Badge>
+                                </td>
+                              </tr>
+                              {expandedRows[`trainer-${t.user_id}`] && t.sessions?.length > 0 && (
+                                <tr className="bg-gray-50">
+                                  <td colSpan={5} className="p-4">
+                                    <div className="text-xs space-y-2 max-h-40 overflow-y-auto">
+                                      {t.sessions.slice(0, 10).map((s, idx) => (
+                                        <div key={idx} className="flex justify-between items-center bg-white p-2 rounded border">
+                                          <span>{s.date} - {s.programme}</span>
+                                          <div className="flex items-center gap-2">
+                                            <span className="font-semibold">{formatCurrency(s.amount)}</span>
+                                            <Badge className={s.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
+                                              {s.status}
+                                            </Badge>
+                                          </div>
+                                        </div>
+                                      ))}
+                                      {t.sessions.length > 10 && <p className="text-gray-500 text-center">...and {t.sessions.length - 10} more</p>}
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </React.Fragment>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr className="bg-purple-100 font-bold">
+                            <td className="p-3">TOTAL</td>
+                            <td className="p-3 text-right text-green-700">{formatCurrency(trainerSubledger?.totals?.trainer_earned)}</td>
+                            <td className="p-3 text-right text-blue-700">{formatCurrency(trainerSubledger?.totals?.trainer_paid)}</td>
+                            <td className="p-3 text-right text-orange-700">{formatCurrency(trainerSubledger?.totals?.trainer_balance)}</td>
+                            <td></td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Coordinators */}
+                  <div>
+                    <h4 className="font-semibold text-blue-700 mb-3 flex items-center gap-2">
+                      <UserCheck className="w-4 h-4" /> Coordinators
+                    </h4>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b bg-blue-50">
+                            <th className="text-left p-3">Name</th>
+                            <th className="text-right p-3">Earned</th>
+                            <th className="text-right p-3">Paid</th>
+                            <th className="text-right p-3">Balance</th>
+                            <th className="w-10"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(trainerSubledger?.coordinators || []).map((c) => (
+                            <React.Fragment key={c.user_id}>
+                              <tr className="border-b hover:bg-gray-50 cursor-pointer" onClick={() => toggleRow(`coord-${c.user_id}`)}>
+                                <td className="p-3 font-medium flex items-center gap-2">
+                                  {expandedRows[`coord-${c.user_id}`] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                                  {c.name}
+                                </td>
+                                <td className="p-3 text-right text-green-600">{formatCurrency(c.total_earned)}</td>
+                                <td className="p-3 text-right text-blue-600">{formatCurrency(c.total_paid)}</td>
+                                <td className={`p-3 text-right font-semibold ${c.balance > 0 ? 'text-orange-600' : 'text-gray-600'}`}>
+                                  {formatCurrency(c.balance)}
+                                </td>
+                                <td className="p-3">
+                                  <Badge variant="outline">{c.sessions?.length || 0}</Badge>
+                                </td>
+                              </tr>
+                              {expandedRows[`coord-${c.user_id}`] && c.sessions?.length > 0 && (
+                                <tr className="bg-gray-50">
+                                  <td colSpan={5} className="p-4">
+                                    <div className="text-xs space-y-2 max-h-40 overflow-y-auto">
+                                      {c.sessions.slice(0, 10).map((s, idx) => (
+                                        <div key={idx} className="flex justify-between items-center bg-white p-2 rounded border">
+                                          <span>{s.date} - {s.programme}</span>
+                                          <div className="flex items-center gap-2">
+                                            <span className="font-semibold">{formatCurrency(s.amount)}</span>
+                                            <Badge className={s.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
+                                              {s.status}
+                                            </Badge>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </React.Fragment>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr className="bg-blue-100 font-bold">
+                            <td className="p-3">TOTAL</td>
+                            <td className="p-3 text-right text-green-700">{formatCurrency(trainerSubledger?.totals?.coordinator_earned)}</td>
+                            <td className="p-3 text-right text-blue-700">{formatCurrency(trainerSubledger?.totals?.coordinator_paid)}</td>
+                            <td className="p-3 text-right text-orange-700">{formatCurrency(trainerSubledger?.totals?.coordinator_balance)}</td>
+                            <td></td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Marketing Sub-ledger Tab */}
+        <TabsContent value="marketing-subledger">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <UserCheck className="w-5 h-5 text-pink-600" />
+                Marketing Commission Sub-ledger - {selectedYear}
+              </CardTitle>
+              <CardDescription>Commission breakdown by marketer</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {!marketingSubledger ? (
+                <div className="flex items-center justify-center p-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-pink-600" />
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b bg-pink-50">
+                        <th className="text-left p-3">Marketer</th>
+                        <th className="text-right p-3">Commission</th>
+                        <th className="text-right p-3">Paid</th>
+                        <th className="text-right p-3">Balance</th>
+                        <th className="w-10"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(marketingSubledger?.marketers || []).map((m) => (
+                        <React.Fragment key={m.user_id}>
+                          <tr className="border-b hover:bg-gray-50 cursor-pointer" onClick={() => toggleRow(`mkt-${m.user_id}`)}>
+                            <td className="p-3 font-medium flex items-center gap-2">
+                              {expandedRows[`mkt-${m.user_id}`] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                              {m.name}
+                            </td>
+                            <td className="p-3 text-right text-green-600">{formatCurrency(m.total_commission)}</td>
+                            <td className="p-3 text-right text-blue-600">{formatCurrency(m.total_paid)}</td>
+                            <td className={`p-3 text-right font-semibold ${m.balance > 0 ? 'text-orange-600' : 'text-gray-600'}`}>
+                              {formatCurrency(m.balance)}
+                            </td>
+                            <td className="p-3">
+                              <Badge variant="outline">{m.clients?.length || 0}</Badge>
+                            </td>
+                          </tr>
+                          {expandedRows[`mkt-${m.user_id}`] && m.clients?.length > 0 && (
+                            <tr className="bg-gray-50">
+                              <td colSpan={5} className="p-4">
+                                <div className="text-xs space-y-2 max-h-40 overflow-y-auto">
+                                  {m.clients.slice(0, 10).map((c, idx) => (
+                                    <div key={idx} className="flex justify-between items-center bg-white p-2 rounded border">
+                                      <span>{c.date} - {c.client} ({c.programme})</span>
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-gray-500">{c.commission_rate}%</span>
+                                        <span className="font-semibold">{formatCurrency(c.amount)}</span>
+                                        <Badge className={c.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
+                                          {c.status}
+                                        </Badge>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="bg-pink-100 font-bold">
+                        <td className="p-3">TOTAL</td>
+                        <td className="p-3 text-right text-green-700">{formatCurrency(marketingSubledger?.totals?.total_commission)}</td>
+                        <td className="p-3 text-right text-blue-700">{formatCurrency(marketingSubledger?.totals?.total_paid)}</td>
+                        <td className="p-3 text-right text-orange-700">{formatCurrency(marketingSubledger?.totals?.total_balance)}</td>
+                        <td></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Payroll Sub-ledger Tab */}
+        <TabsContent value="payroll-subledger">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-blue-600" />
+                Staff Payroll Register - {selectedYear}
+              </CardTitle>
+              <CardDescription>Payroll breakdown by employee</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {!payrollSubledger ? (
+                <div className="flex items-center justify-center p-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b bg-blue-50">
+                        <th className="text-left p-3">Employee</th>
+                        <th className="text-right p-3">Gross</th>
+                        <th className="text-right p-3">EPF</th>
+                        <th className="text-right p-3">SOCSO</th>
+                        <th className="text-right p-3">EIS</th>
+                        <th className="text-right p-3">Net</th>
+                        <th className="w-10"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(payrollSubledger?.employees || []).map((e) => (
+                        <React.Fragment key={e.staff_id}>
+                          <tr className="border-b hover:bg-gray-50 cursor-pointer" onClick={() => toggleRow(`emp-${e.staff_id}`)}>
+                            <td className="p-3 font-medium flex items-center gap-2">
+                              {expandedRows[`emp-${e.staff_id}`] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                              <div>
+                                <p>{e.name}</p>
+                                <p className="text-xs text-gray-500">{e.designation}</p>
+                              </div>
+                            </td>
+                            <td className="p-3 text-right">{formatCurrency(e.total_gross)}</td>
+                            <td className="p-3 text-right text-red-600">{formatCurrency(e.total_epf)}</td>
+                            <td className="p-3 text-right text-red-600">{formatCurrency(e.total_socso)}</td>
+                            <td className="p-3 text-right text-red-600">{formatCurrency(e.total_eis)}</td>
+                            <td className="p-3 text-right font-semibold text-green-600">{formatCurrency(e.total_net)}</td>
+                            <td className="p-3">
+                              <Badge variant="outline">{e.months?.length || 0}mo</Badge>
+                            </td>
+                          </tr>
+                          {expandedRows[`emp-${e.staff_id}`] && e.months?.length > 0 && (
+                            <tr className="bg-gray-50">
+                              <td colSpan={7} className="p-4">
+                                <div className="text-xs overflow-x-auto">
+                                  <table className="w-full">
+                                    <thead>
+                                      <tr className="text-gray-500">
+                                        <th className="text-left p-1">Month</th>
+                                        <th className="text-right p-1">Gross</th>
+                                        <th className="text-right p-1">EPF</th>
+                                        <th className="text-right p-1">SOCSO</th>
+                                        <th className="text-right p-1">EIS</th>
+                                        <th className="text-right p-1">Net</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {e.months.map((m, idx) => (
+                                        <tr key={idx} className="border-t">
+                                          <td className="p-1">{m.month_name}</td>
+                                          <td className="p-1 text-right">{formatCurrency(m.gross)}</td>
+                                          <td className="p-1 text-right">{formatCurrency(m.epf)}</td>
+                                          <td className="p-1 text-right">{formatCurrency(m.socso)}</td>
+                                          <td className="p-1 text-right">{formatCurrency(m.eis)}</td>
+                                          <td className="p-1 text-right font-semibold">{formatCurrency(m.net)}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="bg-blue-100 font-bold">
+                        <td className="p-3">TOTAL</td>
+                        <td className="p-3 text-right">{formatCurrency(payrollSubledger?.totals?.total_gross)}</td>
+                        <td className="p-3 text-right text-red-700">{formatCurrency(payrollSubledger?.totals?.total_epf)}</td>
+                        <td className="p-3 text-right text-red-700">{formatCurrency(payrollSubledger?.totals?.total_socso)}</td>
+                        <td className="p-3 text-right text-red-700">{formatCurrency(payrollSubledger?.totals?.total_eis)}</td>
+                        <td className="p-3 text-right text-green-700">{formatCurrency(payrollSubledger?.totals?.total_net)}</td>
+                        <td></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
