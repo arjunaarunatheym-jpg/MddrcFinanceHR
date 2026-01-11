@@ -27,8 +27,10 @@ const FinanceDashboard = ({ user, onLogout }) => {
   const [auditLogs, setAuditLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('pending');
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [availableYears, setAvailableYears] = useState([]);
+  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+  // Always include current year and 2 previous years, plus any years from data
+  const [availableYears, setAvailableYears] = useState([currentYear, currentYear - 1, currentYear - 2]);
   
   // Company Settings State
   const [companySettings, setCompanySettings] = useState({
