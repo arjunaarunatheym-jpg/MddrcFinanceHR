@@ -486,3 +486,40 @@ A comprehensive training management platform for MDDRC (Malaysian Defensive Driv
 - **Dynamic Programme Support**: New programmes automatically appear in CEO P&L when sessions are created with that `program_id`
 
 
+
+### General Ledger View (P1 - COMPLETED)
+- **Problem**: User wanted a proper General Ledger with double-entry (DR/CR) format matching their Excel template
+- **Solution**:
+
+**1. Chart of Accounts (Static Config)**
+  - Asset accounts (1xxx): Cash at Bank, Petty Cash, Accounts Receivable
+  - Liability accounts (2xxx): AP, Trainer/Coordinator/Marketing Payable, EPF/SOCSO/EIS Payable, Salary Payable
+  - Income accounts (4xxx): Training Income by programme type (Cars, Motorcycles, Heavy Vehicles, Bus), Other Income
+  - Expense accounts (5xxx): Trainer/Coordinator Fees, Marketing Commission, Staff Salaries, Employer Contributions, F&B, Venue, HRDCorp Levy, Petty Cash, Other
+
+**2. General Ledger Endpoint** (`GET /api/finance/general-ledger?year=YYYY&month=MM`)
+  - Generates double-entry journal entries from all financial transactions:
+    - Invoices: DR Accounts Receivable, CR Training Income (by programme)
+    - Payments: DR Bank, CR Accounts Receivable  
+    - Trainer Fees: DR Trainer Fees Expense, CR Trainer Payable
+    - Coordinator Fees: DR Coordinator Fees Expense, CR Coordinator Payable
+    - Marketing Commission: DR Marketing Expense, CR Marketing Payable
+    - Payroll: DR Salaries + Employer Contributions, CR EPF/SOCSO/EIS/Salary Payable
+    - Session Expenses: DR F&B/Venue/HRDCorp, CR Accounts Payable
+    - Petty Cash: DR Petty Cash Expenses, CR Petty Cash
+    - Manual Income/Expenses: Appropriate DR/CR entries
+  - Returns: Journal entries + Trial Balance (aggregated by account)
+  - Verifies debits = credits (balanced check)
+
+**3. Frontend Tab** (ProfitLossLedger.jsx - "General Ledger" tab)
+  - Month selector dropdown (filter by specific month or all months)
+  - Print button - Opens professional printout with:
+    - Journal entries table (Entry #, Date, Reference, Account Code, Account Name, Description, Debit, Credit)
+    - Totals row with balanced/unbalanced indicator
+    - Trial Balance table
+  - Download CSV button - Exports full GL data to CSV (opens in Excel)
+  - Journal entries table with color-coded Debit (red) and Credit (green)
+  - Trial Balance section with account types badges (Asset=blue, Liability=purple, Income=green, Expense=red)
+  - Net balance shown as DR or CR
+
+- **Files Modified**: `backend/server.py`, `frontend/src/components/ProfitLossLedger.jsx`
