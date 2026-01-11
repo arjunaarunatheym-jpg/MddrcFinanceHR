@@ -490,6 +490,10 @@ const ProfitLossLedger = () => {
             <Briefcase className="w-4 h-4 mr-1" />
             CEO P&L
           </TabsTrigger>
+          <TabsTrigger value="general-ledger" className="text-emerald-600">
+            <BookOpen className="w-4 h-4 mr-1" />
+            General Ledger
+          </TabsTrigger>
           <TabsTrigger value="expenses">Expense Breakdown</TabsTrigger>
           <TabsTrigger value="trainer-subledger">
             <Users className="w-4 h-4 mr-1" />
