@@ -1488,6 +1488,9 @@ const DataManagement = ({ user }) => {
             <TabsContent value="invoice-management">
               <InvoiceManagementTab />
             </TabsContent>
+            <TabsContent value="creditnote-management">
+              <CreditNoteManagementTab />
+            </TabsContent>
             <TabsContent value="payment-management">
               <PaymentManagementTab />
             </TabsContent>
