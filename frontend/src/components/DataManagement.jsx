@@ -64,6 +64,15 @@ const DataManagement = ({ user }) => {
   const [payments, setPayments] = useState([]);
   const [deletePaymentDialog, setDeletePaymentDialog] = useState({ open: false, payment: null });
 
+  // Credit Note Management State
+  const [creditNotes, setCreditNotes] = useState([]);
+  const [cnSearch, setCnSearch] = useState("");
+  const [cnStatusFilter, setCnStatusFilter] = useState("all");
+  const [editCnDialog, setEditCnDialog] = useState({ open: false, cn: null });
+  const [backdateCnDialog, setBackdateCnDialog] = useState({ open: false, cn: null });
+  const [voidCnDialog, setVoidCnDialog] = useState({ open: false, cn: null });
+  const [editCnNumberDialog, setEditCnNumberDialog] = useState({ open: false, cn: null });
+
   // Settings State
   const [sequenceForm, setSequenceForm] = useState({ year: new Date().getFullYear(), month: new Date().getMonth() + 1, sequence: 1, reason: "" });
 
@@ -78,6 +87,12 @@ const DataManagement = ({ user }) => {
   const [overrideForm, setOverrideForm] = useState({ totalAmount: 0, reason: "" });
   const [editPaidForm, setEditPaidForm] = useState({ billToName: "", billToAddress: "", totalAmount: 0, reason: "" });
   const [deletePaymentForm, setDeletePaymentForm] = useState({ reason: "" });
+
+  // Credit Note Form states
+  const [editCnForm, setEditCnForm] = useState({ companyName: "", reason: "", description: "", amount: 0, percentage: 4, editReason: "" });
+  const [backdateCnForm, setBackdateCnForm] = useState({ newDate: "", reason: "" });
+  const [voidCnForm, setVoidCnForm] = useState({ reason: "" });
+  const [editCnNumberForm, setEditCnNumberForm] = useState({ year: 2026, month: 1, sequence: 1, reason: "" });
 
   useEffect(() => {
     loadFiltersData();
