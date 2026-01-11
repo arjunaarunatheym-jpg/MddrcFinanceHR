@@ -808,7 +808,7 @@ const FinanceDashboard = ({ user, onLogout }) => {
           <p><strong>Payment Terms:</strong> ${settings.invoice_terms || 'Upon receipt of invoice'}</p>
           <p><strong>Bank:</strong> ${settings.bank_name || '-'} | <strong>Account:</strong> ${settings.bank_account_name || settings.company_name || '-'} | <strong>No:</strong> ${settings.bank_account_number || '-'}</p>
           <p>${settings.invoice_footer_note || 'Thank you for your business!'}</p>
-          ${(settings.invoice_custom_fields || []).filter(f => f.position === 'Footer' || f.position === 'footer').map(f => `<p><strong>${f.label}:</strong> ${f.value}</p>`).join('')}
+          ${footerCustomFields}
         </div>
         
         <div class="tagline">"${tagline}"</div>
