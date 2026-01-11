@@ -156,6 +156,160 @@ const ProfitLossLedger = () => {
     }
   };
 
+  // Print General Ledger
+  const handlePrintGL = () => {
+    if (!generalLedger) return;
+    
+    const monthLabel = selectedMonth 
+      ? months.find(m => m.value === selectedMonth)?.label 
+      : 'Full Year';
+    
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>General Ledger - ${selectedYear} ${monthLabel}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; font-size: 11px; }
+            h1 { text-align: center; color: #1e40af; margin-bottom: 5px; }
+            h2 { text-align: center; color: #6b7280; margin-top: 0; font-weight: normal; }
+            .header-info { text-align: center; margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+            th { background: #1e40af; color: white; padding: 8px 6px; text-align: left; font-weight: 600; }
+            td { padding: 6px; border-bottom: 1px solid #e5e7eb; }
+            .text-right { text-align: right; }
+            .text-center { text-align: center; }
+            .debit { color: #dc2626; }
+            .credit { color: #16a34a; }
+            .entry-group { background: #f9fafb; }
+            .totals-row { background: #1e40af; color: white; font-weight: bold; }
+            .totals-row td { padding: 10px 6px; }
+            .section-title { font-size: 14px; font-weight: bold; color: #1e40af; margin: 20px 0 10px; border-bottom: 2px solid #1e40af; padding-bottom: 5px; }
+            .balanced { color: #16a34a; font-weight: bold; }
+            .unbalanced { color: #dc2626; font-weight: bold; }
+            .trial-balance th { background: #059669; }
+            @media print { 
+              body { margin: 0; } 
+              .no-print { display: none; }
+              @page { size: A4 landscape; margin: 10mm; }
+            }
+          </style>
+        </head>
+        <body>
+          <h1>GENERAL LEDGER</h1>
+          <h2>${selectedYear} - ${monthLabel}</h2>
+          <div class="header-info">
+            <p>Generated: ${new Date().toLocaleString('en-MY')}</p>
+          </div>
+          
+          <div class="section-title">Journal Entries</div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 60px;">Entry #</th>
+                <th style="width: 80px;">Date</th>
+                <th style="width: 80px;">Reference</th>
+                <th style="width: 70px;">Account</th>
+                <th>Account Name</th>
+                <th>Description</th>
+                <th class="text-right" style="width: 90px;">Debit (RM)</th>
+                <th class="text-right" style="width: 90px;">Credit (RM)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(generalLedger.entries || []).map(e => `
+                <tr>
+                  <td class="text-center">${e.entry_id}</td>
+                  <td>${e.date}</td>
+                  <td>${e.reference}</td>
+                  <td>${e.account_code}</td>
+                  <td>${e.account_name}</td>
+                  <td>${e.description}</td>
+                  <td class="text-right debit">${e.debit > 0 ? e.debit.toLocaleString('en-MY', { minimumFractionDigits: 2 }) : ''}</td>
+                  <td class="text-right credit">${e.credit > 0 ? e.credit.toLocaleString('en-MY', { minimumFractionDigits: 2 }) : ''}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+            <tfoot>
+              <tr class="totals-row">
+                <td colspan="6" class="text-right">TOTALS:</td>
+                <td class="text-right">${generalLedger.totals?.total_debit?.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
+                <td class="text-right">${generalLedger.totals?.total_credit?.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
+              </tr>
+              <tr>
+                <td colspan="8" class="text-center ${generalLedger.totals?.is_balanced ? 'balanced' : 'unbalanced'}">
+                  ${generalLedger.totals?.is_balanced ? '✓ BALANCED' : '✗ UNBALANCED'}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+          
+          <div class="section-title">Trial Balance</div>
+          <table class="trial-balance">
+            <thead>
+              <tr>
+                <th>Account Code</th>
+                <th>Account Name</th>
+                <th>Type</th>
+                <th class="text-right">Debit (RM)</th>
+                <th class="text-right">Credit (RM)</th>
+                <th class="text-right">Net (RM)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(generalLedger.trial_balance || []).map(tb => `
+                <tr>
+                  <td>${tb.account_code}</td>
+                  <td>${tb.account_name}</td>
+                  <td>${tb.account_type}</td>
+                  <td class="text-right">${tb.debit > 0 ? tb.debit.toLocaleString('en-MY', { minimumFractionDigits: 2 }) : '-'}</td>
+                  <td class="text-right">${tb.credit > 0 ? tb.credit.toLocaleString('en-MY', { minimumFractionDigits: 2 }) : '-'}</td>
+                  <td class="text-right" style="font-weight: bold; ${tb.net >= 0 ? 'color: #dc2626;' : 'color: #16a34a;'}">${tb.net.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          
+          <script>window.onload = function() { window.print(); }</script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  // Download GL as CSV
+  const handleDownloadGL = () => {
+    if (!generalLedger) return;
+    
+    const monthLabel = selectedMonth 
+      ? months.find(m => m.value === selectedMonth)?.label 
+      : 'Full_Year';
+    
+    // Build CSV content
+    let csv = 'Entry #,Date,Reference,Account Code,Account Name,Description,Debit,Credit\n';
+    
+    for (const e of generalLedger.entries || []) {
+      csv += `${e.entry_id},${e.date},${e.reference},${e.account_code},"${e.account_name}","${e.description}",${e.debit || ''},${e.credit || ''}\n`;
+    }
+    
+    csv += `\n,,,,,TOTALS:,${generalLedger.totals?.total_debit || 0},${generalLedger.totals?.total_credit || 0}\n`;
+    csv += `\n\nTRIAL BALANCE\n`;
+    csv += 'Account Code,Account Name,Type,Debit,Credit,Net\n';
+    
+    for (const tb of generalLedger.trial_balance || []) {
+      csv += `${tb.account_code},"${tb.account_name}",${tb.account_type},${tb.debit || ''},${tb.credit || ''},${tb.net || ''}\n`;
+    }
+    
+    // Download
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `General_Ledger_${selectedYear}_${monthLabel}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleAddIncome = async () => {
     if (!entryForm.description || !entryForm.amount) {
       toast.error('Please fill in description and amount');
