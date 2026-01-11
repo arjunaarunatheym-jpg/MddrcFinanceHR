@@ -383,6 +383,8 @@ const HRModule = () => {
   });
   const [viewPayAdvice, setViewPayAdvice] = useState(null);
   const [printPayAdvice, setPrintPayAdvice] = useState(null);
+  // Unlock Pay Advice Dialog state
+  const [unlockPayAdviceDialog, setUnlockPayAdviceDialog] = useState({ open: false, id: null, reason: '' });
   
   // Statutory rates upload state
   const [statutoryRates, setStatutoryRates] = useState({ epf: [], socso: [], eis: [] });
