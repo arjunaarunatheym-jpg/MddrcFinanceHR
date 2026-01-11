@@ -12314,10 +12314,10 @@ async def bulk_generate_pay_advice(year: int, month: int, current_user: User = D
             user_ids.add(cf["coordinator_id"])
     
     # Marketing
-    mkt_comm = await db.marketing_commissions.find({"session_id": {"$in": session_ids}}, {"_id": 0, "user_id": 1}).to_list(1000)
+    mkt_comm = await db.marketing_commissions.find({"session_id": {"$in": session_ids}}, {"_id": 0, "marketing_user_id": 1}).to_list(1000)
     for mc in mkt_comm:
-        if mc.get("user_id"):
-            user_ids.add(mc["user_id"])
+        if mc.get("marketing_user_id"):
+            user_ids.add(mc["marketing_user_id"])
     
     # Generate pay advice for each user
     generated = 0
