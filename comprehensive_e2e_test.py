@@ -30,7 +30,7 @@ from datetime import datetime, timedelta
 import random
 
 # Configuration
-BASE_URL = "https://finance-hub-455.preview.emergentagent.com/api"
+BASE_URL = "https://finance-tracker-1774.preview.emergentagent.com/api"
 
 # Test Credentials from request
 ADMIN_EMAIL = "arjuna@mddrc.com.my"
