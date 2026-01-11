@@ -412,3 +412,77 @@ A comprehensive training management platform for MDDRC (Malaysian Defensive Driv
 
 - **Files Modified**: `backend/server.py`, `frontend/src/pages/FinanceDashboard.jsx`
 
+
+
+---
+
+## January 11, 2026 - P0 Bug Fix & P&L Enhancement
+
+### P0: Re-open Period Dialog Fix (COMPLETED)
+- **Problem**: The "Reopen" button for locked Pay Advice periods used `window.prompt()` which:
+  - Doesn't work on mobile browsers
+  - Is a poor UX (native browser dialog)
+  - Was inconsistent with the rest of the app's modal dialogs
+- **Solution**:
+  - Replaced `window.prompt()` in `HRModule.jsx` with a proper Shadcn `Dialog` component
+  - Added state: `unlockPayAdviceDialog` with `{open, id, reason}`
+  - Created `confirmUnlockPayAdvice()` handler that validates reason (min 5 chars) before API call
+  - Dialog includes: title, description, textarea for reason, Cancel/Unlock buttons
+  - Same pattern already used in `FinanceDashboard.jsx` for Payables period reopen
+- **Files Modified**: `frontend/src/components/HRModule.jsx`
+
+### P&L Enhancement: CEO P&L View & Sub-ledger Reports (COMPLETED)
+- **Problem**: User wanted programme-level P&L breakdown matching their Excel template with:
+  - Dynamic income/expense breakdown by programme
+  - Sub-ledger views for Trainers, Marketing, Payroll
+  - CEO-style insight view with margins
+
+- **Solution - Backend Endpoints Added**:
+  - `GET /api/finance/profit-loss/by-programme?year=YYYY` - Programme-level P&L with:
+    - Revenue per programme (linked via sessions → invoices)
+    - Direct costs per programme (trainer fees, coordinator fees, marketing, session expenses)
+    - Gross profit and margin % per programme
+    - Overhead costs (payroll, petty cash, manual) shown separately
+    - Summary with net profit and net margin %
+  
+  - `GET /api/finance/subledger/trainers?year=YYYY` - Trainer & Coordinator Sub-ledger:
+    - Aggregated by person (earned, paid, balance)
+    - Session-level detail with dates, programme, amounts, status
+  
+  - `GET /api/finance/subledger/marketing?year=YYYY` - Marketing Commission Sub-ledger:
+    - Aggregated by marketer
+    - Client/campaign detail with commission rates
+  
+  - `GET /api/finance/subledger/payroll?year=YYYY` - Staff Payroll Register:
+    - Aggregated by employee
+    - Monthly breakdown with gross, EPF, SOCSO, EIS, net
+
+- **Solution - Frontend (ProfitLossLedger.jsx)**:
+  - **New Tabs Added**:
+    - "CEO P&L" - Programme breakdown table with expandable rows for cost detail
+    - "Trainers" - Trainer & Coordinator sub-ledger with expandable session detail
+    - "Marketing" - Marketing commission sub-ledger with client detail
+    - "Payroll" - Staff payroll register with monthly breakdown
+  - **Features**:
+    - Expandable rows (click to see detail)
+    - Color-coded margins (green >30%, yellow 15-30%, red <15%)
+    - Summary cards showing totals and overhead breakdown
+    - Year selector (dynamic data loading)
+
+- **Files Modified**: 
+  - `backend/server.py` - Added 4 new endpoints
+  - `frontend/src/components/ProfitLossLedger.jsx` - Complete rewrite with new tabs
+
+### Key Architecture Notes
+- **No new database collections** - All new endpoints aggregate existing data from:
+  - `db.programs` - Programme definitions
+  - `db.sessions` - Sessions with `program_id` field
+  - `db.invoices` - Invoice amounts
+  - `db.trainer_fees`, `db.coordinator_fees`, `db.marketing_commissions` - Direct costs
+  - `db.session_expenses` - F&B, venue costs
+  - `db.hr_payslips` - Payroll data
+  - `db.petty_cash_transactions`, `db.manual_expenses` - Overhead
+
+- **Dynamic Programme Support**: New programmes automatically appear in CEO P&L when sessions are created with that `program_id`
+
+
