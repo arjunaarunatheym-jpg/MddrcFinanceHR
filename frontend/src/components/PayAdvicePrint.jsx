@@ -174,6 +174,16 @@ const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
           {/* Footer */}
           <div className="footer">
             This document is computer-generated. For enquiries, please contact HR department.
+            {/* Custom Fields */}
+            {(companySettings?.payadvice_custom_fields || []).length > 0 && (
+              <div style={{ marginTop: '10px', textAlign: 'left' }}>
+                {(companySettings?.payadvice_custom_fields || []).map((field, idx) => (
+                  <span key={idx} style={{ marginRight: '15px' }}>
+                    <strong>{field.label}</strong>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
