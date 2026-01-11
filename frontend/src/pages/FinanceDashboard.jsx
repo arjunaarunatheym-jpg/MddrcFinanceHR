@@ -157,12 +157,114 @@ const FinanceDashboard = ({ user, onLogout }) => {
         coordinator_fees: coordRes.data || [],
         marketing_commissions: commRes.data || []
       });
+      
+      // Load period status
+      await loadPeriodStatus();
     } catch (error) {
       console.error('Failed to load payables:', error);
     }
   };
 
+  const loadPeriodStatus = async () => {
+    try {
+      const response = await axiosInstance.get(`/finance/payables/period-status?year=${payablesYear}&month=${payablesMonth}`);
+      setCurrentPeriodStatus(response.data);
+    } catch (error) {
+      console.error('Failed to load period status:', error);
+    }
+  };
+
+  const loadPayablesPeriods = async () => {
+    try {
+      const response = await axiosInstance.get('/finance/payables/periods');
+      setPayablesPeriods(response.data);
+    } catch (error) {
+      console.error('Failed to load periods:', error);
+    }
+  };
+
+  const handleClosePeriod = async () => {
+    try {
+      // First check if period exists, if not create it
+      if (!currentPeriodStatus.exists) {
+        await axiosInstance.post('/finance/payables/periods', { year: payablesYear, month: payablesMonth });
+      }
+      
+      // Get the period ID
+      const periodRes = await axiosInstance.get(`/finance/payables/period-status?year=${payablesYear}&month=${payablesMonth}`);
+      if (periodRes.data.period?.id) {
+        await axiosInstance.post(`/finance/payables/periods/${periodRes.data.period.id}/close`);
+        toast.success(`Period ${payablesYear}-${String(payablesMonth).padStart(2, '0')} closed successfully`);
+        await loadPeriodStatus();
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to close period');
+    }
+  };
+
+  const handleReopenPeriod = async () => {
+    const reason = window.prompt('Enter reason for reopening this period (required):');
+    if (!reason || reason.trim().length < 5) {
+      toast.error('Reason must be at least 5 characters');
+      return;
+    }
+    
+    try {
+      if (currentPeriodStatus.period?.id) {
+        await axiosInstance.post(`/finance/payables/periods/${currentPeriodStatus.period.id}/reopen?reason=${encodeURIComponent(reason)}`);
+        toast.success('Period reopened successfully');
+        await loadPeriodStatus();
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to reopen period');
+    }
+  };
+
+  const handleExportPayablesExcel = async () => {
+    try {
+      const response = await axiosInstance.get(`/finance/payables/export-excel?year=${payablesYear}&month=${payablesMonth}`);
+      const data = response.data;
+      
+      // Generate Excel-like CSV content
+      let csvContent = "NAME,INVOICE NUMBER,TRAINING DATE,POSITION,COMPANY,DETAILS,PRICE\n";
+      
+      Object.entries(data.data).forEach(([name, group]) => {
+        group.items.forEach((item, index) => {
+          const trainingDate = item.training_date ? new Date(item.training_date).toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' }) : '-';
+          csvContent += `"${index === 0 ? name : ''}","${item.invoice_number}","${trainingDate}","${item.position}","${item.company}","${item.details}","RM ${item.amount.toFixed(2)}"\n`;
+        });
+        // Add subtotal row
+        csvContent += `"","","","","","TOTAL","RM ${group.total.toFixed(2)}"\n`;
+        csvContent += "\n";
+      });
+      
+      // Add grand total
+      csvContent += `"","","","","","GRAND TOTAL","RM ${data.grand_total.toFixed(2)}"\n`;
+      
+      // Download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Payables_${data.period_name.replace(' ', '_')}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success(`Exported payables for ${data.period_name}`);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to export payables');
+    }
+  };
+
   const handleMarkPaid = async (type, id) => {
+    // Check if period is closed
+    if (currentPeriodStatus.status === 'closed') {
+      toast.error('Cannot modify payables - period is closed');
+      return;
+    }
+    
     try {
       let endpoint = '';
       if (type === 'trainer') endpoint = `/finance/trainer-fees/${id}/mark-paid`;
