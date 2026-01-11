@@ -2799,6 +2799,26 @@ const AdminDashboard = ({ user, onLogout }) => {
           {/* Finance Tab */}
           <TabsContent value="finance">
             <div className="space-y-6">
+              {/* Year Filter */}
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="flex items-center gap-3">
+                  <Label className="text-sm font-medium text-gray-700">Financial Year:</Label>
+                  <Select value={financeYear?.toString()} onValueChange={(val) => setFinanceYear(parseInt(val))}>
+                    <SelectTrigger className="w-[140px]" data-testid="admin-year-selector">
+                      <SelectValue placeholder="Select Year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {financeAvailableYears.map(year => (
+                        <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="text-sm text-gray-500">
+                  Showing data for <span className="font-semibold text-gray-800">{financeYear}</span>
+                </div>
+              </div>
+
               {/* Finance Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
@@ -2807,7 +2827,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-blue-900">
-                      {financeSummary.invoices.length} (RM {financeSummary.totalInvoiced.toLocaleString()})
+                      <span id="finance-total-invoices">{financeSummary.invoiceCount || financeSummary.invoices.length}</span> (RM {financeSummary.totalInvoiced.toLocaleString()})
                     </div>
                   </CardContent>
                 </Card>
@@ -2816,7 +2836,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                     <CardTitle className="text-sm font-medium text-green-700">Total Collected</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-green-900">RM {financeSummary.totalCollected.toLocaleString()}</div>
+                    <div className="text-2xl font-bold text-green-900" id="finance-collected">RM {financeSummary.totalCollected.toLocaleString()}</div>
                   </CardContent>
                 </Card>
                 <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
@@ -2824,7 +2844,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                     <CardTitle className="text-sm font-medium text-orange-700">Outstanding</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-orange-900">RM {financeSummary.totalOutstanding.toLocaleString()}</div>
+                    <div className="text-2xl font-bold text-orange-900" id="finance-outstanding">RM {financeSummary.totalOutstanding.toLocaleString()}</div>
                   </CardContent>
                 </Card>
                 <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
@@ -2832,7 +2852,7 @@ const AdminDashboard = ({ user, onLogout }) => {
                     <CardTitle className="text-sm font-medium text-purple-700">Pending Payables</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-purple-900">RM {financeSummary.totalPayables.toLocaleString()}</div>
+                    <div className="text-2xl font-bold text-purple-900" id="finance-payables">RM {financeSummary.totalPayables.toLocaleString()}</div>
                   </CardContent>
                 </Card>
               </div>
