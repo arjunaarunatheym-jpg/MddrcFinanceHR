@@ -12096,7 +12096,7 @@ async def generate_pay_advice(data: dict, current_user: User = Depends(get_curre
         total_amount += fee.get("total_fee", 0)
     
     # 3. Get marketing commissions - filter by session date
-    mkt_comm = await db.marketing_commissions.find({"user_id": user_id}, {"_id": 0}).to_list(500)
+    mkt_comm = await db.marketing_commissions.find({"marketing_user_id": user_id}, {"_id": 0}).to_list(500)
     for comm in mkt_comm:
         session = await db.sessions.find_one({"id": comm.get("session_id")}, {"_id": 0, "name": 1, "start_date": 1, "company_id": 1})
         if not session:
