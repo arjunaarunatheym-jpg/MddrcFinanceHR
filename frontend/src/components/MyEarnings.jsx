@@ -129,9 +129,10 @@ const MyEarnings = ({ userId, userRoles = [] }) => {
   const renderIncomeSection = (title, data, icon, colorClass) => {
     if (!data) return null;
     
-    const filteredSessions = getFilteredSessions(data.sessions);
-    const totalAmount = filteredSessions.reduce((sum, s) => sum + (s.fee_amount || s.amount || 0), 0);
-    const paidAmount = filteredSessions.filter(s => s.payment_status === 'paid').reduce((sum, s) => sum + (s.fee_amount || s.amount || 0), 0);
+    // API returns 'records' not 'sessions'
+    const filteredSessions = getFilteredSessions(data.records || data.sessions || []);
+    const totalAmount = filteredSessions.reduce((sum, s) => sum + (s.fee_amount || s.amount || s.total_fee || s.calculated_amount || 0), 0);
+    const paidAmount = filteredSessions.filter(s => s.status === 'paid' || s.payment_status === 'paid').reduce((sum, s) => sum + (s.fee_amount || s.amount || s.total_fee || s.calculated_amount || 0), 0);
     const pendingAmount = totalAmount - paidAmount;
 
     return (
