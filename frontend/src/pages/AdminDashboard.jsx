@@ -304,32 +304,44 @@ const AdminDashboard = ({ user, onLogout }) => {
         console.log('Marketing users not loaded:', e.message);
       }
       
-      // Load finance summary
-      try {
-        const invoicesRes = await axiosInstance.get(`/finance/invoices?_t=${timestamp}`);
-        const invoices = invoicesRes.data;
-        const totalInvoiced = invoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
-        const totalCollected = invoices.filter(inv => inv.status === 'paid').reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
-        const totalOutstanding = totalInvoiced - totalCollected;
-        
-        // Get pending payables (trainer fees + coordinator fees)
-        const trainerFeesRes = await axiosInstance.get(`/finance/dashboard?_t=${timestamp}`).catch(() => ({ data: {} }));
-        const totalPayables = (trainerFeesRes.data?.pending_trainer_fees || 0) + (trainerFeesRes.data?.pending_coordinator_fees || 0);
-        
-        setFinanceSummary({
-          invoices,
-          totalInvoiced,
-          totalCollected,
-          totalOutstanding,
-          totalPayables
-        });
-      } catch (e) {
-        console.log('Finance data not loaded:', e.message);
-      }
+      // Load finance summary with year filter
+      await loadFinanceSummaryByYear(financeYear);
     } catch (error) {
       toast.error("Failed to load data");
     }
   };
+
+  // Load finance summary by year
+  const loadFinanceSummaryByYear = async (year) => {
+    try {
+      const timestamp = Date.now();
+      const dashboardRes = await axiosInstance.get(`/finance/dashboard?year=${year}&_t=${timestamp}`);
+      const data = dashboardRes.data;
+      
+      // Set available years from API response
+      if (data.available_years && data.available_years.length > 0) {
+        const defaultYears = [currentYear, currentYear - 1, currentYear - 2];
+        const mergedYears = [...new Set([...defaultYears, ...data.available_years])].sort((a, b) => b - a);
+        setFinanceAvailableYears(mergedYears);
+      }
+      
+      setFinanceSummary({
+        invoices: [],
+        totalInvoiced: data.financials?.total_issued || 0,
+        totalCollected: data.financials?.total_collected || 0,
+        totalOutstanding: data.financials?.outstanding_receivables || 0,
+        totalPayables: data.payables?.pending_total || 0,
+        invoiceCount: data.invoices?.total || 0
+      });
+    } catch (e) {
+      console.log('Finance data not loaded:', e.message);
+    }
+  };
+
+  // Reload finance when year changes
+  useEffect(() => {
+    loadFinanceSummaryByYear(financeYear);
+  }, [financeYear]);
   
   // Search filtering effects
   useEffect(() => {
