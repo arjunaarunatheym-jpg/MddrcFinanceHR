@@ -51,6 +51,9 @@ const AdminDashboard = ({ user, onLogout }) => {
   const [selectedProgram, setSelectedProgram] = useState(null);
   const [costingSession, setCostingSession] = useState(null); // Session for costing modal
   const [financeSummary, setFinanceSummary] = useState({ invoices: [], totalInvoiced: 0, totalCollected: 0, totalOutstanding: 0, totalPayables: 0 });
+  const currentYear = new Date().getFullYear();
+  const [financeYear, setFinanceYear] = useState(currentYear);
+  const [financeAvailableYears, setFinanceAvailableYears] = useState([currentYear, currentYear - 1, currentYear - 2]);
   
   // Search states
   const [companiesSearch, setCompaniesSearch] = useState("");
