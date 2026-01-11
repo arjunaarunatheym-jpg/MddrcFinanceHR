@@ -106,6 +106,7 @@ const TestManagement = ({ program, onBack }) => {
     try {
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('program_id', program.id);  // Pass program ID from context
 
       const response = await axiosInstance.post('/tests/bulk-upload', formData, {
         headers: {
