@@ -1617,12 +1617,60 @@ const FinanceDashboard = ({ user, onLogout }) => {
               <CardHeader>
                 <div className="flex justify-between items-center flex-wrap gap-4">
                   <div>
-                    <CardTitle>Staff Payables</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                      Staff Payables
+                      {currentPeriodStatus.status === 'closed' && (
+                        <Badge className="bg-red-500 text-white ml-2">CLOSED</Badge>
+                      )}
+                      {currentPeriodStatus.status === 'open' && (
+                        <Badge className="bg-green-500 text-white ml-2">OPEN</Badge>
+                      )}
+                    </CardTitle>
                     <CardDescription>
                       Monthly closing: 1st-31st | Payment release: 15th of following month
                     </CardDescription>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap items-center">
+                    {/* Month/Year Selector */}
+                    <Select value={payablesMonth.toString()} onValueChange={(val) => { setPayablesMonth(parseInt(val)); }}>
+                      <SelectTrigger className="w-[120px]">
+                        <SelectValue placeholder="Month" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[1,2,3,4,5,6,7,8,9,10,11,12].map(m => (
+                          <SelectItem key={m} value={m.toString()}>{new Date(2000, m-1).toLocaleString('en', {month: 'long'})}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={payablesYear.toString()} onValueChange={(val) => { setPayablesYear(parseInt(val)); }}>
+                      <SelectTrigger className="w-[100px]">
+                        <SelectValue placeholder="Year" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[currentYear, currentYear - 1, currentYear - 2].map(y => (
+                          <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    
+                    {/* Period Control */}
+                    {currentPeriodStatus.status === 'open' ? (
+                      <Button variant="outline" onClick={handleClosePeriod} className="border-red-300 text-red-600 hover:bg-red-50">
+                        <Lock className="w-4 h-4 mr-2" />
+                        Close Period
+                      </Button>
+                    ) : (
+                      <Button variant="outline" onClick={handleReopenPeriod} className="border-green-300 text-green-600 hover:bg-green-50">
+                        <Unlock className="w-4 h-4 mr-2" />
+                        Reopen
+                      </Button>
+                    )}
+                    
+                    {/* Export/Print */}
+                    <Button variant="outline" onClick={handleExportPayablesExcel} className="bg-green-50 border-green-300 text-green-700 hover:bg-green-100">
+                      <Download className="w-4 h-4 mr-2" />
+                      Excel
+                    </Button>
                     <Button variant="outline" onClick={handlePrintPayables}>
                       <Printer className="w-4 h-4 mr-2" />
                       Print
@@ -1635,6 +1683,15 @@ const FinanceDashboard = ({ user, onLogout }) => {
                 </div>
               </CardHeader>
               <CardContent>
+                {/* Period Status Banner */}
+                {currentPeriodStatus.status === 'closed' && (
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700">
+                    <Lock className="w-5 h-5" />
+                    <span className="font-medium">Period {payablesYear}-{String(payablesMonth).padStart(2, '0')} is CLOSED.</span>
+                    <span className="text-sm">No changes allowed. Contact admin to reopen if needed.</span>
+                  </div>
+                )}
+
                 {/* Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   <Card className="bg-blue-50 border-blue-200">
