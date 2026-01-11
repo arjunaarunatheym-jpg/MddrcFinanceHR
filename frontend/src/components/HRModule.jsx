@@ -698,6 +698,52 @@ const HRModule = () => {
     }
   };
 
+  const handleBulkGeneratePayAdvice = async () => {
+    try {
+      const response = await axiosInstance.post(`/hr/pay-advice/bulk-generate?year=${payAdviceForm.year}&month=${payAdviceForm.month}`);
+      toast.success(`Generated ${response.data.generated} pay advice (${response.data.skipped} skipped)`);
+      loadData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to bulk generate');
+    }
+  };
+
+  const handleBulkLockPayAdvice = async () => {
+    if (!window.confirm(`Lock all pay advice for ${getMonthName(payAdviceForm.month)} ${payAdviceForm.year}? Staff will be able to view their pay advice once locked.`)) return;
+    try {
+      const response = await axiosInstance.post(`/hr/pay-advice/bulk-lock?year=${payAdviceForm.year}&month=${payAdviceForm.month}`);
+      toast.success(`Locked ${response.data.message}`);
+      loadData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to bulk lock');
+    }
+  };
+
+  const handleLockPayAdvice = async (id) => {
+    try {
+      await axiosInstance.post(`/hr/pay-advice/${id}/lock`);
+      toast.success('Pay advice locked');
+      loadData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to lock');
+    }
+  };
+
+  const handleUnlockPayAdvice = async (id) => {
+    const reason = window.prompt('Enter reason for unlocking (required):');
+    if (!reason || reason.trim().length < 5) {
+      toast.error('Reason must be at least 5 characters');
+      return;
+    }
+    try {
+      await axiosInstance.post(`/hr/pay-advice/${id}/unlock?reason=${encodeURIComponent(reason)}`);
+      toast.success('Pay advice unlocked');
+      loadData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to unlock');
+    }
+  };
+
   const calculateTotalAllowances = (s) => {
     return (s.housing_allowance || 0) + (s.transport_allowance || 0) + 
            (s.meal_allowance || 0) + (s.phone_allowance || 0) + (s.other_allowance || 0);
