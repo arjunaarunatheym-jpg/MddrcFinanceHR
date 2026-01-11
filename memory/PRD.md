@@ -272,3 +272,45 @@ A comprehensive training management platform for MDDRC (Malaysian Defensive Driv
 ## Test Credentials
 - **Admin**: arjuna@mddrc.com.my / Dana102229
 - **Finance**: munirah@sdc.com.my / mddrc1
+
+---
+
+## January 11, 2026 - Finance Dashboard Year Filter & Credit Note Workflow
+
+### Year-by-Year Filter for Finance Dashboard (P1 - COMPLETED)
+- **Problem**: Finance Dashboard showed all invoices/data regardless of year; user couldn't filter by financial year
+- **Solution**: 
+  - Added `Financial Year` dropdown selector in Finance Dashboard
+  - Backend `/api/finance/dashboard` and `/api/finance/invoices` endpoints now accept `?year=YYYY` parameter
+  - Dashboard cards (Total Invoices, Collected, Outstanding, Payables) filter by selected year
+  - Invoices tab also filters by selected year
+  - Year selector always shows current year ± 2 years (e.g., 2024, 2025, 2026) plus any years with data
+  - "Showing data for YYYY" indicator displays selected year
+- **Files Modified**: `backend/server.py`, `frontend/src/pages/FinanceDashboard.jsx`
+
+### Credit Note Workflow Enhancement (P1 - COMPLETED)
+- **Problem**: Credit Notes were created as "draft" and never issued; no print/download functionality
+- **Solution**:
+  - Added status workflow: Draft → Approved → Issued (same as Invoices)
+  - New API endpoints:
+    - `POST /api/finance/credit-notes/{cn_id}/approve` - Approve a draft CN
+    - `POST /api/finance/credit-notes/{cn_id}/issue` - Issue a CN (can skip approve)
+  - Credit Notes tab now shows:
+    - Date column
+    - Status badges (Draft=Yellow, Approved=Blue, Issued=Green)
+    - Actions column with:
+      - Approve button (for draft CNs)
+      - Issue button (for draft/approved CNs)
+      - Print button (opens print preview)
+      - Download button (opens print for PDF save)
+  - **Auto-Issue on Payment**: When recording a payment with CN checkbox, the Credit Note is now automatically issued
+  - **Print Preview**: Professional Credit Note document with:
+    - Company header with logo and custom fields
+    - Red-themed styling (contrasting with Invoice blue)
+    - CN details (number, date, invoice reference)
+    - Reason/description section
+    - Amount displayed prominently
+    - Status badge
+    - Footer with company info
+- **Files Modified**: `backend/server.py`, `frontend/src/pages/FinanceDashboard.jsx`
+
