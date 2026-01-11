@@ -110,10 +110,19 @@ const FinanceDashboard = ({ user, onLogout }) => {
     loadCompanySettings();
   }, []);
 
-  const loadDashboard = async () => {
+  // Reload dashboard when year changes
+  useEffect(() => {
+    loadDashboard(selectedYear);
+    loadInvoices(selectedYear);
+  }, [selectedYear]);
+
+  const loadDashboard = async (year = selectedYear) => {
     try {
-      const response = await axiosInstance.get('/finance/dashboard');
+      const response = await axiosInstance.get(`/finance/dashboard${year ? `?year=${year}` : ''}`);
       setDashboard(response.data);
+      if (response.data.available_years && response.data.available_years.length > 0) {
+        setAvailableYears(response.data.available_years);
+      }
     } catch (error) {
       console.error('Failed to load dashboard:', error);
     }
