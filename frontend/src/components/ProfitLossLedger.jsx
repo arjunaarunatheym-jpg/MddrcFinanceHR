@@ -12,17 +12,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { 
   TrendingUp, TrendingDown, DollarSign, Calendar, Plus, Trash2, 
   Loader2, Download, PieChart, BarChart3, ArrowUpRight, ArrowDownRight,
-  Users, Briefcase, UserCheck, Building2, ChevronDown, ChevronRight
+  Users, Briefcase, UserCheck, Building2, ChevronDown, ChevronRight,
+  BookOpen, Printer, FileSpreadsheet
 } from 'lucide-react';
 
 const ProfitLossLedger = () => {
   const [loading, setLoading] = useState(true);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(null);
   const [reportData, setReportData] = useState(null);
   const [programmeData, setProgrammeData] = useState(null);
   const [trainerSubledger, setTrainerSubledger] = useState(null);
   const [marketingSubledger, setMarketingSubledger] = useState(null);
   const [payrollSubledger, setPayrollSubledger] = useState(null);
+  const [generalLedger, setGeneralLedger] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [expandedRows, setExpandedRows] = useState({});
   
@@ -44,6 +47,14 @@ const ProfitLossLedger = () => {
   for (let y = currentYear; y >= currentYear - 5; y--) {
     years.push(y);
   }
+
+  const months = [
+    { value: null, label: 'All Months' },
+    { value: 1, label: 'January' }, { value: 2, label: 'February' }, { value: 3, label: 'March' },
+    { value: 4, label: 'April' }, { value: 5, label: 'May' }, { value: 6, label: 'June' },
+    { value: 7, label: 'July' }, { value: 8, label: 'August' }, { value: 9, label: 'September' },
+    { value: 10, label: 'October' }, { value: 11, label: 'November' }, { value: 12, label: 'December' }
+  ];
 
   const expenseCategories = [
     'Office Supplies', 'Transport', 'Utilities', 'Professional Services',
