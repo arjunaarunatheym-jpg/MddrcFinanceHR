@@ -1001,7 +1001,7 @@ const HRModule = () => {
               <Card className="p-8 text-center text-gray-500">
                 <DollarSign className="w-12 h-12 mx-auto mb-4 opacity-50" />
                 <p>No pay advice for {getMonthName(payAdviceForm.month)} {payAdviceForm.year}</p>
-                <p className="text-sm mt-2">Click "Bulk Generate" to create pay advice for all session workers</p>
+                <p className="text-sm mt-2">Click &quot;Bulk Generate&quot; to create pay advice for all session workers</p>
               </Card>
             ) : (
               payAdviceList.filter(pa => pa.year === payAdviceForm.year && pa.month === payAdviceForm.month).map((pa) => (
