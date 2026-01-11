@@ -91,6 +91,16 @@ const PayslipContent = ({ payslip, companySettings }) => (
     <div style={{ padding: '10px', textAlign: 'center', fontSize: '9px', color: '#666', borderTop: '1px solid #ddd' }}>
       This is a computer-generated payslip. No signature required.
       <br />Bank: {payslip.bank_name || '-'} | Account: {payslip.bank_account || '-'}
+      {/* Custom Fields */}
+      {(companySettings?.payslip_custom_fields || []).length > 0 && (
+        <div style={{ marginTop: '5px', textAlign: 'left', padding: '0 10px' }}>
+          {(companySettings?.payslip_custom_fields || []).map((field, idx) => (
+            <span key={idx} style={{ marginRight: '15px' }}>
+              <strong>{field.label}:</strong> {field.default_value || '-'}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   </div>
 );
