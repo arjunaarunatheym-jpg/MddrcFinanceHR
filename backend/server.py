@@ -8562,32 +8562,66 @@ async def get_marketing_users(current_user: User = Depends(get_current_user)):
     return marketing_users
 
 @api_router.get("/finance/dashboard")
-async def get_finance_dashboard(current_user: User = Depends(get_current_user)):
-    """Get finance dashboard"""
+async def get_finance_dashboard(year: Optional[int] = None, current_user: User = Depends(get_current_user)):
+    """Get finance dashboard with optional year filter"""
     if current_user.role not in ["admin", "super_admin", "finance"]:
         raise HTTPException(status_code=403, detail="Access denied")
     
-    total_invoices = await db.invoices.count_documents({})
-    draft_invoices = await db.invoices.count_documents({"status": {"$in": ["auto_draft", "finance_review"]}})
-    approved_invoices = await db.invoices.count_documents({"status": "approved"})
-    issued_invoices = await db.invoices.count_documents({"status": "issued"})
-    paid_invoices = await db.invoices.count_documents({"status": "paid"})
+    # Build date filter for the selected year
+    date_filter = {}
+    if year:
+        start_date = datetime(year, 1, 1)
+        end_date = datetime(year, 12, 31, 23, 59, 59)
+        date_filter = {"$or": [
+            {"invoice_date": {"$gte": start_date.isoformat(), "$lte": end_date.isoformat()}},
+            {"$and": [{"invoice_date": {"$exists": False}}, {"created_at": {"$gte": start_date, "$lte": end_date}}]},
+            {"$and": [{"invoice_date": None}, {"created_at": {"$gte": start_date, "$lte": end_date}}]}
+        ]}
     
-    all_invoices = await db.invoices.find({"status": {"$in": ["issued", "paid"]}}, {"_id": 0, "total_amount": 1, "status": 1}).to_list(1000)
+    # Invoice counts with year filter
+    base_query = date_filter if year else {}
+    total_invoices = await db.invoices.count_documents(base_query)
+    draft_invoices = await db.invoices.count_documents({**base_query, "status": {"$in": ["auto_draft", "finance_review"]}})
+    approved_invoices = await db.invoices.count_documents({**base_query, "status": "approved"})
+    issued_invoices = await db.invoices.count_documents({**base_query, "status": "issued"})
+    paid_invoices = await db.invoices.count_documents({**base_query, "status": "paid"})
+    
+    # Financial totals with year filter
+    financial_query = {**base_query, "status": {"$in": ["issued", "paid"]}} if year else {"status": {"$in": ["issued", "paid"]}}
+    all_invoices = await db.invoices.find(financial_query, {"_id": 0, "total_amount": 1, "status": 1}).to_list(1000)
     total_issued_amount = sum(inv.get("total_amount", 0) for inv in all_invoices)
     total_collected = sum(inv.get("total_amount", 0) for inv in all_invoices if inv.get("status") == "paid")
     
-    # Get pending payables from trainer_fees (not trainer_income)
-    pending_trainer = await db.trainer_fees.find({"status": {"$ne": "paid"}}, {"_id": 0, "fee_amount": 1}).to_list(1000)
-    pending_coord = await db.coordinator_fees.find({"status": {"$ne": "paid"}}, {"_id": 0, "total_fee": 1}).to_list(1000)
-    pending_comm = await db.marketing_commissions.find({"status": {"$in": ["pending", "approved"]}}, {"_id": 0, "calculated_amount": 1}).to_list(1000)
+    # Payables with year filter (based on created_at)
+    payables_date_filter = {}
+    if year:
+        payables_date_filter = {"created_at": {"$gte": start_date, "$lte": end_date}}
+    
+    pending_trainer = await db.trainer_fees.find({**payables_date_filter, "status": {"$ne": "paid"}}, {"_id": 0, "fee_amount": 1}).to_list(1000)
+    pending_coord = await db.coordinator_fees.find({**payables_date_filter, "status": {"$ne": "paid"}}, {"_id": 0, "total_fee": 1}).to_list(1000)
+    pending_comm = await db.marketing_commissions.find({**payables_date_filter, "status": {"$in": ["pending", "approved"]}}, {"_id": 0, "calculated_amount": 1}).to_list(1000)
     
     total_pending = sum(r.get("fee_amount", 0) for r in pending_trainer) + sum(r.get("total_fee", 0) for r in pending_coord) + sum(r.get("calculated_amount", 0) for r in pending_comm)
+    
+    # Get available years for the dropdown
+    available_years = set()
+    all_invoices_for_years = await db.invoices.find({}, {"_id": 0, "invoice_date": 1, "created_at": 1}).to_list(5000)
+    for inv in all_invoices_for_years:
+        date_val = inv.get("invoice_date") or inv.get("created_at")
+        if date_val:
+            if isinstance(date_val, str):
+                try:
+                    date_val = datetime.fromisoformat(date_val.replace('Z', '+00:00'))
+                except:
+                    continue
+            available_years.add(date_val.year)
     
     return {
         "invoices": {"total": total_invoices, "draft": draft_invoices, "approved": approved_invoices, "issued": issued_invoices, "paid": paid_invoices},
         "financials": {"total_issued": total_issued_amount, "total_collected": total_collected, "outstanding_receivables": total_issued_amount - total_collected},
-        "payables": {"pending_total": total_pending}
+        "payables": {"pending_total": total_pending},
+        "available_years": sorted(list(available_years), reverse=True),
+        "selected_year": year
     }
 
 @api_router.get("/finance/audit-log")
