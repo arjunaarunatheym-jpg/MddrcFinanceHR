@@ -419,7 +419,7 @@ const MyEarnings = ({ userId, userRoles = [] }) => {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Pay Advice - {selectedYear}</CardTitle>
-                  <CardDescription>Session-based payment advice</CardDescription>
+                  <CardDescription>Monthly session-based payment advice</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {payAdvice.length === 0 ? (
@@ -431,25 +431,25 @@ const MyEarnings = ({ userId, userRoles = [] }) => {
                           <CardContent className="p-4">
                             <div className="flex justify-between items-start mb-2">
                               <div>
-                                <p className="font-semibold text-sm">{advice.session_name}</p>
+                                <p className="font-semibold text-sm">{advice.period_name || `${advice.month}/${advice.year}`}</p>
                                 <p className="text-xs text-gray-500">
-                                  {new Date(advice.session_date).toLocaleDateString()}
+                                  {advice.total_sessions || 0} session(s)
                                 </p>
                               </div>
-                              <Badge variant={advice.status === 'paid' ? 'default' : 'outline'}>
-                                {advice.status}
+                              <Badge variant={advice.is_locked ? 'default' : 'outline'}>
+                                {advice.is_locked ? 'Locked' : 'Draft'}
                               </Badge>
                             </div>
                             <div className="bg-blue-50 rounded p-2 mb-3">
-                              <p className="text-xs text-blue-600">Amount</p>
-                              <p className="text-lg font-bold text-blue-700">{formatCurrency(advice.total_amount)}</p>
+                              <p className="text-xs text-blue-600">Nett Amount</p>
+                              <p className="text-lg font-bold text-blue-700">{formatCurrency(advice.nett_amount || advice.gross_amount || 0)}</p>
                             </div>
                             <Button 
                               size="sm" 
                               className="w-full"
                               onClick={() => setPrintPayAdvice(advice)}
                             >
-                              <Eye className="w-4 h-4 mr-2" /> View
+                              <Eye className="w-4 h-4 mr-2" /> View / Print
                             </Button>
                           </CardContent>
                         </Card>
