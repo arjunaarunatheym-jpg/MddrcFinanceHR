@@ -92,7 +92,7 @@ const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
           {/* Header */}
           <div className="header">
             <h1>{companySettings?.company_name || 'MALAYSIAN DEFENSIVE DRIVING AND RIDING CENTRE SDN BHD'}</h1>
-            <h2>PAY ADVICE - {getMonthName(payAdvice.month).toUpperCase()} {payAdvice.year}</h2>
+            <h2>PAY ADVICE - {getDisplayPeriod()}</h2>
           </div>
 
           {/* Recipient Info */}
