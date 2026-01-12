@@ -4,16 +4,27 @@ import { Printer, X, Download } from 'lucide-react';
 
 const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
   const printRef = useRef(null);
+  
+  // Get the display period - use period_name if available, or construct from month/year
+  const getDisplayPeriod = () => {
+    if (payAdvice?.period_name) return payAdvice.period_name.toUpperCase();
+    if (payAdvice?.month && payAdvice?.year) {
+      const monthName = new Date(2000, payAdvice.month - 1).toLocaleString('default', { month: 'long' });
+      return `${monthName.toUpperCase()} ${payAdvice.year}`;
+    }
+    return 'N/A';
+  };
 
   const handlePrint = () => {
     const printContent = printRef.current;
     const printWindow = window.open('', '_blank');
+    const displayPeriod = getDisplayPeriod();
     
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Pay Advice - ${payAdvice.full_name} - ${payAdvice.period_name}</title>
+          <title>Pay Advice - ${payAdvice?.full_name || 'Staff'} - ${payAdvice?.period_name || displayPeriod}</title>
           <style>
             @page { size: A4; margin: 15mm; }
             @media print { body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } }
