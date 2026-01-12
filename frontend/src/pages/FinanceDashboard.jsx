@@ -1181,72 +1181,72 @@ const FinanceDashboard = ({ user, onLogout }) => {
             flex: 1;
           }
           .company-name { 
-            font-size: 14px; 
+            font-size: 18px; 
             font-weight: bold; 
             color: ${primaryColor};
-            margin-bottom: 2px;
+            margin-bottom: 5px;
           }
           .company-info { 
-            font-size: 9px; 
+            font-size: 11px; 
             color: #444;
-            line-height: 1.4;
+            line-height: 1.5;
           }
           
           .invoice-title { 
-            font-size: 16px; 
+            font-size: 22px; 
             font-weight: bold; 
             text-align: center; 
             color: ${primaryColor}; 
-            margin: 8px 0;
-            padding: 5px;
+            margin: 15px 0;
+            padding: 10px;
             background: #f0f4f8;
           }
           
-          /* Details Grid - More Compact */
+          /* Details Grid */
           .details-grid { 
             display: grid; 
             grid-template-columns: 1fr 1fr; 
-            gap: 10px; 
-            margin-bottom: 10px;
+            gap: 15px; 
+            margin-bottom: 20px;
           }
           .detail-box { 
-            padding: 8px; 
+            padding: 12px; 
             border: 1px solid #ddd; 
             border-radius: 4px;
-            font-size: 9px;
+            font-size: 11px;
           }
           .detail-label { 
             font-weight: bold; 
-            font-size: 8px; 
+            font-size: 10px; 
             color: #666; 
-            margin-bottom: 2px; 
+            margin-bottom: 4px; 
             text-transform: uppercase;
           }
-          .detail-value { font-size: 10px; margin-bottom: 2px; }
+          .detail-value { font-size: 12px; margin-bottom: 4px; }
           
-          /* Training Details - Inline */
+          /* Training Details */
           .training-box {
-            padding: 8px;
+            padding: 12px;
             background: #f9fafb;
             border: 1px solid #e5e7eb;
             border-radius: 4px;
-            margin-bottom: 10px;
-            font-size: 9px;
+            margin-bottom: 20px;
+            font-size: 11px;
           }
           .training-box .detail-label { display: inline; }
-          .training-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; }
+          .training-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
           
-          /* Compact Table */
-          table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-          th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; font-size: 9px; }
-          th { background: ${secondaryColor}; color: white; font-weight: bold; font-size: 8px; text-transform: uppercase; }
+          /* Table */
+          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+          th, td { border: 1px solid #ddd; padding: 10px 12px; text-align: left; font-size: 11px; }
+          th { background: ${secondaryColor}; color: white; font-weight: bold; font-size: 10px; text-transform: uppercase; }
           .text-right { text-align: right; }
           
-          /* Compact Totals */
+          /* Totals */
           .totals { 
             width: 50%;
             margin-left: auto;
-            font-size: 9px;
+            font-size: 11px;
           }
           .total-row { 
             display: flex; 
