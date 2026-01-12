@@ -7890,7 +7890,7 @@ async def export_invoices(
     if status:
         query["status"] = status
     
-    invoices = await db.invoices.find(query, {"_id": 0}).sort("created_at", -1).to_list(10000)
+    invoices = await db.invoices.find(query, {"_id": 0}).sort("created_at", 1).to_list(10000)
     
     # Get all payments for payment status
     payments = await db.payments.find({}, {"_id": 0}).to_list(10000)
