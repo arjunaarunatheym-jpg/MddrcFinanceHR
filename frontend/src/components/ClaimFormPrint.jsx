@@ -54,71 +54,68 @@ const ClaimFormPrint = ({ session, onClose }) => {
         <head>
           <title>Course Registration Form - ${session.name}</title>
           <style>
-            @page { size: A4; margin: 12mm; }
+            @page { size: A4; margin: 8mm 10mm; }
             @media print { body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } }
             
             * { box-sizing: border-box; margin: 0; padding: 0; }
-            body { font-family: Arial, sans-serif; font-size: 10px; line-height: 1.4; padding: 15px; }
+            body { font-family: Arial, sans-serif; font-size: 8px; line-height: 1.25; padding: 5px; }
             
-            /* Header */
+            /* Header - Compact */
             .header { 
               display: flex; 
               align-items: center; 
               justify-content: center;
-              margin-bottom: 15px; 
+              margin-bottom: 8px; 
               border-bottom: 2px solid #1e40af; 
-              padding-bottom: 12px;
-              gap: 20px;
+              padding-bottom: 6px;
+              gap: 12px;
             }
-            .logo { max-width: 100px; max-height: 60px; object-fit: contain; }
+            .logo { max-width: 60px; max-height: 40px; object-fit: contain; }
             .header-text { text-align: center; }
-            .company-name { font-size: 14px; font-weight: bold; color: #1e40af; margin-bottom: 4px; }
-            .form-title { font-size: 12px; font-weight: bold; background: #e5e7eb; padding: 4px 12px; display: inline-block; margin-top: 4px; }
+            .company-name { font-size: 11px; font-weight: bold; color: #1e40af; margin-bottom: 2px; }
+            .form-title { font-size: 9px; font-weight: bold; background: #e5e7eb; padding: 2px 8px; display: inline-block; }
             
-            /* Sections */
-            .section { margin-bottom: 12px; }
+            /* Sections - Compact */
+            .section { margin-bottom: 6px; }
             .section-header { 
               background: #1e40af; 
               color: white; 
-              padding: 5px 10px; 
+              padding: 3px 8px; 
               font-weight: bold; 
-              font-size: 10px; 
+              font-size: 8px; 
             }
             
-            /* Info Grid */
+            /* Info Grid - Compact */
             .info-grid { 
               display: grid; 
               grid-template-columns: repeat(2, 1fr); 
-              gap: 12px; 
-              padding: 12px; 
+              gap: 4px 8px; 
+              padding: 6px 8px; 
               border: 1px solid #000; 
               border-top: none; 
             }
-            .info-grid-3 { grid-template-columns: repeat(3, 1fr); }
             .info-item { }
             .info-label { 
               font-weight: bold; 
-              font-size: 9px; 
+              font-size: 7px; 
               color: #333; 
               display: block; 
-              margin-bottom: 4px; 
+              margin-bottom: 1px; 
               text-transform: uppercase;
-              letter-spacing: 0.5px;
             }
             .info-value { 
               border-bottom: 1px solid #ccc; 
-              padding: 6px 8px; 
-              min-height: 26px; 
-              font-size: 11px;
+              padding: 3px 4px; 
+              min-height: 16px; 
+              font-size: 9px;
               background: #fafafa;
-              margin-top: 2px;
             }
             .info-full { grid-column: span 2; }
             
-            /* Tables */
-            table { width: 100%; border-collapse: collapse; font-size: 9px; margin-top: 0; }
-            th, td { border: 1px solid #000; padding: 5px 6px; text-align: left; }
-            th { background: #f3f4f6; font-weight: bold; font-size: 8px; }
+            /* Tables - Compact */
+            table { width: 100%; border-collapse: collapse; font-size: 8px; margin-top: 0; }
+            th, td { border: 1px solid #000; padding: 2px 4px; text-align: left; }
+            th { background: #f3f4f6; font-weight: bold; font-size: 7px; }
             .text-right { text-align: right; }
             .text-center { text-align: center; }
             .highlight { background: #fef9c3 !important; }
@@ -126,31 +123,33 @@ const ClaimFormPrint = ({ session, onClose }) => {
             .total-row { background: #d1d5db; font-weight: bold; }
             .profit-row { background: #bbf7d0 !important; font-weight: bold; }
             
-            /* Two Column Layout */
-            .two-col { display: flex; gap: 12px; margin-bottom: 12px; }
-            .col-left { flex: 1.2; }
-            .col-right { flex: 0.8; }
+            /* Three Column Layout */
+            .three-col { display: flex; gap: 6px; margin-bottom: 6px; }
+            .col-invoice { flex: 1.1; }
+            .col-trainers { flex: 0.9; }
+            .col-costing { flex: 1; }
             
-            /* Costing Summary */
+            /* Costing Summary - Compact */
             .costing-table { width: 100%; }
-            .costing-table td { padding: 5px 10px; border: 1px solid #000; }
-            .costing-label { font-weight: bold; width: 55%; }
-            .costing-value { text-align: right; width: 30%; }
-            .costing-pct { text-align: right; width: 15%; }
+            .costing-table td { padding: 2px 6px; border: 1px solid #000; font-size: 8px; }
+            .costing-label { font-weight: bold; width: 60%; }
+            .costing-value { text-align: right; width: 25%; }
+            .costing-pct { text-align: right; width: 15%; font-size: 8px; }
             
-            /* Acknowledgment */
-            .ack-table { width: 100%; margin-top: 15px; }
-            .ack-table td { padding: 10px; border: 1px solid #000; height: 50px; vertical-align: top; }
-            .ack-label { font-weight: bold; width: 25%; }
+            /* Acknowledgment - Compact */
+            .ack-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; border: 1px solid #000; border-top: none; padding: 4px; }
+            .ack-item { text-align: center; padding: 3px; border: 1px solid #ccc; }
+            .ack-label { font-size: 7px; font-weight: bold; margin-bottom: 15px; display: block; }
+            .ack-line { border-bottom: 1px solid #000; margin-top: 20px; }
             
             /* Footer */
             .footer { 
-              margin-top: 15px; 
+              margin-top: 6px; 
               text-align: center; 
-              font-size: 8px; 
+              font-size: 7px; 
               color: #666; 
               border-top: 1px solid #ccc; 
-              padding-top: 8px; 
+              padding-top: 4px; 
             }
           </style>
         </head>
