@@ -12411,14 +12411,25 @@ async def bulk_generate_pay_advice(year: int, month: int, current_user: User = D
             if not session_details:
                 continue
             
+            # Calculate payment month (following month - training done Dec means payment in Jan)
+            payment_year = year
+            payment_month = month + 1
+            if payment_month > 12:
+                payment_month = 1
+                payment_year = year + 1
+            
             now = get_malaysia_time()
             pay_advice = {
                 "id": str(uuid.uuid4()),
-                "advice_number": f"PA/MDDRC/{year}/{str(month).zfill(2)}/{str(uuid.uuid4())[:4].upper()}",
+                "advice_number": f"PA/MDDRC/{payment_year}/{str(payment_month).zfill(2)}/{str(uuid.uuid4())[:4].upper()}",
                 "user_id": user_id,
-                "year": year,
-                "month": month,
-                "period_name": f"{datetime(year, month, 1).strftime('%B %Y')}",
+                # Store both training and payment periods
+                "training_year": year,
+                "training_month": month,
+                "year": payment_year,  # Payment year
+                "month": payment_month,  # Payment month
+                "period_name": f"{datetime(payment_year, payment_month, 1).strftime('%B %Y')}",  # Payment month display
+                "training_period_name": f"{datetime(year, month, 1).strftime('%B %Y')}",  # Training month
                 "full_name": user.get("full_name"),
                 "id_number": user.get("id_number"),
                 "email": user.get("email"),
