@@ -748,85 +748,150 @@ const FinanceDashboard = ({ user, onLogout }) => {
     
     const primaryColor = settings.primary_color || '#1a365d';
     const today = new Date().toLocaleDateString('en-MY', { year: 'numeric', month: 'long', day: 'numeric' });
+    const monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const periodName = `${monthNames[payablesMonth]} ${payablesYear}`;
     
-    // Calculate totals
-    const trainerTotal = payables.trainer_fees.filter(f => f.status !== 'paid').reduce((sum, f) => sum + (f.fee_amount || 0), 0);
-    const coordTotal = payables.coordinator_fees.filter(f => f.status !== 'paid').reduce((sum, f) => sum + (f.total_fee || 0), 0);
-    const marketingTotal = payables.marketing_commissions.filter(f => f.status !== 'paid').reduce((sum, f) => sum + (f.calculated_amount || 0), 0);
-    const grandTotal = trainerTotal + coordTotal + marketingTotal;
-    
-    // Build rows for each category
-    const buildRows = (items, type) => {
-      return items.filter(f => f.status !== 'paid').map(item => {
-        let name = '', session = '', amount = 0, role = '';
-        if (type === 'trainer') {
-          name = item.trainer_name || 'Unknown';
-          session = item.session_name || '-';
-          amount = item.fee_amount || 0;
-          role = item.trainer_role || 'Trainer';
-        } else if (type === 'coordinator') {
-          name = item.coordinator_name || 'Unknown';
-          session = item.session_name || '-';
-          amount = item.total_fee || 0;
-          role = 'Coordinator';
-        } else if (type === 'marketing') {
-          name = item.user_name || 'Unknown';
-          session = item.session_name || '-';
-          amount = item.calculated_amount || 0;
-          role = 'Marketing';
-        }
-        return `<tr>
-          <td style="padding: 8px; border-bottom: 1px solid #eee;">${name}</td>
-          <td style="padding: 8px; border-bottom: 1px solid #eee;">${role}</td>
-          <td style="padding: 8px; border-bottom: 1px solid #eee;">${session}</td>
-          <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">RM ${amount.toLocaleString('en-MY', {minimumFractionDigits: 2})}</td>
-        </tr>`;
-      }).join('');
+    // Filter payables by selected month/year
+    const filterByMonth = (item) => {
+      const sessionDate = item.session_start_date || item.session_date;
+      if (!sessionDate) return false;
+      const d = new Date(sessionDate);
+      return d.getFullYear() === payablesYear && (d.getMonth() + 1) === payablesMonth;
     };
+    
+    const filteredTrainer = payables.trainer_fees.filter(f => f.status !== 'paid' && filterByMonth(f));
+    const filteredCoord = payables.coordinator_fees.filter(f => f.status !== 'paid' && filterByMonth(f));
+    const filteredMarketing = payables.marketing_commissions.filter(f => f.status !== 'paid' && filterByMonth(f));
+    
+    // Group all payables by person name
+    const groupedData = {};
+    
+    filteredTrainer.forEach(item => {
+      const name = (item.trainer_name || 'Unknown').toUpperCase();
+      if (!groupedData[name]) groupedData[name] = { items: [], total: 0 };
+      groupedData[name].items.push({
+        invoice_number: item.invoice_number || '-',
+        training_date: item.session_start_date || item.session_date,
+        position: item.trainer_role || 'Trainer',
+        company: item.company_name || '-',
+        details: item.session_name || '-',
+        amount: item.fee_amount || 0
+      });
+      groupedData[name].total += (item.fee_amount || 0);
+    });
+    
+    filteredCoord.forEach(item => {
+      const name = (item.coordinator_name || 'Unknown').toUpperCase();
+      if (!groupedData[name]) groupedData[name] = { items: [], total: 0 };
+      groupedData[name].items.push({
+        invoice_number: item.invoice_number || '-',
+        training_date: item.session_start_date || item.session_date,
+        position: 'Coordinator',
+        company: item.company_name || '-',
+        details: item.session_name || '-',
+        amount: item.total_fee || 0
+      });
+      groupedData[name].total += (item.total_fee || 0);
+    });
+    
+    filteredMarketing.forEach(item => {
+      const name = (item.marketer_name || item.user_name || 'Unknown').toUpperCase();
+      if (!groupedData[name]) groupedData[name] = { items: [], total: 0 };
+      groupedData[name].items.push({
+        invoice_number: item.invoice_number || '-',
+        training_date: item.session_start_date || item.session_date,
+        position: 'Marketing',
+        company: item.company_name || '-',
+        details: item.session_name || '-',
+        amount: item.calculated_amount || 0
+      });
+      groupedData[name].total += (item.calculated_amount || 0);
+    });
+    
+    // Sort names alphabetically
+    const sortedNames = Object.keys(groupedData).sort();
+    
+    // Build table rows matching Excel format
+    let tableRows = '';
+    let grandTotal = 0;
+    
+    sortedNames.forEach(name => {
+      const group = groupedData[name];
+      grandTotal += group.total;
+      
+      // Sort items by date
+      group.items.sort((a, b) => new Date(a.training_date || 0) - new Date(b.training_date || 0));
+      
+      group.items.forEach((item, idx) => {
+        const dateStr = item.training_date 
+          ? new Date(item.training_date).toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' }) 
+          : '-';
+        tableRows += `
+          <tr>
+            <td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: ${idx === 0 ? 'bold' : 'normal'};">${idx === 0 ? name : ''}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.invoice_number}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #eee;">${dateStr}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.position}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.company}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.details}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">RM ${item.amount.toLocaleString('en-MY', {minimumFractionDigits: 2})}</td>
+          </tr>`;
+      });
+      
+      // Add TOTAL row for this person
+      tableRows += `
+        <tr style="background: #f3f4f6;">
+          <td colspan="6" style="padding: 8px; text-align: right; font-weight: bold;">TOTAL</td>
+          <td style="padding: 8px; text-align: right; font-weight: bold;">RM ${group.total.toLocaleString('en-MY', {minimumFractionDigits: 2})}</td>
+        </tr>`;
+    });
+    
+    // Calculate summary totals
+    const trainerTotal = filteredTrainer.reduce((sum, f) => sum + (f.fee_amount || 0), 0);
+    const coordTotal = filteredCoord.reduce((sum, f) => sum + (f.total_fee || 0), 0);
+    const marketingTotal = filteredMarketing.reduce((sum, f) => sum + (f.calculated_amount || 0), 0);
     
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Payables Report - ${today}</title>
+        <title>Payables Report - ${periodName}</title>
         <style>
-          @page { size: A4; margin: 15mm; }
+          @page { size: A4 landscape; margin: 10mm; }
           @media print { body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } }
           * { box-sizing: border-box; margin: 0; padding: 0; }
-          body { font-family: Arial, sans-serif; font-size: 11px; padding: 20px; max-width: 210mm; margin: 0 auto; line-height: 1.4; }
+          body { font-family: Arial, sans-serif; font-size: 10px; padding: 15px; max-width: 297mm; margin: 0 auto; line-height: 1.4; }
           
           .header { display: flex; align-items: center; gap: 15px; padding-bottom: 15px; border-bottom: 3px solid ${primaryColor}; margin-bottom: 15px; }
-          .logo-img { width: 80px; height: auto; }
-          .company-name { font-size: 16px; font-weight: bold; color: ${primaryColor}; }
-          .company-info { font-size: 10px; color: #444; }
+          .logo-img { width: 70px; height: auto; }
+          .company-name { font-size: 14px; font-weight: bold; color: ${primaryColor}; }
+          .company-info { font-size: 9px; color: #444; }
           
-          .report-title { font-size: 18px; font-weight: bold; text-align: center; color: ${primaryColor}; margin: 20px 0; padding: 10px; background: #f8fafc; border-radius: 4px; }
-          .report-date { text-align: center; font-size: 11px; color: #666; margin-bottom: 20px; }
+          .report-title { font-size: 16px; font-weight: bold; text-align: center; color: ${primaryColor}; margin: 15px 0; padding: 8px; background: #f8fafc; border-radius: 4px; }
+          .report-period { text-align: center; font-size: 12px; color: #333; margin-bottom: 5px; font-weight: bold; }
+          .report-date { text-align: center; font-size: 10px; color: #666; margin-bottom: 15px; }
           
-          .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
-          .summary-card { padding: 12px; border-radius: 6px; text-align: center; }
+          .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px; }
+          .summary-card { padding: 10px; border-radius: 4px; text-align: center; }
           .summary-card.blue { background: #dbeafe; }
           .summary-card.green { background: #dcfce7; }
           .summary-card.purple { background: #f3e8ff; }
           .summary-card.yellow { background: #fef9c3; }
-          .summary-label { font-size: 10px; color: #555; margin-bottom: 4px; }
-          .summary-value { font-size: 14px; font-weight: bold; }
+          .summary-label { font-size: 9px; color: #555; margin-bottom: 3px; }
+          .summary-value { font-size: 12px; font-weight: bold; }
           
-          .section-title { font-size: 13px; font-weight: bold; margin: 20px 0 10px; padding: 8px; background: #f1f5f9; border-left: 4px solid ${primaryColor}; }
-          
-          table { width: 100%; border-collapse: collapse; font-size: 10px; }
-          th { background: #f8fafc; padding: 10px 8px; text-align: left; font-weight: 600; border-bottom: 2px solid #e2e8f0; }
+          table { width: 100%; border-collapse: collapse; font-size: 9px; }
+          th { background: #1a365d; color: white; padding: 8px 6px; text-align: left; font-weight: 600; }
           th:last-child { text-align: right; }
           
-          .category-total { background: #f8fafc; font-weight: bold; }
-          .grand-total { background: ${primaryColor}; color: white; font-weight: bold; font-size: 12px; }
-          .grand-total td { padding: 12px 8px; }
+          .grand-total { background: #1a365d; color: white; font-weight: bold; font-size: 11px; }
+          .grand-total td { padding: 10px 8px; }
           
-          .footer { margin-top: 30px; font-size: 9px; color: #666; border-top: 1px solid #ddd; padding-top: 15px; }
-          .signature-area { margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+          .footer { margin-top: 20px; font-size: 8px; color: #666; border-top: 1px solid #ddd; padding-top: 10px; }
+          .signature-area { margin-top: 25px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
           .signature-box { text-align: center; }
-          .signature-line { border-top: 1px solid #333; width: 150px; margin: 30px auto 5px; }
+          .signature-line { border-top: 1px solid #333; width: 120px; margin: 25px auto 5px; }
         </style>
       </head>
       <body>
@@ -839,6 +904,7 @@ const FinanceDashboard = ({ user, onLogout }) => {
         </div>
         
         <div class="report-title">STAFF PAYABLES REPORT</div>
+        <div class="report-period">${periodName}</div>
         <div class="report-date">Generated on ${today}</div>
         
         <div class="summary-grid">
@@ -863,31 +929,20 @@ const FinanceDashboard = ({ user, onLogout }) => {
         <table>
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Role</th>
-              <th>Session/Training</th>
-              <th>Amount (RM)</th>
+              <th style="width: 15%;">NAME</th>
+              <th style="width: 10%;">INVOICE NO</th>
+              <th style="width: 12%;">TRAINING DATE</th>
+              <th style="width: 10%;">POSITION</th>
+              <th style="width: 18%;">COMPANY</th>
+              <th style="width: 20%;">DETAILS</th>
+              <th style="width: 15%;">PRICE</th>
             </tr>
           </thead>
           <tbody>
-            ${payables.trainer_fees.filter(f => f.status !== 'paid').length > 0 ? `
-              <tr class="category-total"><td colspan="4" style="padding: 8px; background: #dbeafe; font-weight: bold;">Trainer Fees</td></tr>
-              ${buildRows(payables.trainer_fees, 'trainer')}
-            ` : ''}
-            
-            ${payables.coordinator_fees.filter(f => f.status !== 'paid').length > 0 ? `
-              <tr class="category-total"><td colspan="4" style="padding: 8px; background: #dcfce7; font-weight: bold;">Coordinator Fees</td></tr>
-              ${buildRows(payables.coordinator_fees, 'coordinator')}
-            ` : ''}
-            
-            ${payables.marketing_commissions.filter(f => f.status !== 'paid').length > 0 ? `
-              <tr class="category-total"><td colspan="4" style="padding: 8px; background: #f3e8ff; font-weight: bold;">Marketing Commission</td></tr>
-              ${buildRows(payables.marketing_commissions, 'marketing')}
-            ` : ''}
-            
+            ${tableRows}
             <tr class="grand-total">
-              <td colspan="3">GRAND TOTAL</td>
-              <td style="text-align: right;">RM ${grandTotal.toLocaleString('en-MY', {minimumFractionDigits: 2})}</td>
+              <td colspan="6" style="text-align: right; font-weight: bold;">GRAND TOTAL</td>
+              <td style="text-align: right; font-weight: bold;">RM ${grandTotal.toLocaleString('en-MY', {minimumFractionDigits: 2})}</td>
             </tr>
           </tbody>
         </table>
@@ -898,6 +953,21 @@ const FinanceDashboard = ({ user, onLogout }) => {
             <div>Prepared By</div>
           </div>
           <div class="signature-box">
+            <div class="signature-line"></div>
+            <div>Approved By</div>
+          </div>
+        </div>
+        
+        <div class="footer">
+          <p>This report is computer generated.</p>
+        </div>
+        
+        <script>window.onload = function() { window.print(); }</script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
             <div class="signature-line"></div>
             <div>Approved By</div>
           </div>
