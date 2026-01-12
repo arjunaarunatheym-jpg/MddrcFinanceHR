@@ -795,7 +795,7 @@ const FinanceDashboard = ({ user, onLogout }) => {
     });
     
     filteredMarketing.forEach(item => {
-      const name = (item.marketer_name || item.user_name || 'Unknown').toUpperCase();
+      const name = (item.marketer_name || item.marketing_user_name || item.user_name || 'Unknown').toUpperCase();
       if (!groupedData[name]) groupedData[name] = { items: [], total: 0 };
       groupedData[name].items.push({
         invoice_number: item.invoice_number || '-',
