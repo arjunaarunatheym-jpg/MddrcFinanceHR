@@ -1723,27 +1723,78 @@ const FinanceDashboard = ({ user, onLogout }) => {
                     <CardContent className="p-4">
                       <p className="text-sm text-blue-700 font-medium">Trainer Fees</p>
                       <p className="text-xl font-bold text-blue-900">
-                        RM {payables.trainer_fees.filter(f => f.status !== 'paid').reduce((sum, f) => sum + (f.fee_amount || 0), 0).toLocaleString()}
+                        RM {payables.trainer_fees
+                          .filter(f => {
+                            if (f.status === 'paid') return false;
+                            const sessionDate = f.session_start_date || f.session_date;
+                            if (!sessionDate) return false;
+                            const d = new Date(sessionDate);
+                            return d.getFullYear() === payablesYear && (d.getMonth() + 1) === payablesMonth;
+                          })
+                          .reduce((sum, f) => sum + (f.fee_amount || 0), 0)
+                          .toLocaleString('en-MY', { minimumFractionDigits: 2 })}
                       </p>
-                      <p className="text-xs text-blue-600">{payables.trainer_fees.filter(f => f.status !== 'paid').length} pending</p>
+                      <p className="text-xs text-blue-600">
+                        {payables.trainer_fees.filter(f => {
+                          if (f.status === 'paid') return false;
+                          const sessionDate = f.session_start_date || f.session_date;
+                          if (!sessionDate) return false;
+                          const d = new Date(sessionDate);
+                          return d.getFullYear() === payablesYear && (d.getMonth() + 1) === payablesMonth;
+                        }).length} pending
+                      </p>
                     </CardContent>
                   </Card>
                   <Card className="bg-green-50 border-green-200">
                     <CardContent className="p-4">
                       <p className="text-sm text-green-700 font-medium">Coordinator Fees</p>
                       <p className="text-xl font-bold text-green-900">
-                        RM {payables.coordinator_fees.filter(f => f.status !== 'paid').reduce((sum, f) => sum + (f.total_fee || 0), 0).toLocaleString()}
+                        RM {payables.coordinator_fees
+                          .filter(f => {
+                            if (f.status === 'paid') return false;
+                            const sessionDate = f.session_start_date || f.session_date;
+                            if (!sessionDate) return false;
+                            const d = new Date(sessionDate);
+                            return d.getFullYear() === payablesYear && (d.getMonth() + 1) === payablesMonth;
+                          })
+                          .reduce((sum, f) => sum + (f.total_fee || 0), 0)
+                          .toLocaleString('en-MY', { minimumFractionDigits: 2 })}
                       </p>
-                      <p className="text-xs text-green-600">{payables.coordinator_fees.filter(f => f.status !== 'paid').length} pending</p>
+                      <p className="text-xs text-green-600">
+                        {payables.coordinator_fees.filter(f => {
+                          if (f.status === 'paid') return false;
+                          const sessionDate = f.session_start_date || f.session_date;
+                          if (!sessionDate) return false;
+                          const d = new Date(sessionDate);
+                          return d.getFullYear() === payablesYear && (d.getMonth() + 1) === payablesMonth;
+                        }).length} pending
+                      </p>
                     </CardContent>
                   </Card>
                   <Card className="bg-purple-50 border-purple-200">
                     <CardContent className="p-4">
                       <p className="text-sm text-purple-700 font-medium">Marketing Commission</p>
                       <p className="text-xl font-bold text-purple-900">
-                        RM {payables.marketing_commissions.filter(f => f.status !== 'paid').reduce((sum, f) => sum + (f.calculated_amount || 0), 0).toLocaleString()}
+                        RM {payables.marketing_commissions
+                          .filter(f => {
+                            if (f.status === 'paid') return false;
+                            const sessionDate = f.session_start_date || f.session_date;
+                            if (!sessionDate) return false;
+                            const d = new Date(sessionDate);
+                            return d.getFullYear() === payablesYear && (d.getMonth() + 1) === payablesMonth;
+                          })
+                          .reduce((sum, f) => sum + (f.calculated_amount || 0), 0)
+                          .toLocaleString('en-MY', { minimumFractionDigits: 2 })}
                       </p>
-                      <p className="text-xs text-purple-600">{payables.marketing_commissions.filter(f => f.status !== 'paid').length} pending</p>
+                      <p className="text-xs text-purple-600">
+                        {payables.marketing_commissions.filter(f => {
+                          if (f.status === 'paid') return false;
+                          const sessionDate = f.session_start_date || f.session_date;
+                          if (!sessionDate) return false;
+                          const d = new Date(sessionDate);
+                          return d.getFullYear() === payablesYear && (d.getMonth() + 1) === payablesMonth;
+                        }).length} pending
+                      </p>
                     </CardContent>
                   </Card>
                 </div>
