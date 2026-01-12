@@ -231,21 +231,40 @@ const FinanceDashboard = ({ user, onLogout }) => {
       const response = await axiosInstance.get(`/finance/payables/export-excel?year=${payablesYear}&month=${payablesMonth}`);
       const data = response.data;
       
-      // Generate Excel-like CSV content
+      if (!data.data || Object.keys(data.data).length === 0) {
+        toast.error('No payables data to export for this period');
+        return;
+      }
+      
+      // Generate Excel-like CSV content matching your format
       let csvContent = "NAME,INVOICE NUMBER,TRAINING DATE,POSITION,COMPANY,DETAILS,PRICE\n";
       
-      Object.entries(data.data).forEach(([name, group]) => {
-        group.items.forEach((item, index) => {
-          const trainingDate = item.training_date ? new Date(item.training_date).toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' }) : '-';
-          csvContent += `"${index === 0 ? name : ''}","${item.invoice_number}","${trainingDate}","${item.position}","${item.company}","${item.details}","RM ${item.amount.toFixed(2)}"\n`;
+      // Sort entries by name
+      const sortedNames = Object.keys(data.data).sort();
+      
+      sortedNames.forEach((name) => {
+        const group = data.data[name];
+        // Sort items by training date
+        const sortedItems = [...group.items].sort((a, b) => {
+          const dateA = a.training_date ? new Date(a.training_date) : new Date(0);
+          const dateB = b.training_date ? new Date(b.training_date) : new Date(0);
+          return dateA - dateB;
         });
-        // Add subtotal row
-        csvContent += `"","","","","","TOTAL","RM ${group.total.toFixed(2)}"\n`;
-        csvContent += "\n";
+        
+        sortedItems.forEach((item, index) => {
+          const trainingDate = item.training_date 
+            ? new Date(item.training_date).toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' }) 
+            : '-';
+          // Name only on first row for each person
+          const displayName = index === 0 ? name.toUpperCase() : '';
+          csvContent += `"${displayName}","${item.invoice_number || '-'}","${trainingDate}","${item.position || '-'}","${item.company || '-'}","${item.details || '-'}","RM ${(item.amount || 0).toFixed(2)}"\n`;
+        });
+        // Add TOTAL row for this person
+        csvContent += `"","","","","","TOTAL","RM ${(group.total || 0).toFixed(2)}"\n`;
       });
       
-      // Add grand total
-      csvContent += `"","","","","","GRAND TOTAL","RM ${data.grand_total.toFixed(2)}"\n`;
+      // Add GRAND TOTAL row
+      csvContent += `"GRAND TOTAL","","","","","","RM ${(data.grand_total || 0).toFixed(2)}"\n`;
       
       // Download
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -260,6 +279,7 @@ const FinanceDashboard = ({ user, onLogout }) => {
       
       toast.success(`Exported payables for ${data.period_name}`);
     } catch (error) {
+      console.error('Export error:', error);
       toast.error(error.response?.data?.detail || 'Failed to export payables');
     }
   };
