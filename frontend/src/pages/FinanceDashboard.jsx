@@ -477,17 +477,23 @@ const FinanceDashboard = ({ user, onLogout }) => {
       }
       
       const headers = Object.keys(data[0]);
-      const csvContent = [
-        headers.join(','),
-        ...data.map(row => headers.map(h => {
+      const csvRows = [headers.join(',')];
+      
+      for (const row of data) {
+        const values = headers.map(h => {
           const val = row[h];
-          // Escape commas and quotes
-          if (typeof val === 'string' && (val.includes(',') || val.includes('"'))) {
-            return `"${val.replace(/"/g, '""')}"`;
+          // Escape commas, quotes and newlines
+          if (val === null || val === undefined) return '';
+          const strVal = String(val);
+          if (strVal.includes(',') || strVal.includes('"') || strVal.includes('\n')) {
+            return `"${strVal.replace(/"/g, '""')}"`;
           }
-          return val;
-        }).join(','))
-      ].join('\\n');
+          return strVal;
+        });
+        csvRows.push(values.join(','));
+      }
+      
+      const csvContent = csvRows.join('\n');
       
       // Download
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
