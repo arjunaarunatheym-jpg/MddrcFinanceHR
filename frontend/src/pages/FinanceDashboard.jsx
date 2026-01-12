@@ -1149,31 +1149,31 @@ const FinanceDashboard = ({ user, onLogout }) => {
       <head>
         <title>Invoice ${invoice.invoice_number}</title>
         <style>
-          @page { size: A4; margin: 10mm; }
+          @page { size: A4; margin: 15mm; }
           @media print { 
             body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
           }
           * { box-sizing: border-box; margin: 0; padding: 0; }
           body { 
             font-family: Arial, sans-serif; 
-            font-size: 10px;
-            padding: 15px; 
+            font-size: 12px;
+            padding: 25px; 
             max-width: 210mm;
             margin: 0 auto; 
-            line-height: 1.3;
+            line-height: 1.5;
           }
           
-          /* Compact Header with Logo */
+          /* Header with Logo */
           .header { 
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid ${primaryColor};
-            margin-bottom: 10px;
+            gap: 20px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid ${primaryColor};
+            margin-bottom: 20px;
           }
           .logo-img { 
-            width: 80px; 
+            width: 100px; 
             height: auto;
             flex-shrink: 0;
           }
