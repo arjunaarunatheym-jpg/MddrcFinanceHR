@@ -12146,16 +12146,28 @@ async def generate_pay_advice(data: dict, current_user: User = Depends(get_curre
     # Sort by session date
     session_details.sort(key=lambda x: x.get("session_date", ""))
     
+    # Calculate payment month (following month - training done Dec means payment in Jan)
+    # Training done in month X is paid by 15th of month X+1
+    payment_year = year
+    payment_month = month + 1
+    if payment_month > 12:
+        payment_month = 1
+        payment_year = year + 1
+    
     # Create pay advice
     now = get_malaysia_time()
     pay_advice = {
         "id": str(uuid.uuid4()),
-        "advice_number": f"PA/MDDRC/{year}/{str(month).zfill(2)}/{str(uuid.uuid4())[:4].upper()}",
+        "advice_number": f"PA/MDDRC/{payment_year}/{str(payment_month).zfill(2)}/{str(uuid.uuid4())[:4].upper()}",
         "user_id": user_id,
         "period_id": period["id"] if period else None,
-        "year": year,
-        "month": month,
-        "period_name": f"{datetime(year, month, 1).strftime('%B %Y')}",
+        # Store both training and payment periods for clarity
+        "training_year": year,
+        "training_month": month,
+        "year": payment_year,  # Payment year
+        "month": payment_month,  # Payment month
+        "period_name": f"{datetime(payment_year, payment_month, 1).strftime('%B %Y')}",  # Shows payment month
+        "training_period_name": f"{datetime(year, month, 1).strftime('%B %Y')}",  # Shows training month
         
         # User info
         "full_name": user.get("full_name"),
