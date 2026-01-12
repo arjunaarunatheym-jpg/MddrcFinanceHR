@@ -9306,8 +9306,18 @@ async def export_payables_excel(year: int, month: int, current_user: User = Depe
         invoice = await db.invoices.find_one({"session_id": comm.get("session_id")}, {"_id": 0, "invoice_number": 1})
         invoice_number = invoice.get("invoice_number") if invoice else "-"
         
+        # Get marketer name - try multiple fields
+        marketer_name = comm.get("marketer_name") or comm.get("user_name")
+        if not marketer_name or marketer_name == "Unknown":
+            # Look up from marketing_user_id
+            mkt_user_id = comm.get("marketing_user_id") or comm.get("user_id")
+            if mkt_user_id:
+                mkt_user = await db.users.find_one({"id": mkt_user_id}, {"_id": 0, "full_name": 1})
+                if mkt_user:
+                    marketer_name = mkt_user.get("full_name", "Unknown")
+        
         payables_data.append({
-            "name": comm.get("user_name", "Unknown").upper(),
+            "name": (marketer_name or "Unknown").upper(),
             "invoice_number": invoice_number,
             "training_date": session_date,
             "position": "Marketing",
