@@ -103,10 +103,14 @@ const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
               <div>
                 <div className="info-row"><span className="info-label">Name:</span><span>{payAdvice.full_name}</span></div>
                 <div className="info-row"><span className="info-label">NRIC:</span><span>{payAdvice.id_number || '-'}</span></div>
+                {payAdvice.training_period_name && (
+                  <div className="info-row"><span className="info-label">Training Period:</span><span>{payAdvice.training_period_name}</span></div>
+                )}
               </div>
               <div>
                 <div className="info-row"><span className="info-label">Phone:</span><span>{payAdvice.phone || '-'}</span></div>
                 <div className="info-row"><span className="info-label">Email:</span><span>{payAdvice.email || '-'}</span></div>
+                <div className="info-row"><span className="info-label">Payment Period:</span><span>{payAdvice.period_name || getDisplayPeriod()}</span></div>
               </div>
             </div>
           </div>
