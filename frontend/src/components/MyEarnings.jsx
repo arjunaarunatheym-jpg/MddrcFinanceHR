@@ -518,7 +518,7 @@ const MyEarnings = ({ userId, userRoles = [] }) => {
       )}
       {printPayAdvice && (
         <PayAdvicePrint 
-          record={printPayAdvice}
+          payAdvice={printPayAdvice}
           companySettings={companySettings}
           onClose={() => setPrintPayAdvice(null)} 
         />
