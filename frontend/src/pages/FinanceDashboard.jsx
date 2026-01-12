@@ -186,17 +186,27 @@ const FinanceDashboard = ({ user, onLogout }) => {
 
   const handleClosePeriod = async () => {
     try {
+      let periodId = currentPeriodStatus.period?.id;
+      
       // First check if period exists, if not create it
-      if (!currentPeriodStatus.exists) {
-        await axiosInstance.post('/finance/payables/periods', { year: payablesYear, month: payablesMonth });
+      if (!currentPeriodStatus.exists || !periodId) {
+        const createRes = await axiosInstance.post('/finance/payables/periods', { year: payablesYear, month: payablesMonth });
+        periodId = createRes.data.id;
       }
       
-      // Get the period ID
-      const periodRes = await axiosInstance.get(`/finance/payables/period-status?year=${payablesYear}&month=${payablesMonth}`);
-      if (periodRes.data.period?.id) {
-        await axiosInstance.post(`/finance/payables/periods/${periodRes.data.period.id}/close`);
+      // Now close the period
+      if (periodId) {
+        await axiosInstance.post(`/finance/payables/periods/${periodId}/close`);
         toast.success(`Period ${payablesYear}-${String(payablesMonth).padStart(2, '0')} closed successfully`);
         await loadPeriodStatus();
+      } else {
+        // Fallback: get the period ID from API
+        const periodRes = await axiosInstance.get(`/finance/payables/period-status?year=${payablesYear}&month=${payablesMonth}`);
+        if (periodRes.data.period?.id) {
+          await axiosInstance.post(`/finance/payables/periods/${periodRes.data.period.id}/close`);
+          toast.success(`Period ${payablesYear}-${String(payablesMonth).padStart(2, '0')} closed successfully`);
+          await loadPeriodStatus();
+        }
       }
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to close period');
