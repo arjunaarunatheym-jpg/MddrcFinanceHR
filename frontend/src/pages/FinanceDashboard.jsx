@@ -907,6 +907,19 @@ const FinanceDashboard = ({ user, onLogout }) => {
       } catch (e) {}
     }
     
+    // Get the invoice to get bill_to details
+    let billToName = cn.company_name || '-';
+    if (cn.invoice_id) {
+      try {
+        const invRes = await axiosInstance.get(`/finance/invoices/${cn.invoice_id}`);
+        const invoice = invRes.data;
+        // Use bill_to_name if available, otherwise company_name from invoice
+        billToName = invoice.bill_to_name || invoice.company_name || billToName;
+      } catch (e) {
+        console.log('Could not fetch invoice for bill_to');
+      }
+    }
+    
     const primaryColor = settings.primary_color || '#1a365d';
     const secondaryColor = settings.secondary_color || '#dc2626';
     const tagline = settings.tagline || 'Towards a Nation of Safe Drivers';
@@ -928,108 +941,108 @@ const FinanceDashboard = ({ user, onLogout }) => {
       <head>
         <title>Credit Note ${cn.cn_number}</title>
         <style>
-          @page { size: A4; margin: 10mm; }
+          @page { size: A4; margin: 15mm; }
           @media print { 
             body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
           }
           * { box-sizing: border-box; margin: 0; padding: 0; }
           body { 
             font-family: Arial, sans-serif; 
-            font-size: 11px;
-            padding: 20px; 
+            font-size: 12px;
+            padding: 30px; 
             max-width: 210mm;
             margin: 0 auto; 
-            line-height: 1.4;
+            line-height: 1.5;
           }
           
           .header { 
             display: flex;
             align-items: center;
-            gap: 15px;
-            padding-bottom: 15px;
+            gap: 20px;
+            padding-bottom: 20px;
             border-bottom: 3px solid ${secondaryColor};
-            margin-bottom: 15px;
+            margin-bottom: 25px;
           }
-          .logo-img { width: 90px; height: auto; flex-shrink: 0; }
+          .logo-img { width: 100px; height: auto; flex-shrink: 0; }
           .company-details { flex: 1; }
-          .company-name { font-size: 16px; font-weight: bold; color: ${primaryColor}; margin-bottom: 3px; }
-          .company-info { font-size: 10px; color: #444; line-height: 1.4; }
+          .company-name { font-size: 18px; font-weight: bold; color: ${primaryColor}; margin-bottom: 5px; }
+          .company-info { font-size: 11px; color: #444; line-height: 1.5; }
           
           .cn-title { 
-            font-size: 20px; 
+            font-size: 24px; 
             font-weight: bold; 
             text-align: center; 
             color: white; 
             background: ${secondaryColor};
-            margin: 15px 0;
-            padding: 10px;
+            margin: 25px 0;
+            padding: 15px;
             border-radius: 4px;
           }
           
           .details-grid { 
             display: grid; 
             grid-template-columns: 1fr 1fr; 
-            gap: 15px; 
-            margin-bottom: 20px;
+            gap: 20px; 
+            margin-bottom: 30px;
           }
           .detail-box { 
-            padding: 12px; 
+            padding: 15px; 
             border: 1px solid #ddd; 
             border-radius: 4px;
-            font-size: 10px;
+            font-size: 11px;
           }
           .detail-label { 
             font-weight: bold; 
-            font-size: 9px; 
+            font-size: 10px; 
             color: #666; 
-            margin-bottom: 3px; 
+            margin-bottom: 5px; 
             text-transform: uppercase;
           }
-          .detail-value { font-size: 11px; margin-bottom: 3px; }
+          .detail-value { font-size: 12px; margin-bottom: 5px; }
           
           .amount-box {
             text-align: center;
-            padding: 30px;
+            padding: 40px;
             background: #fef2f2;
             border: 2px solid ${secondaryColor};
             border-radius: 8px;
-            margin: 20px 0;
+            margin: 30px 0;
           }
-          .amount-label { font-size: 14px; color: #666; margin-bottom: 10px; }
-          .amount-value { font-size: 32px; font-weight: bold; color: ${secondaryColor}; }
+          .amount-label { font-size: 16px; color: #666; margin-bottom: 15px; }
+          .amount-value { font-size: 36px; font-weight: bold; color: ${secondaryColor}; }
           
           .reason-box {
-            padding: 15px;
+            padding: 20px;
             background: #f9fafb;
             border: 1px solid #e5e7eb;
             border-radius: 4px;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
           }
           
           .footer { 
-            margin-top: 30px; 
-            font-size: 9px; 
+            margin-top: 40px; 
+            font-size: 10px; 
             color: #555;
-            padding-top: 15px;
+            padding-top: 20px;
             border-top: 1px solid #ddd;
           }
-          .footer p { margin-bottom: 3px; }
+          .footer p { margin-bottom: 5px; }
           
           .tagline { 
             font-style: italic;
             color: ${primaryColor}; 
-            font-size: 11px; 
+            font-size: 12px; 
             text-align: center; 
-            margin-top: 15px;
-            padding-top: 10px;
+            margin-top: 20px;
+            padding-top: 15px;
             border-top: 1px solid #eee;
           }
           
           .status-badge {
             display: inline-block;
-            padding: 4px 12px;
+            padding: 5px 15px;
             border-radius: 20px;
-            font-size: 10px;
+            font-size: 11px;
             font-weight: bold;
             text-transform: uppercase;
             background: ${cn.status === 'issued' ? '#22c55e' : cn.status === 'approved' ? '#3b82f6' : '#eab308'};
@@ -1057,11 +1070,11 @@ const FinanceDashboard = ({ user, onLogout }) => {
         <div class="details-grid">
           <div class="detail-box">
             <div class="detail-label">Credit Note To:</div>
-            <div class="detail-value" style="font-weight: bold; font-size: 13px;">${cn.company_name || '-'}</div>
+            <div class="detail-value" style="font-weight: bold; font-size: 14px;">${billToName}</div>
             ${cn.session_name ? `<div class="detail-value">Session: ${cn.session_name}</div>` : ''}
           </div>
           <div class="detail-box">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
               <div><div class="detail-label">CN Number:</div><div class="detail-value" style="color: ${secondaryColor}; font-weight: bold;">${cn.cn_number}</div></div>
               <div><div class="detail-label">Date:</div><div class="detail-value">${cn.issued_at ? new Date(cn.issued_at).toLocaleDateString('en-MY') : new Date(cn.created_at).toLocaleDateString('en-MY')}</div></div>
               <div><div class="detail-label">Invoice Ref:</div><div class="detail-value">${cn.invoice_number || '-'}</div></div>
@@ -1072,9 +1085,9 @@ const FinanceDashboard = ({ user, onLogout }) => {
         
         <div class="reason-box">
           <div class="detail-label">Reason / Description:</div>
-          <div class="detail-value" style="font-size: 12px; margin-top: 5px;">${cn.reason || 'HRDCorp Levy Deduction'}</div>
+          <div class="detail-value" style="font-size: 13px; margin-top: 8px;">${cn.reason || 'HRDCorp Levy Deduction'}</div>
           <div class="detail-value">${cn.description || ''}</div>
-          ${cn.base_amount ? `<div class="detail-value" style="margin-top: 10px;">Base Amount: RM ${cn.base_amount?.toLocaleString('en-MY', {minimumFractionDigits: 2})} × ${cn.percentage || 4}%</div>` : ''}
+          ${cn.base_amount ? `<div class="detail-value" style="margin-top: 12px;">Base Amount: RM ${cn.base_amount?.toLocaleString('en-MY', {minimumFractionDigits: 2})} × ${cn.percentage || 4}%</div>` : ''}
         </div>
         
         <div class="amount-box">
