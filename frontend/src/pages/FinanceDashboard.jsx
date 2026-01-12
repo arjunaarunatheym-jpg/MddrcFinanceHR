@@ -1251,44 +1251,44 @@ const FinanceDashboard = ({ user, onLogout }) => {
           .total-row { 
             display: flex; 
             justify-content: space-between; 
-            padding: 4px 0; 
+            padding: 6px 0; 
             border-bottom: 1px solid #eee;
           }
           .grand-total { 
-            font-size: 12px; 
+            font-size: 14px; 
             font-weight: bold; 
             background: ${secondaryColor}; 
             color: white; 
-            padding: 8px 10px; 
-            margin-top: 5px; 
+            padding: 12px 15px; 
+            margin-top: 8px; 
             border-radius: 4px;
             display: flex;
             justify-content: space-between;
           }
           
-          /* Compact Footer */
+          /* Footer */
           .footer { 
-            margin-top: 15px; 
-            font-size: 8px; 
+            margin-top: 30px; 
+            font-size: 10px; 
             color: #555;
-            padding-top: 10px;
+            padding-top: 15px;
             border-top: 1px solid #ddd;
           }
-          .footer p { margin-bottom: 3px; }
+          .footer p { margin-bottom: 5px; }
           
           .tagline { 
             font-style: italic;
             color: ${primaryColor}; 
-            font-size: 10px; 
+            font-size: 12px; 
             text-align: center; 
-            margin-top: 10px;
-            padding-top: 8px;
+            margin-top: 15px;
+            padding-top: 12px;
             border-top: 1px solid #eee;
           }
         </style>
       </head>
       <body>
-        <!-- Compact Header -->
+        <!-- Header -->
         <div class="header">
           ${logoUrl ? `<img src="${logoUrl}" class="logo-img" alt="Logo" />` : ''}
           <div class="company-details">
