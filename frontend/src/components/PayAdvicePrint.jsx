@@ -76,15 +76,6 @@ const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
     return new Date(2000, month - 1).toLocaleString('default', { month: 'long' });
   };
   const formatCurrency = (val) => `RM ${(val || 0).toLocaleString('en-MY', { minimumFractionDigits: 2 })}`;
-  
-  // Get the display period - use period_name if available, or construct from month/year
-  const getDisplayPeriod = () => {
-    if (payAdvice?.period_name) return payAdvice.period_name.toUpperCase();
-    if (payAdvice?.month && payAdvice?.year) {
-      return `${getMonthName(payAdvice.month).toUpperCase()} ${payAdvice.year}`;
-    }
-    return 'N/A';
-  };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
