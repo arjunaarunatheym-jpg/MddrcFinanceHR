@@ -968,22 +968,6 @@ const FinanceDashboard = ({ user, onLogout }) => {
     `);
     printWindow.document.close();
   };
-            <div class="signature-line"></div>
-            <div>Approved By</div>
-          </div>
-        </div>
-        
-        <div class="footer">
-          <p>This report shows all pending payables as of ${today}.</p>
-          <p>Monthly closing: 1st-31st | Payment release: 15th of following month</p>
-        </div>
-        
-        <script>window.onload = function() { window.print(); }</script>
-      </body>
-      </html>
-    `);
-    printWindow.document.close();
-  };
 
   // Print Credit Note
   const handlePrintCreditNote = async (cn) => {
