@@ -267,75 +267,73 @@ const ClaimFormPrint = ({ session, onClose }) => {
             </div>
           </div>
 
-          {/* Course Particulars */}
+          {/* Course Particulars - Compact 4-column grid */}
           <div className="section">
-            <div className="section-header" style={{ background: '#1e40af', color: 'white', padding: '5px 10px', fontWeight: 'bold', fontSize: '10px' }}>COURSE PARTICULARS</div>
-            <div className="info-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '15px', padding: '15px', border: '1px solid #000', borderTop: 'none' }}>
-              <div className="info-item" style={{ gridColumn: 'span 2' }}>
-                <span className="info-label" style={{ fontWeight: 'bold', fontSize: '9px', color: '#333', display: 'block', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>CLIENT</span>
-                <div className="info-value" style={{ borderBottom: '1px solid #ccc', padding: '8px 10px', minHeight: '28px', fontSize: '11px', background: '#f9fafb' }}>{costingData.company_name}</div>
+            <div className="section-header" style={{ background: '#1e40af', color: 'white', padding: '3px 8px', fontWeight: 'bold', fontSize: '8px' }}>COURSE PARTICULARS</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '4px 8px', padding: '6px 8px', border: '1px solid #000', borderTop: 'none', fontSize: '8px' }}>
+              <div style={{ gridColumn: 'span 2' }}>
+                <span style={{ fontWeight: 'bold', fontSize: '7px', color: '#333', display: 'block', textTransform: 'uppercase' }}>CLIENT</span>
+                <div style={{ borderBottom: '1px solid #ccc', padding: '2px 4px', fontSize: '9px', background: '#f9fafb' }}>{costingData.company_name}</div>
               </div>
-              <div className="info-item">
-                <span className="info-label" style={{ fontWeight: 'bold', fontSize: '9px', color: '#333', display: 'block', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>TRAINING START</span>
-                <div className="info-value" style={{ borderBottom: '1px solid #ccc', padding: '8px 10px', minHeight: '28px', fontSize: '11px', background: '#f9fafb' }}>{formatDate(session.start_date)}</div>
+              <div>
+                <span style={{ fontWeight: 'bold', fontSize: '7px', color: '#333', display: 'block', textTransform: 'uppercase' }}>START</span>
+                <div style={{ borderBottom: '1px solid #ccc', padding: '2px 4px', fontSize: '9px', background: '#f9fafb' }}>{formatDate(session.start_date)}</div>
               </div>
-              <div className="info-item">
-                <span className="info-label" style={{ fontWeight: 'bold', fontSize: '9px', color: '#333', display: 'block', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>TRAINING END</span>
-                <div className="info-value" style={{ borderBottom: '1px solid #ccc', padding: '8px 10px', minHeight: '28px', fontSize: '11px', background: '#f9fafb' }}>{formatDate(session.end_date)}</div>
+              <div>
+                <span style={{ fontWeight: 'bold', fontSize: '7px', color: '#333', display: 'block', textTransform: 'uppercase' }}>END</span>
+                <div style={{ borderBottom: '1px solid #ccc', padding: '2px 4px', fontSize: '9px', background: '#f9fafb' }}>{formatDate(session.end_date)}</div>
               </div>
-              <div className="info-item">
-                <span className="info-label" style={{ fontWeight: 'bold', fontSize: '9px', color: '#333', display: 'block', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>TOTAL PARTICIPANTS</span>
-                <div className="info-value" style={{ borderBottom: '1px solid #ccc', padding: '8px 10px', minHeight: '28px', fontSize: '11px', background: '#f9fafb' }}>{costingData.pax}</div>
+              <div style={{ gridColumn: 'span 2' }}>
+                <span style={{ fontWeight: 'bold', fontSize: '7px', color: '#333', display: 'block', textTransform: 'uppercase' }}>PROGRAM</span>
+                <div style={{ borderBottom: '1px solid #ccc', padding: '2px 4px', fontSize: '9px', background: '#f9fafb' }}>{session.name}</div>
               </div>
-              <div className="info-item">
-                <span className="info-label" style={{ fontWeight: 'bold', fontSize: '9px', color: '#333', display: 'block', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>NO. OF DAYS</span>
-                <div className="info-value" style={{ borderBottom: '1px solid #ccc', padding: '8px 10px', minHeight: '28px', fontSize: '11px', background: '#f9fafb' }}>{days}</div>
+              <div>
+                <span style={{ fontWeight: 'bold', fontSize: '7px', color: '#333', display: 'block', textTransform: 'uppercase' }}>PARTICIPANTS</span>
+                <div style={{ borderBottom: '1px solid #ccc', padding: '2px 4px', fontSize: '9px', background: '#f9fafb' }}>{costingData.pax}</div>
               </div>
-              <div className="info-item" style={{ gridColumn: 'span 2' }}>
-                <span className="info-label" style={{ fontWeight: 'bold', fontSize: '9px', color: '#333', display: 'block', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>PROGRAM</span>
-                <div className="info-value" style={{ borderBottom: '1px solid #ccc', padding: '8px 10px', minHeight: '28px', fontSize: '11px', background: '#f9fafb' }}>{session.name}</div>
+              <div>
+                <span style={{ fontWeight: 'bold', fontSize: '7px', color: '#333', display: 'block', textTransform: 'uppercase' }}>DAYS</span>
+                <div style={{ borderBottom: '1px solid #ccc', padding: '2px 4px', fontSize: '9px', background: '#f9fafb' }}>{days}</div>
               </div>
             </div>
           </div>
 
-          {/* Invoicing and Trainers Side by Side */}
-          <div className="two-col">
+          {/* Invoicing, Trainers, and Costing Summary - 3 columns */}
+          <div className="three-col">
             {/* Invoicing */}
-            <div className="col-left">
+            <div className="col-invoice">
               <div className="section">
                 <div className="section-header">INVOICING</div>
-                <table>
+                <table style={{ fontSize: '7px' }}>
                   <thead>
                     <tr>
-                      <th colSpan="2">INV NO: {costingData.invoice_number || 'N/A'}</th>
-                      <th colSpan="2" className="text-right">DATE: {formatShortDate(costingData.invoice_date)}</th>
+                      <th colSpan="4" style={{ fontSize: '7px', padding: '2px 4px' }}>INV: {costingData.invoice_number || 'N/A'} | {formatShortDate(costingData.invoice_date)}</th>
                     </tr>
                     <tr>
-                      <th style={{ width: '10%' }}>QTY</th>
-                      <th style={{ width: '50%' }}>PARTICULARS</th>
-                      <th style={{ width: '20%' }}>RM/UNIT</th>
-                      <th style={{ width: '20%' }}>TOTAL</th>
+                      <th style={{ width: '8%', padding: '2px' }}>QTY</th>
+                      <th style={{ width: '52%', padding: '2px' }}>PARTICULARS</th>
+                      <th style={{ width: '20%', padding: '2px' }}>RM/UNIT</th>
+                      <th style={{ width: '20%', padding: '2px' }}>TOTAL</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
-                      <td className="text-center">1</td>
-                      <td>{session.name}</td>
-                      <td className="text-right">{invoiceTotal.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
-                      <td className="text-right">{invoiceTotal.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
+                      <td className="text-center" style={{ padding: '2px' }}>1</td>
+                      <td style={{ padding: '2px', fontSize: '7px' }}>{session.name?.substring(0, 35)}{session.name?.length > 35 ? '...' : ''}</td>
+                      <td className="text-right" style={{ padding: '2px' }}>{invoiceTotal.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
+                      <td className="text-right" style={{ padding: '2px' }}>{invoiceTotal.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
                     </tr>
-                    <tr><td colSpan="4" style={{ height: '25px' }}></td></tr>
                     <tr className="subtotal-row">
-                      <td colSpan="3" className="text-right">SUBTOTAL</td>
-                      <td className="text-right">{invoiceTotal.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
+                      <td colSpan="3" className="text-right" style={{ padding: '2px' }}>SUBTOTAL</td>
+                      <td className="text-right" style={{ padding: '2px' }}>{invoiceTotal.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
                     </tr>
                     <tr>
-                      <td colSpan="3" className="text-right">6% GST (if applicable)</td>
-                      <td className="text-right">{taxAmount.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
+                      <td colSpan="3" className="text-right" style={{ padding: '2px' }}>6% GST</td>
+                      <td className="text-right" style={{ padding: '2px' }}>{taxAmount.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
                     </tr>
                     <tr className="total-row">
-                      <td colSpan="3" className="text-right">TOTAL</td>
-                      <td className="text-right">{invoiceTotal.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
+                      <td colSpan="3" className="text-right" style={{ padding: '2px' }}>TOTAL</td>
+                      <td className="text-right" style={{ padding: '2px' }}>{invoiceTotal.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -343,36 +341,78 @@ const ClaimFormPrint = ({ session, onClose }) => {
             </div>
 
             {/* Trainers */}
-            <div className="col-right">
+            <div className="col-trainers">
               <div className="section">
                 <div className="section-header">TRAINERS</div>
-                <table>
+                <table style={{ fontSize: '7px' }}>
                   <thead>
                     <tr>
-                      <th>NAME</th>
-                      <th>ROLE</th>
-                      <th>CLAIM (RM)</th>
+                      <th style={{ padding: '2px' }}>NAME</th>
+                      <th style={{ padding: '2px' }}>ROLE</th>
+                      <th style={{ padding: '2px' }}>RM</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {(costingData.trainer_fees || []).map((fee, idx) => (
+                    {(costingData.trainer_fees || []).slice(0, 4).map((fee, idx) => (
                       <tr key={idx}>
-                        <td>{fee.trainer_name}</td>
-                        <td style={{ textTransform: 'capitalize' }}>{fee.role}</td>
-                        <td className="text-right">{(fee.fee_amount || 0).toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
+                        <td style={{ padding: '2px', fontSize: '7px' }}>{fee.trainer_name?.split(' ').slice(0, 2).join(' ')}</td>
+                        <td style={{ padding: '2px', textTransform: 'capitalize', fontSize: '7px' }}>{fee.role?.substring(0, 6)}</td>
+                        <td className="text-right" style={{ padding: '2px' }}>{(fee.fee_amount || 0).toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
                       </tr>
                     ))}
                     {costingData.coordinator_fee && coordFeeTotal > 0 && (
                       <tr>
-                        <td>{costingData.coordinator_fee.coordinator_name || 'Coordinator'}</td>
-                        <td>Coordinator</td>
-                        <td className="text-right">{coordFeeTotal.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
+                        <td style={{ padding: '2px', fontSize: '7px' }}>{costingData.coordinator_fee.coordinator_name?.split(' ').slice(0, 2).join(' ') || 'Coordinator'}</td>
+                        <td style={{ padding: '2px', fontSize: '7px' }}>Coord</td>
+                        <td className="text-right" style={{ padding: '2px' }}>{coordFeeTotal.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
                       </tr>
                     )}
-                    <tr><td colSpan="3" style={{ height: '20px' }}></td></tr>
                     <tr className="total-row">
-                      <td colSpan="2" className="text-right">TOTAL</td>
-                      <td className="text-right">{(trainerFeesTotal + coordFeeTotal).toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
+                      <td colSpan="2" className="text-right" style={{ padding: '2px' }}>TOTAL</td>
+                      <td className="text-right" style={{ padding: '2px' }}>{(trainerFeesTotal + coordFeeTotal).toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Costing Summary */}
+            <div className="col-costing">
+              <div className="section">
+                <div className="section-header">COSTING SUMMARY</div>
+                <table className="costing-table" style={{ fontSize: '7px' }}>
+                  <tbody>
+                    <tr>
+                      <td className="costing-label" style={{ padding: '2px 4px' }}>Total Sales</td>
+                      <td className="costing-value" style={{ padding: '2px 4px' }}>{invoiceTotal.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
+                    </tr>
+                    <tr>
+                      <td className="costing-label" style={{ padding: '2px 4px' }}>Less GST 6%</td>
+                      <td className="costing-value" style={{ padding: '2px 4px' }}>{taxAmount.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
+                    </tr>
+                    <tr style={{ background: '#dbeafe' }}>
+                      <td className="costing-label" style={{ padding: '2px 4px', fontWeight: 'bold' }}>Gross Revenue</td>
+                      <td className="costing-value" style={{ padding: '2px 4px', fontWeight: 'bold' }}>{grossRevenue.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
+                    </tr>
+                    <tr>
+                      <td className="costing-label" style={{ padding: '2px 4px' }}>Cash Expenses</td>
+                      <td className="costing-value" style={{ padding: '2px 4px' }}>{cashExpenses.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
+                    </tr>
+                    <tr>
+                      <td className="costing-label" style={{ padding: '2px 4px' }}>Trainers Claim</td>
+                      <td className="costing-value" style={{ padding: '2px 4px' }}>{(trainerFeesTotal + coordFeeTotal).toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
+                    </tr>
+                    <tr className="highlight">
+                      <td className="costing-label" style={{ padding: '2px 4px' }}>Marketing</td>
+                      <td className="costing-value" style={{ padding: '2px 4px' }}>{marketingAmount.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
+                    </tr>
+                    <tr style={{ background: '#fef3c7' }}>
+                      <td className="costing-label" style={{ padding: '2px 4px', fontWeight: 'bold' }}>Total Expenses</td>
+                      <td className="costing-value" style={{ padding: '2px 4px', fontWeight: 'bold' }}>{totalExpenses.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
+                    </tr>
+                    <tr className="profit-row">
+                      <td className="costing-label" style={{ padding: '2px 4px', fontWeight: 'bold' }}>NET PROFIT</td>
+                      <td className="costing-value" style={{ padding: '2px 4px', fontWeight: 'bold' }}>{profit.toLocaleString('en-MY', { minimumFractionDigits: 2 })} ({profitPct.toFixed(1)}%)</td>
                     </tr>
                   </tbody>
                 </table>
@@ -380,17 +420,17 @@ const ClaimFormPrint = ({ session, onClose }) => {
             </div>
           </div>
 
-          {/* Expenses */}
+          {/* Expenses - Compact */}
           <div className="section">
             <div className="section-header">EXPENSES</div>
-            <table>
+            <table style={{ fontSize: '7px' }}>
               <thead>
                 <tr>
-                  <th style={{ width: '35%' }}>DESCRIPTION</th>
-                  <th style={{ width: '15%' }}>RATE</th>
-                  <th style={{ width: '15%' }}>BASE</th>
-                  <th style={{ width: '15%' }}>TOTAL (RM)</th>
-                  <th style={{ width: '20%' }}>REMARKS</th>
+                  <th style={{ width: '40%', padding: '2px 4px' }}>DESCRIPTION</th>
+                  <th style={{ width: '12%', padding: '2px 4px' }}>RATE</th>
+                  <th style={{ width: '12%', padding: '2px 4px' }}>BASE</th>
+                  <th style={{ width: '16%', padding: '2px 4px' }}>TOTAL (RM)</th>
+                  <th style={{ width: '20%', padding: '2px 4px' }}>REMARKS</th>
                 </tr>
               </thead>
               <tbody>
@@ -398,8 +438,8 @@ const ClaimFormPrint = ({ session, onClose }) => {
                   const amount = expense.actual_amount || expense.estimated_amount || 0;
                   return (
                     <tr key={idx}>
-                      <td>{expense.description || expense.category}</td>
-                      <td className="text-center">
+                      <td style={{ padding: '2px 4px' }}>{expense.description || expense.category}</td>
+                      <td className="text-center" style={{ padding: '2px 4px' }}>
                         {expense.expense_type === 'percentage' 
                           ? `${((amount / invoiceTotal) * 100).toFixed(0)}%`
                           : expense.expense_type === 'per_pax'
@@ -407,7 +447,7 @@ const ClaimFormPrint = ({ session, onClose }) => {
                           : 'Fixed'
                         }
                       </td>
-                      <td className="text-center">
+                      <td className="text-center" style={{ padding: '2px 4px' }}>
                         {expense.expense_type === 'percentage' 
                           ? invoiceTotal.toLocaleString()
                           : expense.expense_type === 'per_pax'
@@ -415,97 +455,43 @@ const ClaimFormPrint = ({ session, onClose }) => {
                           : '-'
                         }
                       </td>
-                      <td className="text-right">{amount.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
-                      <td>{expense.remark || ''}</td>
+                      <td className="text-right" style={{ padding: '2px 4px' }}>{amount.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
+                      <td style={{ padding: '2px 4px', fontSize: '6px' }}>{expense.remark || ''}</td>
                     </tr>
                   );
                 })}
                 {(costingData.expenses?.length || 0) === 0 && (
-                  <tr><td colSpan="5" className="text-center" style={{ padding: '15px', color: '#666' }}>No expenses recorded</td></tr>
+                  <tr><td colSpan="5" className="text-center" style={{ padding: '8px', color: '#666' }}>No expenses recorded</td></tr>
                 )}
                 <tr className="total-row">
-                  <td colSpan="3" className="text-right">TOTAL EXPENSES</td>
-                  <td className="text-right">{cashExpenses.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
+                  <td colSpan="3" className="text-right" style={{ padding: '2px 4px' }}>TOTAL EXPENSES</td>
+                  <td className="text-right" style={{ padding: '2px 4px' }}>{cashExpenses.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
                   <td></td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          {/* Costing Summary */}
-          <div className="section">
-            <div className="section-header">COSTING SUMMARY</div>
-            <table className="costing-table">
-              <tbody>
-                <tr>
-                  <td className="costing-label">TOTAL SALES</td>
-                  <td className="costing-value">{invoiceTotal.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
-                  <td className="costing-pct"></td>
-                </tr>
-                <tr>
-                  <td className="costing-label">LESS GST 6%</td>
-                  <td className="costing-value">{taxAmount.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
-                  <td className="costing-pct"></td>
-                </tr>
-                <tr style={{ background: '#dbeafe' }}>
-                  <td className="costing-label">GROSS REVENUE</td>
-                  <td className="costing-value" style={{ fontWeight: 'bold' }}>{grossRevenue.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
-                  <td className="costing-pct"></td>
-                </tr>
-                <tr>
-                  <td className="costing-label">Cash Expenses</td>
-                  <td className="costing-value">{cashExpenses.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
-                  <td className="costing-pct"></td>
-                </tr>
-                <tr>
-                  <td className="costing-label">Trainers Claim</td>
-                  <td className="costing-value">{(trainerFeesTotal + coordFeeTotal).toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
-                  <td className="costing-pct"></td>
-                </tr>
-                <tr className="highlight">
-                  <td className="costing-label">Marketing ({marketingName})</td>
-                  <td className="costing-value">{marketingAmount.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
-                  <td className="costing-pct"></td>
-                </tr>
-                <tr style={{ background: '#fef3c7' }}>
-                  <td className="costing-label">TOTAL EXPENSES</td>
-                  <td className="costing-value" style={{ fontWeight: 'bold' }}>{totalExpenses.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
-                  <td className="costing-pct"></td>
-                </tr>
-                <tr className="profit-row">
-                  <td className="costing-label" style={{ fontSize: '11px' }}>NET PROFIT</td>
-                  <td className="costing-value" style={{ fontSize: '12px' }}>{profit.toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
-                  <td className="costing-pct highlight" style={{ fontSize: '11px', fontWeight: 'bold' }}>{profitPct.toFixed(2)}%</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Acknowledgment */}
+          {/* Acknowledgment - Compact horizontal */}
           <div className="section">
             <div className="section-header">ACKNOWLEDGMENT</div>
-            <table className="ack-table">
-              <tbody>
-                <tr>
-                  <td className="ack-label">Training Coordinator:</td>
-                  <td></td>
-                  <td style={{ width: '15%' }}>Sign:</td>
-                  <td style={{ width: '20%' }}>Date:</td>
-                </tr>
-                <tr>
-                  <td className="ack-label">Manager In Charge:</td>
-                  <td></td>
-                  <td>Sign:</td>
-                  <td>Date:</td>
-                </tr>
-                <tr>
-                  <td className="ack-label">Director:</td>
-                  <td></td>
-                  <td>Sign:</td>
-                  <td>Date:</td>
-                </tr>
-              </tbody>
-            </table>
+            <div className="ack-grid">
+              <div className="ack-item">
+                <span className="ack-label">Training Coordinator</span>
+                <div className="ack-line"></div>
+                <div style={{ fontSize: '6px', marginTop: '2px' }}>Sign / Date</div>
+              </div>
+              <div className="ack-item">
+                <span className="ack-label">Manager In Charge</span>
+                <div className="ack-line"></div>
+                <div style={{ fontSize: '6px', marginTop: '2px' }}>Sign / Date</div>
+              </div>
+              <div className="ack-item">
+                <span className="ack-label">Director</span>
+                <div className="ack-line"></div>
+                <div style={{ fontSize: '6px', marginTop: '2px' }}>Sign / Date</div>
+              </div>
+            </div>
           </div>
 
           {/* Footer */}
