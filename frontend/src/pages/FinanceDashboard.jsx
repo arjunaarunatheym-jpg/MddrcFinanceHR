@@ -1799,7 +1799,6 @@ const FinanceDashboard = ({ user, onLogout }) => {
                       <p className="text-xl font-bold text-blue-900">
                         RM {payables.trainer_fees
                           .filter(f => {
-                            if (f.status === 'paid') return false;
                             const sessionDate = f.session_start_date || f.session_date;
                             if (!sessionDate) return false;
                             const d = new Date(sessionDate);
@@ -1810,12 +1809,16 @@ const FinanceDashboard = ({ user, onLogout }) => {
                       </p>
                       <p className="text-xs text-blue-600">
                         {payables.trainer_fees.filter(f => {
-                          if (f.status === 'paid') return false;
+                          const sessionDate = f.session_start_date || f.session_date;
+                          if (!sessionDate) return false;
+                          const d = new Date(sessionDate);
+                          return d.getFullYear() === payablesYear && (d.getMonth() + 1) === payablesMonth && f.status !== 'paid';
+                        }).length} pending / {payables.trainer_fees.filter(f => {
                           const sessionDate = f.session_start_date || f.session_date;
                           if (!sessionDate) return false;
                           const d = new Date(sessionDate);
                           return d.getFullYear() === payablesYear && (d.getMonth() + 1) === payablesMonth;
-                        }).length} pending
+                        }).length} total
                       </p>
                     </CardContent>
                   </Card>
@@ -1825,7 +1828,6 @@ const FinanceDashboard = ({ user, onLogout }) => {
                       <p className="text-xl font-bold text-green-900">
                         RM {payables.coordinator_fees
                           .filter(f => {
-                            if (f.status === 'paid') return false;
                             const sessionDate = f.session_start_date || f.session_date;
                             if (!sessionDate) return false;
                             const d = new Date(sessionDate);
@@ -1836,12 +1838,16 @@ const FinanceDashboard = ({ user, onLogout }) => {
                       </p>
                       <p className="text-xs text-green-600">
                         {payables.coordinator_fees.filter(f => {
-                          if (f.status === 'paid') return false;
+                          const sessionDate = f.session_start_date || f.session_date;
+                          if (!sessionDate) return false;
+                          const d = new Date(sessionDate);
+                          return d.getFullYear() === payablesYear && (d.getMonth() + 1) === payablesMonth && f.status !== 'paid';
+                        }).length} pending / {payables.coordinator_fees.filter(f => {
                           const sessionDate = f.session_start_date || f.session_date;
                           if (!sessionDate) return false;
                           const d = new Date(sessionDate);
                           return d.getFullYear() === payablesYear && (d.getMonth() + 1) === payablesMonth;
-                        }).length} pending
+                        }).length} total
                       </p>
                     </CardContent>
                   </Card>
@@ -1851,7 +1857,6 @@ const FinanceDashboard = ({ user, onLogout }) => {
                       <p className="text-xl font-bold text-purple-900">
                         RM {payables.marketing_commissions
                           .filter(f => {
-                            if (f.status === 'paid') return false;
                             const sessionDate = f.session_start_date || f.session_date;
                             if (!sessionDate) return false;
                             const d = new Date(sessionDate);
@@ -1862,12 +1867,16 @@ const FinanceDashboard = ({ user, onLogout }) => {
                       </p>
                       <p className="text-xs text-purple-600">
                         {payables.marketing_commissions.filter(f => {
-                          if (f.status === 'paid') return false;
+                          const sessionDate = f.session_start_date || f.session_date;
+                          if (!sessionDate) return false;
+                          const d = new Date(sessionDate);
+                          return d.getFullYear() === payablesYear && (d.getMonth() + 1) === payablesMonth && f.status !== 'paid';
+                        }).length} pending / {payables.marketing_commissions.filter(f => {
                           const sessionDate = f.session_start_date || f.session_date;
                           if (!sessionDate) return false;
                           const d = new Date(sessionDate);
                           return d.getFullYear() === payablesYear && (d.getMonth() + 1) === payablesMonth;
-                        }).length} pending
+                        }).length} total
                       </p>
                     </CardContent>
                   </Card>
