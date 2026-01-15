@@ -125,7 +125,13 @@ const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
           </div>
         </div>
 
-        <div ref={printRef} className="p-3 relative text-xs">
+        <div ref={printRef} className="p-3 relative text-xs" style={{ minHeight: '500px' }}>
+          {/* Single centered watermark for preview */}
+          {showWatermark && fullLogoUrl && (
+            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', opacity: watermarkOpacity, zIndex: 0, pointerEvents: 'none' }}>
+              <img src={fullLogoUrl} alt="" style={{ width: '250px', height: 'auto' }} />
+            </div>
+          )}
           <div className="container relative" style={{ zIndex: 1 }}>
             {/* Compact Header */}
             <div className="header flex items-start gap-3 pb-2 mb-2" style={{ borderBottom: `2px solid ${primaryColor}` }}>
