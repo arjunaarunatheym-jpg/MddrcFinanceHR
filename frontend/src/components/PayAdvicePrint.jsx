@@ -16,7 +16,7 @@ const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
   // Build full logo URL
   const fullLogoUrl = logoUrl ? `${process.env.REACT_APP_BACKEND_URL || ''}${logoUrl}` : '';
   
-  // Get the display period - use period_name if available, or construct from month/year
+  // Get the display period
   const getDisplayPeriod = () => {
     if (payAdvice?.period_name) return payAdvice.period_name.toUpperCase();
     if (payAdvice?.month && payAdvice?.year) {
@@ -35,7 +35,7 @@ const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Pay Advice - ${payAdvice?.full_name || 'Staff'} - ${payAdvice?.period_name || displayPeriod}</title>
+          <title>Pay Advice - ${payAdvice?.full_name || 'Staff'} - ${displayPeriod}</title>
           <style>
             @page { size: A4; margin: 15mm; }
             @media print { body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } }
@@ -52,49 +52,75 @@ const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
               z-index: -1;
               pointer-events: none;
             }
-            .watermark img {
-              width: 400px;
-              height: auto;
-            }
+            .watermark img { width: 400px; height: auto; }
             
-            .header { 
+            /* Header - Invoice Style */
+            .header {
+              display: flex;
+              align-items: flex-start;
+              gap: 15px;
+              padding-bottom: 15px;
+              border-bottom: 3px solid ${primaryColor};
+              margin-bottom: 15px;
+            }
+            .logo-img { width: ${Math.max(logoWidth, 100)}px; max-width: 120px; height: auto; flex-shrink: 0; }
+            .company-details { flex: 1; }
+            .company-name { font-size: 16px; font-weight: bold; color: ${primaryColor}; margin-bottom: 5px; }
+            .company-info { font-size: 10px; color: #444; line-height: 1.5; }
+            
+            .document-title { 
+              font-size: 18px; 
+              font-weight: bold; 
               text-align: center; 
-              border-bottom: 3px solid ${primaryColor}; 
-              padding-bottom: 15px; 
-              margin-bottom: 20px; 
+              color: ${primaryColor}; 
+              margin: 15px 0;
+              padding: 8px;
+              background: #f0f4f8;
+              border-left: 4px solid ${secondaryColor};
             }
-            .header-logo { 
-              width: ${Math.max(logoWidth, 180)}px; 
-              max-width: 250px;
-              height: auto; 
-              margin-bottom: 10px; 
+            
+            .recipient-info { 
+              margin-bottom: 15px; 
+              padding: 12px; 
+              background: #f9fafb; 
+              border-radius: 4px; 
+              border: 1px solid #e5e7eb;
             }
-            .header h1 { font-size: 18px; color: ${primaryColor}; margin-bottom: 5px; }
-            .header h2 { font-size: 16px; font-weight: bold; color: ${secondaryColor}; background: #f0f4f8; padding: 8px; margin-top: 10px; }
+            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+            .info-row { display: flex; gap: 8px; font-size: 11px; }
+            .info-label { font-weight: bold; min-width: 100px; color: #666; }
             
-            .recipient-info { margin-bottom: 20px; padding: 15px; background: #f3f4f6; border-radius: 8px; border-left: 4px solid ${primaryColor}; }
-            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-            .info-row { display: flex; gap: 10px; margin-bottom: 5px; }
-            .info-label { font-weight: bold; min-width: 120px; color: #666; }
-            
-            .session-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-            .session-table th, .session-table td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-            .session-table th { background: ${primaryColor}; color: white; font-size: 11px; }
+            .session-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 10px; }
+            .session-table th, .session-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            .session-table th { background: ${primaryColor}; color: white; }
             .session-table tr:nth-child(even) { background: #f9fafb; }
             .text-right { text-align: right; }
             .text-center { text-align: center; }
             
-            .summary { background: ${secondaryColor}; color: white; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0; }
-            .summary .label { font-size: 14px; margin-bottom: 5px; }
-            .summary .amount { font-size: 32px; font-weight: bold; }
+            .summary { 
+              background: ${secondaryColor}; 
+              color: white; 
+              padding: 15px; 
+              text-align: center; 
+              border-radius: 4px; 
+              margin: 15px 0; 
+            }
+            .summary .label { font-size: 12px; margin-bottom: 3px; }
+            .summary .amount { font-size: 26px; font-weight: bold; }
             
-            .bank-info { margin-top: 20px; padding: 15px; background: ${primaryColor}10; border-radius: 8px; border-left: 4px solid ${primaryColor}; }
-            .bank-info h3 { color: ${primaryColor}; margin-bottom: 10px; font-size: 12px; }
+            .bank-info { 
+              padding: 12px; 
+              background: #f0f4f8; 
+              border-radius: 4px; 
+              border-left: 3px solid ${primaryColor}; 
+              margin-bottom: 15px;
+            }
+            .bank-info h3 { color: ${primaryColor}; margin-bottom: 8px; font-size: 11px; }
             
-            .footer { margin-top: 30px; text-align: center; font-size: 9px; color: #666; }
-            .signature-section { margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 50px; }
+            .footer { margin-top: 20px; text-align: center; font-size: 9px; color: #666; }
+            .signature-section { margin-top: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
             .signature-box { text-align: center; }
-            .signature-line { border-bottom: 1px solid #000; height: 50px; margin-bottom: 5px; }
+            .signature-line { border-bottom: 1px solid #000; height: 40px; margin-bottom: 5px; }
           </style>
         </head>
         <body>
@@ -109,11 +135,22 @@ const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
     setTimeout(() => { printWindow.print(); printWindow.close(); }, 250);
   };
 
-  const getMonthName = (month) => {
-    if (!month || isNaN(month)) return '';
-    return new Date(2000, month - 1).toLocaleString('default', { month: 'long' });
-  };
   const formatCurrency = (val) => `RM ${(val || 0).toLocaleString('en-MY', { minimumFractionDigits: 2 })}`;
+
+  // Build company info string like invoice
+  const companyInfoParts = [];
+  if (companySettings?.company_reg_no) companyInfoParts.push(`(${companySettings.company_reg_no})`);
+  if (companySettings?.address_line1) companyInfoParts.push(companySettings.address_line1);
+  if (companySettings?.address_line2) companyInfoParts.push(companySettings.address_line2);
+  
+  const addressParts = [];
+  if (companySettings?.city) addressParts.push(companySettings.city);
+  if (companySettings?.postcode) addressParts.push(companySettings.postcode);
+  if (companySettings?.state) addressParts.push(companySettings.state);
+  
+  const contactParts = [];
+  if (companySettings?.phone) contactParts.push(`Tel: ${companySettings.phone}`);
+  if (companySettings?.email) contactParts.push(companySettings.email);
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -137,45 +174,56 @@ const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
           )}
           
           <div className="relative" style={{ zIndex: 1 }}>
-            {/* Header with Logo */}
-            <div className="header text-center pb-4 mb-5" style={{ borderBottom: `3px solid ${primaryColor}` }}>
+            {/* Header - Invoice Style */}
+            <div className="header flex items-start gap-4 pb-4 mb-4" style={{ borderBottom: `3px solid ${primaryColor}` }}>
               {fullLogoUrl && (
-                <img src={fullLogoUrl} alt="Company Logo" className="header-logo mx-auto" style={{ width: `${Math.max(logoWidth, 180)}px`, maxWidth: '250px', height: 'auto', marginBottom: '10px' }} />
+                <img src={fullLogoUrl} alt="Logo" className="logo-img" style={{ width: `${Math.max(logoWidth, 100)}px`, maxWidth: '120px', height: 'auto', flexShrink: 0 }} />
               )}
-              <h1 style={{ color: primaryColor, fontSize: '18px', fontWeight: 'bold' }}>{companySettings?.company_name || 'MALAYSIAN DEFENSIVE DRIVING AND RIDING CENTRE SDN BHD'}</h1>
-              <h2 className="mt-2 py-2 px-4 rounded" style={{ background: '#f0f4f8', color: secondaryColor, fontSize: '16px', fontWeight: 'bold' }}>
-                PAY ADVICE - {getDisplayPeriod()}
-              </h2>
+              <div className="company-details flex-1">
+                <div className="company-name text-base font-bold mb-1" style={{ color: primaryColor }}>
+                  {companySettings?.company_name || 'MALAYSIAN DEFENSIVE DRIVING AND RIDING CENTRE SDN BHD'}
+                </div>
+                <div className="company-info text-xs text-gray-600 leading-relaxed">
+                  {companyInfoParts.length > 0 && <span>{companyInfoParts.join(' • ')}</span>}
+                  {addressParts.length > 0 && <><br />{addressParts.join(', ')}</>}
+                  {contactParts.length > 0 && <><br />{contactParts.join(' • ')}</>}
+                </div>
+              </div>
+            </div>
+
+            {/* Document Title */}
+            <div className="text-center py-2 px-4 mb-4 rounded" style={{ background: '#f0f4f8', borderLeft: `4px solid ${secondaryColor}` }}>
+              <span className="text-lg font-bold" style={{ color: primaryColor }}>PAY ADVICE</span>
             </div>
 
             {/* Recipient Info */}
-            <div className="recipient-info p-4 rounded-lg mb-5" style={{ background: '#f3f4f6', borderLeft: `4px solid ${primaryColor}` }}>
-              <div className="grid grid-cols-2 gap-4">
+            <div className="p-3 rounded mb-4" style={{ background: '#f9fafb', border: '1px solid #e5e7eb' }}>
+              <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <div className="flex gap-2 mb-1"><span className="font-bold text-gray-600 w-28">Name:</span><span>{payAdvice.full_name}</span></div>
-                  <div className="flex gap-2 mb-1"><span className="font-bold text-gray-600 w-28">NRIC:</span><span>{payAdvice.id_number || '-'}</span></div>
-                  {payAdvice.training_period_name && (
-                    <div className="flex gap-2 mb-1"><span className="font-bold text-gray-600 w-28">Training Period:</span><span>{payAdvice.training_period_name}</span></div>
-                  )}
+                  <div className="flex gap-2 mb-1"><span className="font-bold text-gray-600 w-24">Name:</span><span>{payAdvice.full_name}</span></div>
+                  <div className="flex gap-2 mb-1"><span className="font-bold text-gray-600 w-24">NRIC:</span><span>{payAdvice.id_number || '-'}</span></div>
+                  <div className="flex gap-2 mb-1"><span className="font-bold text-gray-600 w-24">Phone:</span><span>{payAdvice.phone || '-'}</span></div>
                 </div>
                 <div>
-                  <div className="flex gap-2 mb-1"><span className="font-bold text-gray-600 w-28">Phone:</span><span>{payAdvice.phone || '-'}</span></div>
-                  <div className="flex gap-2 mb-1"><span className="font-bold text-gray-600 w-28">Email:</span><span>{payAdvice.email || '-'}</span></div>
-                  <div className="flex gap-2 mb-1"><span className="font-bold text-gray-600 w-28">Payment Period:</span><span>{payAdvice.period_name || getDisplayPeriod()}</span></div>
+                  <div className="flex gap-2 mb-1"><span className="font-bold text-gray-600 w-24">Period:</span><span className="font-semibold">{payAdvice.period_name || getDisplayPeriod()}</span></div>
+                  <div className="flex gap-2 mb-1"><span className="font-bold text-gray-600 w-24">Email:</span><span>{payAdvice.email || '-'}</span></div>
+                  {payAdvice.training_period_name && (
+                    <div className="flex gap-2 mb-1"><span className="font-bold text-gray-600 w-24">Training:</span><span>{payAdvice.training_period_name}</span></div>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Session Details Table */}
-            <table className="w-full border-collapse mb-5">
+            <table className="w-full border-collapse mb-4 text-xs">
               <thead>
                 <tr style={{ background: primaryColor, color: 'white' }}>
-                  <th className="border p-2 text-center" style={{ background: primaryColor }}>No</th>
-                  <th className="border p-2" style={{ background: primaryColor }}>Company</th>
-                  <th className="border p-2" style={{ background: primaryColor }}>Training Session</th>
-                  <th className="border p-2" style={{ background: primaryColor }}>Date</th>
-                  <th className="border p-2" style={{ background: primaryColor }}>Role</th>
-                  <th className="border p-2 text-right" style={{ background: primaryColor }}>Amount (RM)</th>
+                  <th className="border p-2 text-center w-10">No</th>
+                  <th className="border p-2">Company</th>
+                  <th className="border p-2">Training Session</th>
+                  <th className="border p-2 w-24">Date</th>
+                  <th className="border p-2 w-20">Role</th>
+                  <th className="border p-2 text-right w-24">Amount (RM)</th>
                 </tr>
               </thead>
               <tbody>
@@ -190,15 +238,11 @@ const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
                   </tr>
                 ))}
                 {(!payAdvice.session_details || payAdvice.session_details.length === 0) && (
-                  <tr>
-                    <td colSpan="6" className="border p-5 text-center text-gray-500">
-                      No session records found for this period
-                    </td>
-                  </tr>
+                  <tr><td colSpan="6" className="border p-4 text-center text-gray-500">No session records found</td></tr>
                 )}
               </tbody>
               <tfoot>
-                <tr className="bg-gray-200 font-bold">
+                <tr className="bg-gray-100 font-bold">
                   <td colSpan="5" className="border p-2 text-right">GROSS TOTAL</td>
                   <td className="border p-2 text-right">{formatCurrency(payAdvice.gross_amount)}</td>
                 </tr>
@@ -212,16 +256,16 @@ const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
             </table>
 
             {/* Nett Amount */}
-            <div className="text-center py-5 px-4 rounded-lg my-5" style={{ background: secondaryColor, color: 'white' }}>
+            <div className="text-center py-4 px-4 rounded my-4" style={{ background: secondaryColor, color: 'white' }}>
               <div className="text-sm mb-1">NETT PAYMENT</div>
-              <div className="text-3xl font-bold">{formatCurrency(payAdvice.nett_amount)}</div>
+              <div className="text-2xl font-bold">{formatCurrency(payAdvice.nett_amount)}</div>
             </div>
 
             {/* Bank Info */}
             {(payAdvice.bank_name || payAdvice.bank_account) && (
-              <div className="p-4 rounded-lg" style={{ background: `${primaryColor}10`, borderLeft: `4px solid ${primaryColor}` }}>
-                <h3 className="font-bold mb-2" style={{ color: primaryColor }}>Payment Details</h3>
-                <div className="grid grid-cols-2 gap-4">
+              <div className="p-3 rounded mb-4" style={{ background: '#f0f4f8', borderLeft: `3px solid ${primaryColor}` }}>
+                <h3 className="font-bold mb-2 text-xs" style={{ color: primaryColor }}>Payment Details</h3>
+                <div className="grid grid-cols-2 gap-4 text-xs">
                   <div><span className="font-bold text-gray-600">Bank:</span> {payAdvice.bank_name || '-'}</div>
                   <div><span className="font-bold text-gray-600">Account:</span> {payAdvice.bank_account || '-'}</div>
                 </div>
@@ -229,19 +273,19 @@ const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
             )}
 
             {/* Signature Section */}
-            <div className="grid grid-cols-2 gap-12 mt-10">
+            <div className="grid grid-cols-2 gap-10 mt-8">
               <div className="text-center">
-                <div className="border-b border-black h-12 mb-1"></div>
-                <div className="text-sm">Prepared By</div>
+                <div className="border-b border-black h-10 mb-1"></div>
+                <div className="text-xs">Prepared By</div>
               </div>
               <div className="text-center">
-                <div className="border-b border-black h-12 mb-1"></div>
-                <div className="text-sm">Received By</div>
+                <div className="border-b border-black h-10 mb-1"></div>
+                <div className="text-xs">Received By</div>
               </div>
             </div>
 
             {/* Footer */}
-            <div className="mt-8 text-center text-xs text-gray-500">
+            <div className="mt-6 text-center text-xs text-gray-500">
               This document is computer-generated. For enquiries, please contact HR department.
             </div>
           </div>
