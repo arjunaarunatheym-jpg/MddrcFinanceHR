@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { LogOut, FileText, ClipboardCheck, MessageSquare, Award, Play, Users, Clock, Download, Eye, Settings, Lock, AlertTriangle, Shield } from "lucide-react";
+import IndemnityForm from "../components/IndemnityForm";
 
 const ParticipantDashboard = ({ user, onLogout, onUserUpdate }) => {
   const navigate = useNavigate();
