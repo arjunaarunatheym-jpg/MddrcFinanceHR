@@ -1552,7 +1552,9 @@ const FinanceDashboard = ({ user, onLogout }) => {
     ? invoices 
     : statusFilter === 'pending' 
       ? invoices.filter(inv => !['paid', 'cancelled'].includes(inv.status))
-      : invoices.filter(inv => inv.status === statusFilter);
+      : statusFilter === 'draft'
+        ? invoices.filter(inv => ['auto_draft', 'finance_review', 'draft'].includes(inv.status))
+        : invoices.filter(inv => inv.status === statusFilter);
 
   return (
     <div className="min-h-screen bg-gray-50">
