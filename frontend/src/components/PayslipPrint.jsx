@@ -118,11 +118,11 @@ const PayslipPrint = ({ payslip, companySettings, onClose }) => {
           </div>
         </div>
 
-        <div ref={printRef} className="p-2 relative text-xs">
-          {/* Watermark */}
+        <div ref={printRef} className="p-2 relative text-xs" style={{ minHeight: '500px' }}>
+          {/* Single centered watermark */}
           {showWatermark && fullLogoUrl && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ opacity: watermarkOpacity, zIndex: 0 }}>
-              <img src={fullLogoUrl} alt="" style={{ width: '220px', height: 'auto' }} />
+            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', opacity: watermarkOpacity, zIndex: 0, pointerEvents: 'none' }}>
+              <img src={fullLogoUrl} alt="" style={{ width: '200px', height: 'auto' }} />
             </div>
           )}
           
