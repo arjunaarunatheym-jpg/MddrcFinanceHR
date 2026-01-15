@@ -2664,6 +2664,62 @@ const FinanceDashboard = ({ user, onLogout }) => {
                   </div>
                 </div>
 
+                {/* Company Logo Upload */}
+                <div className="p-4 bg-purple-50 rounded-lg space-y-4">
+                  <h3 className="font-semibold text-purple-900">Company Logo</h3>
+                  <p className="text-sm text-purple-700">
+                    Upload your company logo. This will appear on Invoices, Pay Slips, Pay Advice, and other documents.
+                  </p>
+                  <div className="flex flex-col gap-4">
+                    {companySettings.logo_url && (
+                      <div className="flex items-center gap-4 p-4 bg-white rounded border">
+                        <img 
+                          src={`${process.env.REACT_APP_BACKEND_URL}${companySettings.logo_url}`}
+                          alt="Company Logo"
+                          className="h-16 max-w-[200px] object-contain border rounded"
+                          onError={(e) => { e.target.style.display = 'none'; }}
+                        />
+                        <div className="flex-1">
+                          <p className="font-medium">Current Logo</p>
+                          <p className="text-sm text-gray-500">{companySettings.logo_filename || 'logo.png'}</p>
+                        </div>
+                      </div>
+                    )}
+                    <div>
+                      <Label>Upload New Logo</Label>
+                      <input 
+                        type="file"
+                        accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+                        onChange={async (e) => {
+                          const file = e.target.files[0];
+                          if (!file) return;
+                          
+                          const formData = new FormData();
+                          formData.append('file', file);
+                          
+                          try {
+                            toast.info('Uploading logo...');
+                            const response = await axiosInstance.post('/finance/company-settings/upload-logo', formData, {
+                              headers: { 'Content-Type': 'multipart/form-data' }
+                            });
+                            setCompanySettings({
+                              ...companySettings, 
+                              logo_url: response.data.url,
+                              logo_filename: response.data.filename
+                            });
+                            toast.success('Logo uploaded successfully');
+                            e.target.value = '';
+                          } catch (error) {
+                            toast.error(error.response?.data?.detail || 'Failed to upload logo');
+                          }
+                        }}
+                        className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Recommended: PNG or JPG, max 2MB, transparent background for best results</p>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Bank Details */}
                 <div className="p-4 bg-green-50 rounded-lg space-y-4">
                   <h3 className="font-semibold text-green-900">Bank Details (for invoices)</h3>
