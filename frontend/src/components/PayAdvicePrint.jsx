@@ -5,6 +5,11 @@ import { Printer, X, Download } from 'lucide-react';
 const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
   const printRef = useRef(null);
   
+  // Get colors from company settings or use defaults
+  const primaryColor = companySettings?.primary_color || '#1e40af';
+  const secondaryColor = companySettings?.secondary_color || '#16a34a';
+  const logoUrl = companySettings?.logo_url || '';
+  
   // Get the display period - use period_name if available, or construct from month/year
   const getDisplayPeriod = () => {
     if (payAdvice?.period_name) return payAdvice.period_name.toUpperCase();
@@ -31,28 +36,29 @@ const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
             * { box-sizing: border-box; margin: 0; padding: 0; }
             body { font-family: Arial, sans-serif; font-size: 11px; padding: 20px; }
             
-            .header { text-align: center; border-bottom: 2px solid #1e40af; padding-bottom: 15px; margin-bottom: 20px; }
-            .header h1 { font-size: 16px; color: #1e40af; margin-bottom: 5px; }
+            .header { text-align: center; border-bottom: 2px solid ${primaryColor}; padding-bottom: 15px; margin-bottom: 20px; }
+            .header-logo { max-height: 60px; max-width: 200px; margin-bottom: 10px; }
+            .header h1 { font-size: 16px; color: ${primaryColor}; margin-bottom: 5px; }
             .header h2 { font-size: 14px; font-weight: normal; }
             
             .recipient-info { margin-bottom: 20px; padding: 15px; background: #f3f4f6; border-radius: 8px; }
             .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
             .info-row { display: flex; gap: 10px; }
-            .info-label { font-weight: bold; min-width: 80px; color: #666; }
+            .info-label { font-weight: bold; min-width: 100px; color: #666; }
             
             .session-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
             .session-table th, .session-table td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-            .session-table th { background: #1e40af; color: white; }
+            .session-table th { background: ${primaryColor}; color: white; }
             .session-table tr:nth-child(even) { background: #f9fafb; }
             .text-right { text-align: right; }
             .text-center { text-align: center; }
             
-            .summary { background: #16a34a; color: white; padding: 20px; text-align: center; border-radius: 8px; }
+            .summary { background: ${secondaryColor}; color: white; padding: 20px; text-align: center; border-radius: 8px; }
             .summary .label { font-size: 12px; margin-bottom: 5px; }
             .summary .amount { font-size: 28px; font-weight: bold; }
             
-            .bank-info { margin-top: 20px; padding: 15px; background: #eff6ff; border-radius: 8px; }
-            .bank-info h3 { color: #1e40af; margin-bottom: 10px; }
+            .bank-info { margin-top: 20px; padding: 15px; background: ${primaryColor}10; border-radius: 8px; border-left: 4px solid ${primaryColor}; }
+            .bank-info h3 { color: ${primaryColor}; margin-bottom: 10px; }
             
             .footer { margin-top: 30px; text-align: center; font-size: 9px; color: #666; }
             .signature-section { margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 50px; }
@@ -83,7 +89,7 @@ const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
         <div className="sticky top-0 bg-white border-b p-3 flex justify-between items-center z-10">
           <h2 className="text-lg font-bold">Pay Advice Preview</h2>
           <div className="flex gap-2">
-            <Button onClick={handlePrint} className="bg-green-600 hover:bg-green-700">
+            <Button onClick={handlePrint} style={{ backgroundColor: secondaryColor }} className="hover:opacity-90">
               <Download className="w-4 h-4 mr-2" /> Download
             </Button>
             <Button variant="outline" onClick={onClose}><X className="w-4 h-4" /></Button>
@@ -91,9 +97,12 @@ const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
         </div>
 
         <div ref={printRef} className="p-6">
-          {/* Header */}
-          <div className="header">
-            <h1>{companySettings?.company_name || 'MALAYSIAN DEFENSIVE DRIVING AND RIDING CENTRE SDN BHD'}</h1>
+          {/* Header with Logo */}
+          <div className="header" style={{ borderBottom: `2px solid ${primaryColor}` }}>
+            {logoUrl && (
+              <img src={logoUrl} alt="Company Logo" className="header-logo" style={{ maxHeight: '60px', maxWidth: '200px', marginBottom: '10px' }} />
+            )}
+            <h1 style={{ color: primaryColor }}>{companySettings?.company_name || 'MALAYSIAN DEFENSIVE DRIVING AND RIDING CENTRE SDN BHD'}</h1>
             <h2>PAY ADVICE - {getDisplayPeriod()}</h2>
           </div>
 
@@ -118,13 +127,13 @@ const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
           {/* Session Details Table */}
           <table className="session-table">
             <thead>
-              <tr>
-                <th>No</th>
-                <th>Company</th>
-                <th>Training Session</th>
-                <th>Date</th>
-                <th>Role</th>
-                <th className="text-right">Amount (RM)</th>
+              <tr style={{ background: primaryColor }}>
+                <th style={{ background: primaryColor }}>No</th>
+                <th style={{ background: primaryColor }}>Company</th>
+                <th style={{ background: primaryColor }}>Training Session</th>
+                <th style={{ background: primaryColor }}>Date</th>
+                <th style={{ background: primaryColor }}>Role</th>
+                <th className="text-right" style={{ background: primaryColor }}>Amount (RM)</th>
               </tr>
             </thead>
             <tbody>
@@ -161,15 +170,15 @@ const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
           </table>
 
           {/* Nett Amount */}
-          <div className="summary">
+          <div className="summary" style={{ background: secondaryColor }}>
             <div className="label">NETT PAYMENT</div>
             <div className="amount">{formatCurrency(payAdvice.nett_amount)}</div>
           </div>
 
           {/* Bank Info */}
           {(payAdvice.bank_name || payAdvice.bank_account) && (
-            <div className="bank-info">
-              <h3>Payment Details</h3>
+            <div className="bank-info" style={{ background: `${primaryColor}10`, borderLeft: `4px solid ${primaryColor}` }}>
+              <h3 style={{ color: primaryColor }}>Payment Details</h3>
               <div className="info-grid">
                 <div className="info-row"><span className="info-label">Bank:</span><span>{payAdvice.bank_name || '-'}</span></div>
                 <div className="info-row"><span className="info-label">Account:</span><span>{payAdvice.bank_account || '-'}</span></div>
