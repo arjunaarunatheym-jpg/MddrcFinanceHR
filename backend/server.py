@@ -8660,6 +8660,76 @@ async def update_company_settings(settings_data: dict, current_user: User = Depe
     
     return {"message": "Settings updated successfully"}
 
+# Upload company logo for documents (payslip, pay advice, invoices)
+@api_router.post("/finance/company-settings/upload-logo")
+async def upload_company_logo(file: UploadFile = File(...), current_user: User = Depends(get_current_user)):
+    """Upload company logo for document headers"""
+    if current_user.role not in ["admin", "super_admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Only Admin/Finance can upload logo")
+    
+    # Validate file type
+    allowed_extensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp']
+    file_ext = os.path.splitext(file.filename)[1].lower()
+    if file_ext not in allowed_extensions:
+        raise HTTPException(status_code=400, detail="Only image files (PNG, JPG, JPEG, GIF, WEBP) are allowed")
+    
+    # Read file content
+    content = await file.read()
+    
+    # Save to uploads folder
+    upload_dir = "uploads/company"
+    os.makedirs(upload_dir, exist_ok=True)
+    
+    # Generate unique filename
+    timestamp = get_malaysia_time().strftime("%Y%m%d_%H%M%S")
+    safe_filename = f"company_logo_{timestamp}{file_ext}"
+    file_path = os.path.join(upload_dir, safe_filename)
+    
+    with open(file_path, "wb") as f:
+        f.write(content)
+    
+    # Generate URL for the file
+    logo_url = f"/api/uploads/company/{safe_filename}"
+    
+    # Update company settings
+    await db.company_settings.update_one(
+        {"id": "company_settings"},
+        {"$set": {
+            "logo_url": logo_url,
+            "logo_filename": file.filename,
+            "updated_at": get_malaysia_time().isoformat(),
+            "updated_by": current_user.id
+        }},
+        upsert=True
+    )
+    
+    return {
+        "message": "Logo uploaded successfully",
+        "url": logo_url,
+        "filename": file.filename
+    }
+
+# Serve uploaded company files (logo, etc.)
+@api_router.get("/uploads/company/{filename}")
+async def get_company_file(filename: str):
+    """Serve uploaded company files"""
+    file_path = f"uploads/company/{filename}"
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    # Determine content type based on extension
+    ext = os.path.splitext(filename)[1].lower()
+    content_types = {
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp'
+    }
+    content_type = content_types.get(ext, 'application/octet-stream')
+    
+    return FileResponse(file_path, media_type=content_type, filename=filename)
+
 # Upload custom indemnity form PDF
 @api_router.post("/finance/company-settings/upload-indemnity-form")
 async def upload_indemnity_form(file: UploadFile = File(...), current_user: User = Depends(get_current_user)):
