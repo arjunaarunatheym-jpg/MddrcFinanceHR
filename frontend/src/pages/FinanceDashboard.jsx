@@ -45,6 +45,7 @@ const FinanceDashboard = ({ user, onLogout }) => {
     email: '',
     website: '',
     logo_url: '',
+    logo_filename: '',
     bank_name: '',
     bank_account_name: '',
     bank_account_number: '',
