@@ -368,28 +368,24 @@ const ParticipantDashboard = ({ user, onLogout, onUserUpdate }) => {
     }
   };
 
-  // Handle indemnity form acceptance
-  const handleIndemnityAccept = async () => {
-    if (!indemnityAccepted) {
-      toast.error("Please accept the indemnity form to continue");
-      return;
-    }
-    
-    if (!signatureData.signed_name || !signatureData.signed_ic || !signatureData.signed_date) {
-      toast.error("Please fill in all signature fields");
-      return;
-    }
-    
+  // Handle indemnity form acceptance (new enhanced form)
+  const handleIndemnityAccept = async (formData) => {
     try {
       // Mark profile as verified and indemnity accepted with signature data
       await axiosInstance.put("/users/profile", {
         profile_verified: true,
         indemnity_accepted: true,
         indemnity_accepted_at: new Date().toISOString(),
-        indemnity_signature: `Digitally signed by ${signatureData.signed_name}`,
-        indemnity_signed_name: signatureData.signed_name,
-        indemnity_signed_ic: signatureData.signed_ic,
-        indemnity_signed_date: signatureData.signed_date
+        indemnity_signature: `Digitally signed by ${formData.signed_name}`,
+        indemnity_signed_name: formData.signed_name,
+        indemnity_signed_ic: formData.signed_ic,
+        indemnity_signed_date: formData.signed_date,
+        // Enhanced fields
+        indemnity_sections_accepted: formData.sections_accepted,
+        indemnity_training_id: formData.training_id,
+        indemnity_trainer_name: formData.trainer_name,
+        indemnity_vehicle_reg: formData.vehicle_reg,
+        indemnity_locked: true  // Lock the record after submission
       });
       
       setShowIndemnityDialog(false);
@@ -400,18 +396,33 @@ const ParticipantDashboard = ({ user, onLogout, onUserUpdate }) => {
           ...user, 
           profile_verified: true, 
           indemnity_accepted: true,
-          indemnity_signed_name: signatureData.signed_name,
-          indemnity_signed_ic: signatureData.signed_ic,
-          indemnity_signed_date: signatureData.signed_date
+          indemnity_signed_name: formData.signed_name,
+          indemnity_signed_ic: formData.signed_ic,
+          indemnity_signed_date: formData.signed_date,
+          indemnity_locked: true
         });
       }
       
-      toast.success("Welcome! Your indemnity form has been signed.");
+      toast.success("Welcome! Your indemnity form has been signed and locked.");
       loadData();
     } catch (error) {
       toast.error(error.response?.data?.detail || "Failed to accept indemnity");
+      throw error;  // Re-throw so the form knows submission failed
     }
   };
+
+  // Load company settings
+  useEffect(() => {
+    const loadCompanySettings = async () => {
+      try {
+        const response = await axiosInstance.get("/finance/company-settings");
+        setCompanySettings(response.data);
+      } catch (error) {
+        console.log("Could not load company settings");
+      }
+    };
+    loadCompanySettings();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
