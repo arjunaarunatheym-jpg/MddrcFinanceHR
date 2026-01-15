@@ -479,106 +479,28 @@ const ParticipantDashboard = ({ user, onLogout, onUserUpdate }) => {
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">
-            <div className="bg-gray-50 p-4 rounded-lg text-sm space-y-3 max-h-[300px] overflow-y-auto border">
-              <h4 className="font-bold text-lg">RELEASE AND WAIVER OF LIABILITY</h4>
-              
-              <p><strong>MDDRC Training Programme</strong></p>
-              
-              <p>I, the undersigned participant, acknowledge and agree to the following:</p>
-              
-              <ol className="list-decimal pl-5 space-y-2">
-                <li>
-                  <strong>Assumption of Risk:</strong> I understand that participation in the defensive riding/driving training programme involves inherent risks, including but not limited to physical injury, property damage, or other hazards. I voluntarily assume all such risks.
-                </li>
-                <li>
-                  <strong>Release of Liability:</strong> I hereby release, waive, discharge, and covenant not to sue MDDRC, its officers, employees, instructors, and agents from any and all liability, claims, demands, or causes of action arising out of or related to any injury, damage, or loss which may occur as a result of my participation in the training programme.
-                </li>
-                <li>
-                  <strong>Medical Fitness:</strong> I confirm that I am physically fit to participate in this training programme and have no medical conditions that would prevent safe participation. I understand that I should consult with a physician if I have any concerns about my physical ability to participate.
-                </li>
-                <li>
-                  <strong>Compliance with Rules:</strong> I agree to follow all safety rules, regulations, and instructions provided by the training instructors. I understand that failure to comply may result in my removal from the programme.
-                </li>
-                <li>
-                  <strong>Personal Property:</strong> I understand that MDDRC is not responsible for any loss or damage to my personal property during the training programme.
-                </li>
-                <li>
-                  <strong>Photo/Video Consent:</strong> I consent to the use of photographs and videos taken during the training programme for promotional and educational purposes.
-                </li>
-                <li>
-                  <strong>Emergency Medical Treatment:</strong> In the event of an emergency, I authorize MDDRC to seek emergency medical treatment on my behalf if I am unable to do so myself.
-                </li>
-              </ol>
-              
-              <p className="font-semibold mt-4">
-                By signing below, I acknowledge that I have read and understood this waiver, and I agree to be bound by its terms.
-              </p>
-            </div>
-            
-            {/* Digital Signature Section */}
-            <div className="border-t pt-4 space-y-4">
-              <h4 className="font-semibold text-gray-900">Digital Signature</h4>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="signed_name">Full Name (as signature)</Label>
-                  <Input 
-                    id="signed_name"
-                    value={signatureData.signed_name}
-                    onChange={(e) => setSignatureData({...signatureData, signed_name: e.target.value})}
-                    placeholder="Type your full name"
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="signed_ic">IC Number</Label>
-                  <Input 
-                    id="signed_ic"
-                    value={signatureData.signed_ic}
-                    onChange={(e) => setSignatureData({...signatureData, signed_ic: e.target.value})}
-                    placeholder="Your IC number"
-                    className="mt-1"
-                  />
-                </div>
-              </div>
-              
-              <div className="w-full md:w-1/2">
-                <Label htmlFor="signed_date">Date</Label>
-                <Input 
-                  id="signed_date"
-                  type="date"
-                  value={signatureData.signed_date}
-                  onChange={(e) => setSignatureData({...signatureData, signed_date: e.target.value})}
-                  className="mt-1"
-                />
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-2 pt-2">
-              <Checkbox 
-                id="indemnity-accept" 
-                checked={indemnityAccepted}
-                onCheckedChange={setIndemnityAccepted}
-              />
-              <label 
-                htmlFor="indemnity-accept" 
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                I have read, understood, and agree to the terms of this Indemnity & Waiver Form
-              </label>
-            </div>
+            {/* This old indemnity content is replaced by IndemnityForm component */}
           </div>
-          <DialogFooter>
-            <Button 
-              onClick={handleIndemnityAccept} 
-              disabled={!indemnityAccepted || !signatureData.signed_name || !signatureData.signed_ic || !signatureData.signed_date}
-              className="w-full"
-            >
-              Sign & Accept
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* New Enhanced Indemnity Form */}
+      <IndemnityForm
+        open={showIndemnityDialog}
+        onAccept={handleIndemnityAccept}
+        participant={{
+          ...user,
+          company_name: sessions[0]?.company_name || null
+        }}
+        trainingSession={currentTrainingSession || (sessions.length > 0 ? {
+          name: sessions[0]?.name,
+          type: sessions[0]?.type,
+          start_date: sessions[0]?.start_date,
+          venue: sessions[0]?.venue,
+          trainer_name: sessions[0]?.trainer_name
+        } : null)}
+        companySettings={companySettings}
+      />
 
       {/* Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
