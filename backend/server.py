@@ -1650,7 +1650,7 @@ async def delete_user(user_id: str, current_user: User = Depends(get_current_use
 
 # Update own profile (for participants) - MUST BE BEFORE /users/{user_id} to avoid route conflict
 @api_router.put("/users/profile")
-async def update_own_profile(profile_data: dict, current_user: User = Depends(get_current_user)):
+async def update_own_profile(profile_data: dict, request: Request, current_user: User = Depends(get_current_user)):
     """Allow users to update their own profile (limited fields)"""
     
     # Update allowed fields based on role
@@ -1688,6 +1688,27 @@ async def update_own_profile(profile_data: dict, current_user: User = Depends(ge
         update_data["indemnity_signed_ic"] = profile_data["indemnity_signed_ic"]
     if "indemnity_signed_date" in profile_data:
         update_data["indemnity_signed_date"] = profile_data["indemnity_signed_date"]
+    # Enhanced indemnity fields
+    if "indemnity_sections_accepted" in profile_data:
+        update_data["indemnity_sections_accepted"] = profile_data["indemnity_sections_accepted"]
+    if "indemnity_training_id" in profile_data:
+        update_data["indemnity_training_id"] = profile_data["indemnity_training_id"]
+    if "indemnity_trainer_name" in profile_data:
+        update_data["indemnity_trainer_name"] = profile_data["indemnity_trainer_name"]
+    if "indemnity_vehicle_reg" in profile_data:
+        update_data["indemnity_vehicle_reg"] = profile_data["indemnity_vehicle_reg"]
+    if "indemnity_locked" in profile_data:
+        update_data["indemnity_locked"] = profile_data["indemnity_locked"]
+    
+    # Capture IP address and user agent when indemnity is being accepted
+    if profile_data.get("indemnity_accepted") == True:
+        client_ip = request.client.host if request.client else "unknown"
+        # Try to get real IP from headers (in case of proxy)
+        forwarded_for = request.headers.get("X-Forwarded-For")
+        if forwarded_for:
+            client_ip = forwarded_for.split(",")[0].strip()
+        update_data["indemnity_ip_address"] = client_ip
+        update_data["indemnity_user_agent"] = request.headers.get("User-Agent", "unknown")
     
     if not update_data:
         raise HTTPException(status_code=400, detail="No valid fields to update")
