@@ -3493,6 +3493,63 @@ const FinanceDashboard = ({ user, onLogout }) => {
                   </Tabs>
                 </div>
 
+                {/* Indemnity Form Upload */}
+                <div className="p-4 bg-orange-50 rounded-lg space-y-4">
+                  <h3 className="font-semibold text-orange-900">Custom Indemnity Form</h3>
+                  <p className="text-sm text-orange-700">
+                    Upload your custom indemnity form (PDF, DOC, or DOCX). This will be shown to participants for signing.
+                  </p>
+                  <div className="flex flex-col gap-4">
+                    {companySettings.indemnity_form_url && (
+                      <div className="flex items-center gap-3 p-3 bg-white rounded border">
+                        <FileText className="w-8 h-8 text-orange-600" />
+                        <div className="flex-1">
+                          <p className="font-medium">{companySettings.indemnity_form_filename || 'Current Form'}</p>
+                          <a 
+                            href={`${process.env.REACT_APP_BACKEND_URL}${companySettings.indemnity_form_url}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-blue-600 hover:underline"
+                          >
+                            View / Download
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                    <div>
+                      <Label>Upload New Indemnity Form</Label>
+                      <input 
+                        type="file"
+                        accept=".pdf,.doc,.docx"
+                        onChange={async (e) => {
+                          const file = e.target.files[0];
+                          if (!file) return;
+                          
+                          const formData = new FormData();
+                          formData.append('file', file);
+                          
+                          try {
+                            toast.info('Uploading indemnity form...');
+                            const response = await axiosInstance.post('/finance/company-settings/upload-indemnity-form', formData, {
+                              headers: { 'Content-Type': 'multipart/form-data' }
+                            });
+                            setCompanySettings({
+                              ...companySettings, 
+                              indemnity_form_url: response.data.url,
+                              indemnity_form_filename: response.data.filename
+                            });
+                            toast.success('Indemnity form uploaded successfully');
+                            e.target.value = '';
+                          } catch (error) {
+                            toast.error(error.response?.data?.detail || 'Failed to upload indemnity form');
+                          }
+                        }}
+                        className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <div className="flex justify-end">
                   <Button onClick={handleSaveSettings} disabled={settingsLoading}>
                     {settingsLoading ? 'Saving...' : 'Save Settings'}
