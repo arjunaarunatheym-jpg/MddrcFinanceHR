@@ -976,6 +976,9 @@ class CompanySettings(BaseModel):
     indemnity_custom_fields: Optional[List[dict]] = None  # [{label, type, required}]
     payslip_custom_fields: Optional[List[dict]] = None  # [{label, type, default_value}]
     payadvice_custom_fields: Optional[List[dict]] = None  # [{label, show_in_summary}]
+    # Custom indemnity form upload
+    indemnity_form_url: Optional[str] = None  # URL to uploaded custom indemnity form PDF
+    indemnity_form_filename: Optional[str] = None  # Original filename
     updated_at: datetime = Field(default_factory=get_malaysia_time)
     updated_by: Optional[str] = None
 
