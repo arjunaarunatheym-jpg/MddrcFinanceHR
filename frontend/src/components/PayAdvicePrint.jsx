@@ -59,8 +59,9 @@ const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
             * { box-sizing: border-box; margin: 0; padding: 0; }
             body { font-family: Arial, sans-serif; font-size: 9px; line-height: 1.3; }
             
-            .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: ${watermarkOpacity}; z-index: -1; }
-            .watermark img { width: 300px; height: auto; }
+            .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: ${watermarkOpacity}; z-index: 0; pointer-events: none; }
+            .watermark img { width: 280px; height: auto; }
+            .container { position: relative; z-index: 1; }
             
             .container { padding: 8px; }
             .header { display: flex; align-items: flex-start; gap: 10px; padding-bottom: 8px; border-bottom: 2px solid ${primaryColor}; margin-bottom: 8px; }
