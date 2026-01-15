@@ -8631,6 +8631,70 @@ async def update_company_settings(settings_data: dict, current_user: User = Depe
     
     return {"message": "Settings updated successfully"}
 
+# Upload custom indemnity form PDF
+@api_router.post("/finance/company-settings/upload-indemnity-form")
+async def upload_indemnity_form(file: UploadFile = File(...), current_user: User = Depends(get_current_user)):
+    """Upload custom indemnity form PDF"""
+    if current_user.role not in ["admin", "super_admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Only Admin/Finance can upload indemnity form")
+    
+    # Validate file type
+    if not file.filename.lower().endswith(('.pdf', '.doc', '.docx')):
+        raise HTTPException(status_code=400, detail="Only PDF, DOC, DOCX files are allowed")
+    
+    # Read file content
+    content = await file.read()
+    
+    # Save to uploads folder
+    upload_dir = "uploads/indemnity"
+    os.makedirs(upload_dir, exist_ok=True)
+    
+    # Generate unique filename
+    timestamp = get_malaysia_time().strftime("%Y%m%d_%H%M%S")
+    safe_filename = f"indemnity_form_{timestamp}_{file.filename}"
+    file_path = os.path.join(upload_dir, safe_filename)
+    
+    with open(file_path, "wb") as f:
+        f.write(content)
+    
+    # Generate URL for the file
+    file_url = f"/api/uploads/indemnity/{safe_filename}"
+    
+    # Update company settings
+    await db.company_settings.update_one(
+        {"id": "company_settings"},
+        {"$set": {
+            "indemnity_form_url": file_url,
+            "indemnity_form_filename": file.filename,
+            "updated_at": get_malaysia_time().isoformat(),
+            "updated_by": current_user.id
+        }},
+        upsert=True
+    )
+    
+    return {
+        "message": "Indemnity form uploaded successfully",
+        "url": file_url,
+        "filename": file.filename
+    }
+
+# Serve uploaded indemnity form files
+@api_router.get("/uploads/indemnity/{filename}")
+async def get_indemnity_file(filename: str):
+    """Serve uploaded indemnity form file"""
+    file_path = f"uploads/indemnity/{filename}"
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    # Determine content type
+    content_type = "application/pdf"
+    if filename.lower().endswith('.doc'):
+        content_type = "application/msword"
+    elif filename.lower().endswith('.docx'):
+        content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    
+    return FileResponse(file_path, media_type=content_type, filename=filename)
+
 # Receipt Data API (for printing)
 @api_router.get("/finance/payments/{payment_id}/receipt")
 async def get_receipt_data(payment_id: str, current_user: User = Depends(get_current_user)):
