@@ -61,7 +61,10 @@ const FinanceDashboard = ({ user, onLogout }) => {
     show_watermark: true,
     watermark_opacity: 0.08,
     tagline_font: 'Georgia',
-    tagline_style: 'italic'
+    tagline_style: 'italic',
+    // Indemnity form
+    indemnity_form_url: '',
+    indemnity_form_filename: ''
   });
   const [settingsLoading, setSettingsLoading] = useState(false);
   
