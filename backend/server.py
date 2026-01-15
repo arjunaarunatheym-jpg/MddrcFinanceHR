@@ -319,6 +319,14 @@ class User(BaseModel):
     indemnity_signed_name: Optional[str] = None  # Full name typed by user
     indemnity_signed_ic: Optional[str] = None  # IC typed by user
     indemnity_signed_date: Optional[str] = None  # Date typed by user
+    # Enhanced indemnity form data
+    indemnity_ip_address: Optional[str] = None  # IP address at time of signing
+    indemnity_user_agent: Optional[str] = None  # Browser info
+    indemnity_sections_accepted: Optional[dict] = None  # {section_a: true, section_b: true, ...}
+    indemnity_vehicle_reg: Optional[str] = None  # Vehicle registration at signing
+    indemnity_training_id: Optional[str] = None  # Training session ID at signing
+    indemnity_trainer_name: Optional[str] = None  # Trainer name at signing
+    indemnity_locked: Optional[bool] = False  # Once submitted, record is locked
 
 class UserCreate(BaseModel):
     email: Optional[str] = None  # Changed from EmailStr to str - no validation, auto-generated if needed
