@@ -32,15 +32,9 @@ const ParticipantDashboard = ({ user, onLogout, onUserUpdate }) => {
   const [showVerificationDialog, setShowVerificationDialog] = useState(false);
   const [showIndemnityDialog, setShowIndemnityDialog] = useState(false);
   const [verificationData, setVerificationData] = useState({ full_name: "", id_number: "" });
-  const [indemnityAccepted, setIndemnityAccepted] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
-  
-  // Digital signature states for indemnity
-  const [signatureData, setSignatureData] = useState({
-    signed_name: "",
-    signed_ic: "",
-    signed_date: new Date().toISOString().split('T')[0]  // Default to today
-  });
+  const [companySettings, setCompanySettings] = useState({});
+  const [currentTrainingSession, setCurrentTrainingSession] = useState(null);
   
   // Tab restrictions removed - all tabs accessible
 
