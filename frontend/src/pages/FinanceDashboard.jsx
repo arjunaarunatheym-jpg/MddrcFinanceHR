@@ -26,7 +26,7 @@ const FinanceDashboard = ({ user, onLogout }) => {
   const [payments, setPayments] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('pending');
+  const [statusFilter, setStatusFilter] = useState('all');
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
   // Always include current year and 2 previous years, plus any years from data
