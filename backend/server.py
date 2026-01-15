@@ -7863,17 +7863,31 @@ async def get_invoices(
     if company_id:
         query["company_id"] = company_id
     
-    # Add year filter
-    if year:
-        start_date = datetime(year, 1, 1)
-        end_date = datetime(year, 12, 31, 23, 59, 59)
-        query["$or"] = [
-            {"invoice_date": {"$gte": start_date.isoformat(), "$lte": end_date.isoformat()}},
-            {"$and": [{"invoice_date": {"$exists": False}}, {"created_at": {"$gte": start_date, "$lte": end_date}}]},
-            {"$and": [{"invoice_date": None}, {"created_at": {"$gte": start_date, "$lte": end_date}}]}
-        ]
-    
+    # Get all invoices first, then filter by year in Python for consistent date handling
     invoices = await db.invoices.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    
+    # Filter by year if specified - handle both string and datetime formats
+    if year:
+        def get_invoice_year(inv):
+            # First try invoice_date, then created_at
+            date_val = inv.get("invoice_date") or inv.get("created_at")
+            if not date_val:
+                return None
+            if isinstance(date_val, str):
+                try:
+                    return datetime.fromisoformat(date_val.replace('Z', '+00:00')).year
+                except:
+                    # Try parsing just the year from YYYY-MM-DD format
+                    try:
+                        return int(date_val[:4])
+                    except:
+                        return None
+            elif hasattr(date_val, 'year'):
+                return date_val.year
+            return None
+        
+        invoices = [inv for inv in invoices if get_invoice_year(inv) == year]
+    
     return invoices
 
 # MUST be before /finance/invoices/{invoice_id} to avoid route conflict
