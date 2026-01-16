@@ -970,6 +970,15 @@ const AdminDashboard = ({ user, onLogout }) => {
     try {
       await axiosInstance.put(`/companies/${editingCompany.id}`, {
         name: editingCompany.name,
+        registration_no: editingCompany.registration_no,
+        address_line1: editingCompany.address_line1,
+        address_line2: editingCompany.address_line2,
+        city: editingCompany.city,
+        postcode: editingCompany.postcode,
+        state: editingCompany.state,
+        phone: editingCompany.phone,
+        email: editingCompany.email,
+        contact_person: editingCompany.contact_person
       });
       toast.success("Company updated successfully");
       setEditCompanyDialogOpen(false);
