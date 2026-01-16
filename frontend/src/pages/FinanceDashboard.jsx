@@ -91,6 +91,24 @@ const FinanceDashboard = ({ user, onLogout }) => {
   const [currentPeriodStatus, setCurrentPeriodStatus] = useState({ status: 'open', exists: false });
   const [reopenDialog, setReopenDialog] = useState({ open: false, reason: '' });
   
+  // Billing Parties State
+  const [billingParties, setBillingParties] = useState([]);
+  const [showBillingPartyModal, setShowBillingPartyModal] = useState(false);
+  const [editingBillingParty, setEditingBillingParty] = useState(null);
+  const [billingPartyForm, setBillingPartyForm] = useState({
+    name: '',
+    registration_no: '',
+    address_line1: '',
+    address_line2: '',
+    city: '',
+    postcode: '',
+    state: '',
+    country: 'Malaysia',
+    phone: '',
+    email: '',
+    contact_person: ''
+  });
+  
   // Invoice Edit State
   const [editingInvoice, setEditingInvoice] = useState(null);
   const [editForm, setEditForm] = useState({
