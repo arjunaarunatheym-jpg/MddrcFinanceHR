@@ -1784,15 +1784,92 @@ const AdminDashboard = ({ user, onLogout }) => {
                         </DialogDescription>
                       </DialogHeader>
                       <form onSubmit={handleCreateCompany} className="space-y-4">
-                        <div>
-                          <Label htmlFor="company-name">Company Name</Label>
-                          <Input
-                            id="company-name"
-                            data-testid="company-name-input"
-                            value={companyFormName}
-                            onChange={(e) => setCompanyFormName(e.target.value)}
-                            required
-                          />
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="col-span-2">
+                            <Label htmlFor="company-name">Company Name *</Label>
+                            <Input
+                              id="company-name"
+                              data-testid="company-name-input"
+                              value={companyFormData.name}
+                              onChange={(e) => setCompanyFormData({...companyFormData, name: e.target.value})}
+                              required
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="company-reg">Registration No.</Label>
+                            <Input
+                              id="company-reg"
+                              data-testid="company-reg-input"
+                              value={companyFormData.registration_no}
+                              onChange={(e) => setCompanyFormData({...companyFormData, registration_no: e.target.value})}
+                              placeholder="e.g., 1234567-A"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="company-contact">Contact Person</Label>
+                            <Input
+                              id="company-contact"
+                              value={companyFormData.contact_person}
+                              onChange={(e) => setCompanyFormData({...companyFormData, contact_person: e.target.value})}
+                            />
+                          </div>
+                          <div className="col-span-2">
+                            <Label htmlFor="company-address1">Address Line 1</Label>
+                            <Input
+                              id="company-address1"
+                              value={companyFormData.address_line1}
+                              onChange={(e) => setCompanyFormData({...companyFormData, address_line1: e.target.value})}
+                            />
+                          </div>
+                          <div className="col-span-2">
+                            <Label htmlFor="company-address2">Address Line 2</Label>
+                            <Input
+                              id="company-address2"
+                              value={companyFormData.address_line2}
+                              onChange={(e) => setCompanyFormData({...companyFormData, address_line2: e.target.value})}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="company-city">City</Label>
+                            <Input
+                              id="company-city"
+                              value={companyFormData.city}
+                              onChange={(e) => setCompanyFormData({...companyFormData, city: e.target.value})}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="company-postcode">Postcode</Label>
+                            <Input
+                              id="company-postcode"
+                              value={companyFormData.postcode}
+                              onChange={(e) => setCompanyFormData({...companyFormData, postcode: e.target.value})}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="company-state">State</Label>
+                            <Input
+                              id="company-state"
+                              value={companyFormData.state}
+                              onChange={(e) => setCompanyFormData({...companyFormData, state: e.target.value})}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="company-phone">Phone</Label>
+                            <Input
+                              id="company-phone"
+                              value={companyFormData.phone}
+                              onChange={(e) => setCompanyFormData({...companyFormData, phone: e.target.value})}
+                            />
+                          </div>
+                          <div className="col-span-2">
+                            <Label htmlFor="company-email">Email</Label>
+                            <Input
+                              id="company-email"
+                              type="email"
+                              value={companyFormData.email}
+                              onChange={(e) => setCompanyFormData({...companyFormData, email: e.target.value})}
+                            />
+                          </div>
                         </div>
                         <Button data-testid="submit-company-button" type="submit" className="w-full">
                           Create Company
