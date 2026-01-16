@@ -182,14 +182,25 @@ const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
               PAY ADVICE - {getDisplayPeriod()}
             </div>
 
-            {/* Compact Recipient Info */}
+            {/* Compact Recipient Info - Table layout for print compatibility */}
             <div className="info-box p-2 mb-2" style={{ background: '#f9fafb', border: '1px solid #e5e7eb' }}>
-              <div className="grid grid-cols-2 gap-1" style={{ fontSize: '9px' }}>
-                <div className="flex"><span className="font-bold text-gray-600 w-16">Name:</span><span>{payAdvice.full_name}</span></div>
-                <div className="flex"><span className="font-bold text-gray-600 w-16">Period:</span><span className="font-semibold">{payAdvice.period_name || getDisplayPeriod()}</span></div>
-                <div className="flex"><span className="font-bold text-gray-600 w-16">NRIC:</span><span>{payAdvice.id_number || '-'}</span></div>
-                <div className="flex"><span className="font-bold text-gray-600 w-16">Email:</span><span>{payAdvice.email || '-'}</span></div>
-              </div>
+              <table style={{ width: '100%', fontSize: '9px', borderCollapse: 'collapse' }}>
+                <tbody>
+                  <tr>
+                    <td style={{ padding: '2px 4px' }}><span className="font-bold text-gray-600">Name:</span> {payAdvice.full_name}</td>
+                    <td style={{ padding: '2px 4px' }}><span className="font-bold text-gray-600">Period:</span> <span className="font-semibold">{getDisplayPeriod()}</span></td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '2px 4px' }}><span className="font-bold text-gray-600">NRIC:</span> {payAdvice.id_number || '-'}</td>
+                    <td style={{ padding: '2px 4px' }}><span className="font-bold text-gray-600">Email:</span> {payAdvice.email || '-'}</td>
+                  </tr>
+                  {getTrainingPeriod() && (
+                    <tr>
+                      <td colSpan="2" style={{ padding: '2px 4px' }}><span className="font-bold text-gray-600">Training Period:</span> {getTrainingPeriod()}</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
 
             {/* Compact Session Details Table */}
