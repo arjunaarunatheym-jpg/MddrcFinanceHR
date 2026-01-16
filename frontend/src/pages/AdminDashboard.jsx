@@ -491,9 +491,12 @@ const AdminDashboard = ({ user, onLogout }) => {
   const handleCreateCompany = async (e) => {
     e.preventDefault();
     try {
-      await axiosInstance.post("/companies", { name: companyFormName });
+      await axiosInstance.post("/companies", companyFormData);
       toast.success("Company created successfully");
-      setCompanyFormName("");
+      setCompanyFormData({
+        name: '', registration_no: '', address_line1: '', address_line2: '',
+        city: '', postcode: '', state: '', phone: '', email: '', contact_person: ''
+      });
       setCompanyDialogOpen(false);
       loadData();
     } catch (error) {
