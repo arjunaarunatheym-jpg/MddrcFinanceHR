@@ -523,3 +523,47 @@ A comprehensive training management platform for MDDRC (Malaysian Defensive Driv
   - Net balance shown as DR or CR
 
 - **Files Modified**: `backend/server.py`, `frontend/src/components/ProfitLossLedger.jsx`
+
+---
+
+## P0/P1 Features - January 16, 2026
+
+### P0: Billing Parties / Vendors Feature ✅ COMPLETE
+
+**Purpose**: Allow invoicing to alternative billing entities (e.g., HRDC, sponsors) instead of the company receiving training.
+
+**Implementation**:
+1. **Backend API Endpoints** (`server.py` lines 1609-1673):
+   - `POST /api/finance/billing-parties` - Create billing party
+   - `GET /api/finance/billing-parties` - List active billing parties
+   - `PUT /api/finance/billing-parties/{id}` - Update billing party
+   - `DELETE /api/finance/billing-parties/{id}` - Soft delete (is_active=False)
+
+2. **BillingParty Model Fields**:
+   - id, name, registration_no, address_line1, address_line2
+   - city, postcode, state, country, phone, email, contact_person
+   - is_active, created_at
+
+3. **Frontend UI** (`FinanceDashboard.jsx`):
+   - Settings tab: "Billing Parties / Vendors" section
+   - Add/Edit/Delete billing parties via modal
+   - Invoice Edit modal: "Quick Fill" dropdown to apply billing party details to Bill To fields
+
+### P1: Company Registration & Address Fields ✅ COMPLETE
+
+**Purpose**: Capture detailed company information for auto-populating invoices.
+
+**Implementation**:
+1. **Company Model Updated** (`server.py`):
+   - Added: registration_no, address_line1, address_line2, city, postcode, state
+   - Added: phone, email, contact_person
+
+2. **Frontend UI** (`AdminDashboard.jsx`):
+   - Create Company form: All new fields with grid layout
+   - Edit Company form: All new fields with scrollable modal
+   - Company list: Shows registration number if available
+
+**Test Results**: 
+- Backend: 10/10 API tests passed
+- Frontend: All UI features working
+- Test file: `/app/tests/test_billing_parties_companies.py`
