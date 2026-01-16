@@ -137,6 +137,7 @@ const FinanceDashboard = ({ user, onLogout }) => {
     loadCreditNotes();
     loadPayables();
     loadCompanySettings();
+    loadBillingParties();
   }, []);
 
   // Load payments when Payments tab is activated
