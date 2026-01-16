@@ -1608,7 +1608,7 @@ async def update_company(company_id: str, company_data: CompanyUpdate, current_u
 
 # ============ BILLING PARTIES / VENDORS ============
 
-@api_router.post("/billing-parties")
+@api_router.post("/finance/billing-parties")
 async def create_billing_party(data: dict, current_user: User = Depends(get_current_user)):
     """Create a new billing party / vendor"""
     if current_user.role not in ["admin", "super_admin", "finance"]:
@@ -1632,7 +1632,7 @@ async def create_billing_party(data: dict, current_user: User = Depends(get_curr
     await db.billing_parties.insert_one(doc)
     return {"message": "Billing party created", "billing_party": doc}
 
-@api_router.get("/billing-parties")
+@api_router.get("/finance/billing-parties")
 async def get_billing_parties(current_user: User = Depends(get_current_user)):
     """Get all billing parties"""
     if current_user.role not in ["admin", "super_admin", "finance"]:
@@ -1641,7 +1641,7 @@ async def get_billing_parties(current_user: User = Depends(get_current_user)):
     parties = await db.billing_parties.find({"is_active": True}, {"_id": 0}).to_list(100)
     return parties
 
-@api_router.put("/billing-parties/{party_id}")
+@api_router.put("/finance/billing-parties/{party_id}")
 async def update_billing_party(party_id: str, data: dict, current_user: User = Depends(get_current_user)):
     """Update a billing party"""
     if current_user.role not in ["admin", "super_admin", "finance"]:
@@ -1659,7 +1659,7 @@ async def update_billing_party(party_id: str, data: dict, current_user: User = D
     
     return {"message": "Updated successfully"}
 
-@api_router.delete("/billing-parties/{party_id}")
+@api_router.delete("/finance/billing-parties/{party_id}")
 async def delete_billing_party(party_id: str, current_user: User = Depends(get_current_user)):
     """Soft delete a billing party"""
     if current_user.role not in ["admin", "super_admin", "finance"]:
