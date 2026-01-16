@@ -1671,14 +1671,6 @@ async def delete_billing_party(party_id: str, current_user: User = Depends(get_c
     )
     
     return {"message": "Deleted successfully"}
-    
-    if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Company not found")
-    
-    company_doc = await db.companies.find_one({"id": company_id}, {"_id": 0})
-    if isinstance(company_doc.get('created_at'), str):
-        company_doc['created_at'] = datetime.fromisoformat(company_doc['created_at'])
-    return Company(**company_doc)
 
 @api_router.delete("/companies/{company_id}")
 async def delete_company(company_id: str, current_user: User = Depends(get_current_user)):
