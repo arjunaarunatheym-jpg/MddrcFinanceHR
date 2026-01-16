@@ -2825,6 +2825,55 @@ const FinanceDashboard = ({ user, onLogout }) => {
                   </div>
                 </div>
 
+                {/* Billing Parties / Vendors */}
+                <div className="p-4 bg-amber-50 rounded-lg space-y-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="font-semibold text-amber-900">Billing Parties / Vendors</h3>
+                      <p className="text-sm text-amber-700">Manage alternative billing entities (e.g., HRDC, sponsors) for invoicing</p>
+                    </div>
+                    <Button 
+                      size="sm" 
+                      onClick={() => {
+                        setEditingBillingParty(null);
+                        setBillingPartyForm({
+                          name: '', registration_no: '', address_line1: '', address_line2: '',
+                          city: '', postcode: '', state: '', country: 'Malaysia', phone: '', email: '', contact_person: ''
+                        });
+                        setShowBillingPartyModal(true);
+                      }}
+                      data-testid="add-billing-party-btn"
+                    >
+                      <Plus className="w-4 h-4 mr-1" /> Add Billing Party
+                    </Button>
+                  </div>
+                  
+                  {billingParties.length === 0 ? (
+                    <p className="text-sm text-gray-500 text-center py-4">No billing parties added yet. Add one to use as an alternative "Bill To" on invoices.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {billingParties.map((party) => (
+                        <div key={party.id} className="bg-white p-3 rounded border border-amber-200 flex justify-between items-start" data-testid={`billing-party-${party.id}`}>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{party.name}</p>
+                            {party.registration_no && <p className="text-xs text-gray-500">Reg: {party.registration_no}</p>}
+                            {party.address_line1 && <p className="text-xs text-gray-500 truncate">{party.address_line1}</p>}
+                            {party.contact_person && <p className="text-xs text-gray-400">Contact: {party.contact_person}</p>}
+                          </div>
+                          <div className="flex gap-1 ml-2">
+                            <Button variant="ghost" size="sm" onClick={() => openEditBillingParty(party)} data-testid={`edit-billing-party-${party.id}`}>
+                              <Edit className="w-3 h-3" />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700" onClick={() => handleDeleteBillingParty(party.id)} data-testid={`delete-billing-party-${party.id}`}>
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 {/* Bank Details */}
                 <div className="p-4 bg-green-50 rounded-lg space-y-4">
                   <h3 className="font-semibold text-green-900">Bank Details (for invoices)</h3>
