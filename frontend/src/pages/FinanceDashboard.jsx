@@ -4036,6 +4036,124 @@ const FinanceDashboard = ({ user, onLogout }) => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Billing Party Modal */}
+      <Dialog open={showBillingPartyModal} onOpenChange={setShowBillingPartyModal}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingBillingParty ? 'Edit Billing Party' : 'Add Billing Party'}</DialogTitle>
+            <DialogDescription>
+              {editingBillingParty ? 'Update the billing party details' : 'Add a new billing party/vendor for alternative invoicing'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>Name *</Label>
+              <Input
+                value={billingPartyForm.name}
+                onChange={(e) => setBillingPartyForm({...billingPartyForm, name: e.target.value})}
+                placeholder="e.g., HUMAN RESOURCES DEVELOPMENT CORPORATION"
+                data-testid="billing-party-name"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Registration No.</Label>
+                <Input
+                  value={billingPartyForm.registration_no}
+                  onChange={(e) => setBillingPartyForm({...billingPartyForm, registration_no: e.target.value})}
+                  placeholder="Company registration number"
+                  data-testid="billing-party-reg-no"
+                />
+              </div>
+              <div>
+                <Label>Contact Person</Label>
+                <Input
+                  value={billingPartyForm.contact_person}
+                  onChange={(e) => setBillingPartyForm({...billingPartyForm, contact_person: e.target.value})}
+                  placeholder="Contact name"
+                  data-testid="billing-party-contact"
+                />
+              </div>
+            </div>
+            <div>
+              <Label>Address Line 1</Label>
+              <Input
+                value={billingPartyForm.address_line1}
+                onChange={(e) => setBillingPartyForm({...billingPartyForm, address_line1: e.target.value})}
+                placeholder="Street address"
+                data-testid="billing-party-address1"
+              />
+            </div>
+            <div>
+              <Label>Address Line 2</Label>
+              <Input
+                value={billingPartyForm.address_line2}
+                onChange={(e) => setBillingPartyForm({...billingPartyForm, address_line2: e.target.value})}
+                placeholder="Suite, floor, etc."
+                data-testid="billing-party-address2"
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label>City</Label>
+                <Input
+                  value={billingPartyForm.city}
+                  onChange={(e) => setBillingPartyForm({...billingPartyForm, city: e.target.value})}
+                  data-testid="billing-party-city"
+                />
+              </div>
+              <div>
+                <Label>Postcode</Label>
+                <Input
+                  value={billingPartyForm.postcode}
+                  onChange={(e) => setBillingPartyForm({...billingPartyForm, postcode: e.target.value})}
+                  data-testid="billing-party-postcode"
+                />
+              </div>
+              <div>
+                <Label>State</Label>
+                <Input
+                  value={billingPartyForm.state}
+                  onChange={(e) => setBillingPartyForm({...billingPartyForm, state: e.target.value})}
+                  data-testid="billing-party-state"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Phone</Label>
+                <Input
+                  value={billingPartyForm.phone}
+                  onChange={(e) => setBillingPartyForm({...billingPartyForm, phone: e.target.value})}
+                  placeholder="+60-xxx-xxx-xxxx"
+                  data-testid="billing-party-phone"
+                />
+              </div>
+              <div>
+                <Label>Email</Label>
+                <Input
+                  type="email"
+                  value={billingPartyForm.email}
+                  onChange={(e) => setBillingPartyForm({...billingPartyForm, email: e.target.value})}
+                  placeholder="email@example.com"
+                  data-testid="billing-party-email"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowBillingPartyModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleBillingPartySubmit} data-testid="save-billing-party-btn">
+              {editingBillingParty ? 'Update' : 'Create'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
