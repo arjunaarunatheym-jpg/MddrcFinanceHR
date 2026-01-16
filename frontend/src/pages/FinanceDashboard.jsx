@@ -3790,7 +3790,25 @@ const FinanceDashboard = ({ user, onLogout }) => {
           <div className="space-y-6 py-4">
             {/* Bill To Section */}
             <div className="p-4 bg-blue-50 rounded-lg space-y-4">
-              <h3 className="font-semibold text-blue-900">Bill To (M/S)</h3>
+              <div className="flex justify-between items-center">
+                <h3 className="font-semibold text-blue-900">Bill To (M/S)</h3>
+                {billingParties.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs text-blue-700 whitespace-nowrap">Quick Fill:</Label>
+                    <Select onValueChange={applyBillingPartyToInvoice} data-testid="billing-party-select">
+                      <SelectTrigger className="w-[200px] h-8 text-xs bg-white">
+                        <SelectValue placeholder="Select billing party..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">-- Don't apply --</SelectItem>
+                        {billingParties.map((party) => (
+                          <SelectItem key={party.id} value={party.id}>{party.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label>Company/Organization Name</Label>
@@ -3798,6 +3816,7 @@ const FinanceDashboard = ({ user, onLogout }) => {
                     value={editForm.bill_to_name}
                     onChange={(e) => setEditForm({...editForm, bill_to_name: e.target.value})}
                     placeholder="e.g., HUMAN RESOURCES DEVELOPMENT CORPORATION"
+                    data-testid="invoice-bill-to-name"
                   />
                 </div>
                 <div>
@@ -3806,6 +3825,7 @@ const FinanceDashboard = ({ user, onLogout }) => {
                     value={editForm.bill_to_reg_no}
                     onChange={(e) => setEditForm({...editForm, bill_to_reg_no: e.target.value})}
                     placeholder="Company registration number"
+                    data-testid="invoice-bill-to-reg"
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -3814,6 +3834,7 @@ const FinanceDashboard = ({ user, onLogout }) => {
                     value={editForm.bill_to_address}
                     onChange={(e) => setEditForm({...editForm, bill_to_address: e.target.value})}
                     placeholder="Full address"
+                    data-testid="invoice-bill-to-address"
                   />
                 </div>
                 <div>
