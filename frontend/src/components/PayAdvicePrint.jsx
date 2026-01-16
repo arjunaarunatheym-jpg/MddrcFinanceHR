@@ -5,52 +5,28 @@ import { X, Download } from 'lucide-react';
 const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
   const printRef = useRef(null);
   
-  // Get colors from company settings or use defaults
   const primaryColor = companySettings?.primary_color || '#1e40af';
   const secondaryColor = companySettings?.secondary_color || '#16a34a';
   const logoUrl = companySettings?.logo_url || '';
-  const showWatermark = companySettings?.show_watermark !== false;
-  const watermarkOpacity = companySettings?.watermark_opacity || 0.08;
   
-  // Build full logo URL
+  // Build full logo URL - ensure it's always constructed properly
   const fullLogoUrl = logoUrl ? `${process.env.REACT_APP_BACKEND_URL || ''}${logoUrl}` : '';
   
-  // Get the display period - use PAYMENT month (training month + 1)
+  // Get the display period - PAYMENT month
   const getDisplayPeriod = () => {
-    // If we have the payment month stored
+    // Use period_name directly - it now contains the payment month
+    if (payAdvice?.period_name) return payAdvice.period_name.toUpperCase();
+    // Fallback calculation
     if (payAdvice?.month && payAdvice?.year) {
       const monthName = new Date(2000, payAdvice.month - 1).toLocaleString('default', { month: 'long' });
       return `${monthName.toUpperCase()} ${payAdvice.year}`;
     }
-    // Fallback: calculate payment month from training month
-    if (payAdvice?.training_month && payAdvice?.training_year) {
-      let paymentMonth = payAdvice.training_month + 1;
-      let paymentYear = payAdvice.training_year;
-      if (paymentMonth > 12) {
-        paymentMonth = 1;
-        paymentYear += 1;
-      }
-      const monthName = new Date(2000, paymentMonth - 1).toLocaleString('default', { month: 'long' });
-      return `${monthName.toUpperCase()} ${paymentYear}`;
-    }
-    // Last fallback: use period_name but adjust if it looks like training month
-    if (payAdvice?.period_name) {
-      return payAdvice.period_name.toUpperCase();
-    }
     return 'N/A';
   };
   
-  // Get the training period for reference
+  // Get training period for reference
   const getTrainingPeriod = () => {
     if (payAdvice?.training_period_name) return payAdvice.training_period_name;
-    if (payAdvice?.training_month && payAdvice?.training_year) {
-      const monthName = new Date(2000, payAdvice.training_month - 1).toLocaleString('default', { month: 'long' });
-      return `${monthName} ${payAdvice.training_year}`;
-    }
-    // Fallback for old data - assume period_name is training period
-    if (payAdvice?.period_name && !payAdvice?.month) {
-      return payAdvice.period_name;
-    }
     return null;
   };
 
@@ -59,7 +35,6 @@ const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
     const parts = [];
     if (companySettings?.company_reg_no) parts.push(`(${companySettings.company_reg_no})`);
     if (companySettings?.address_line1) parts.push(companySettings.address_line1);
-    if (companySettings?.address_line2) parts.push(companySettings.address_line2);
     if (companySettings?.city) parts.push(companySettings.city);
     if (companySettings?.postcode) parts.push(companySettings.postcode);
     if (companySettings?.state) parts.push(companySettings.state);
@@ -74,8 +49,10 @@ const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
   };
 
   const handlePrint = () => {
-    const printContent = printRef.current;
     const printWindow = window.open('', '_blank');
+    
+    // Build the print HTML with inline logo
+    const logoHtml = fullLogoUrl ? `<img src="${fullLogoUrl}" style="width:70px;height:auto;" crossorigin="anonymous" />` : '';
     
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -86,29 +63,23 @@ const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
             @page { size: A4; margin: 10mm; }
             @media print { body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } }
             * { box-sizing: border-box; margin: 0; padding: 0; }
-            body { font-family: Arial, sans-serif; font-size: 9px; line-height: 1.3; }
+            body { font-family: Arial, sans-serif; font-size: 9px; line-height: 1.3; padding: 8px; }
             
-            .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: ${watermarkOpacity}; z-index: 0; pointer-events: none; }
-            .watermark img { width: 280px; height: auto; }
-            .container { position: relative; z-index: 1; }
-            
-            .container { padding: 8px; }
             .header { display: flex; align-items: flex-start; gap: 10px; padding-bottom: 8px; border-bottom: 2px solid ${primaryColor}; margin-bottom: 8px; }
-            .logo-img { width: 80px; height: auto; }
-            .company-name { font-size: 12px; font-weight: bold; color: ${primaryColor}; margin-bottom: 2px; }
+            .header img { width: 70px; height: auto; }
+            .company-name { font-size: 11px; font-weight: bold; color: ${primaryColor}; margin-bottom: 2px; }
             .company-info { font-size: 8px; color: #444; line-height: 1.4; }
             
-            .doc-title { text-align: center; font-size: 12px; font-weight: bold; color: ${primaryColor}; background: #f0f4f8; padding: 5px; margin-bottom: 8px; border-left: 3px solid ${secondaryColor}; }
+            .doc-title { text-align: center; font-size: 11px; font-weight: bold; color: ${primaryColor}; background: #f0f4f8; padding: 5px; margin-bottom: 8px; border-left: 3px solid ${secondaryColor}; }
             
-            .info-box { background: #f9fafb; padding: 8px; margin-bottom: 8px; border: 1px solid #e5e7eb; }
-            .info-grid { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 4px; }
-            .info-row { display: flex !important; font-size: 9px; }
-            .info-label { font-weight: bold; width: 70px; color: #666; display: inline-block; }
+            .info-table { width: 100%; margin-bottom: 8px; background: #f9fafb; border: 1px solid #e5e7eb; }
+            .info-table td { padding: 4px 8px; font-size: 9px; }
+            .info-label { font-weight: bold; color: #666; }
             
-            table { width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 8px; }
-            th, td { border: 1px solid #ddd; padding: 4px; text-align: left; }
-            th { background: ${primaryColor}; color: white; font-size: 8px; }
-            tr:nth-child(even) { background: #f9fafb; }
+            table.session-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 8px; }
+            table.session-table th, table.session-table td { border: 1px solid #ddd; padding: 4px; text-align: left; }
+            table.session-table th { background: ${primaryColor}; color: white; }
+            table.session-table tr:nth-child(even) { background: #f9fafb; }
             .text-right { text-align: right; }
             .text-center { text-align: center; }
             
@@ -117,10 +88,9 @@ const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
             .summary .amount { font-size: 20px; font-weight: bold; }
             
             .bank-box { background: #f0f4f8; padding: 6px; border-left: 2px solid ${primaryColor}; margin-bottom: 8px; font-size: 8px; }
-            .bank-title { font-weight: bold; color: ${primaryColor}; margin-bottom: 4px; }
             
-            .sig-section { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 15px; }
-            .sig-box { text-align: center; }
+            .sig-table { width: 100%; margin-top: 15px; }
+            .sig-table td { width: 50%; text-align: center; padding: 0 20px; }
             .sig-line { border-bottom: 1px solid #000; height: 30px; margin-bottom: 3px; }
             .sig-label { font-size: 8px; }
             
@@ -128,15 +98,96 @@ const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
           </style>
         </head>
         <body>
-          ${showWatermark && fullLogoUrl ? `<div class="watermark"><img src="${fullLogoUrl}" alt="" /></div>` : ''}
-          ${printContent.innerHTML}
+          <div class="header">
+            ${logoHtml}
+            <div>
+              <div class="company-name">${companySettings?.company_name || 'MALAYSIAN DEFENSIVE DRIVING AND RIDING CENTRE SDN BHD'}</div>
+              <div class="company-info">${getCompanyInfo()}<br/>${getContactInfo()}</div>
+            </div>
+          </div>
+          
+          <div class="doc-title">PAY ADVICE - ${getDisplayPeriod()}</div>
+          
+          <table class="info-table">
+            <tr>
+              <td><span class="info-label">Name:</span> ${payAdvice.full_name}</td>
+              <td><span class="info-label">Payment Period:</span> <strong>${getDisplayPeriod()}</strong></td>
+            </tr>
+            <tr>
+              <td><span class="info-label">NRIC:</span> ${payAdvice.id_number || '-'}</td>
+              <td><span class="info-label">Email:</span> ${payAdvice.email || '-'}</td>
+            </tr>
+            ${getTrainingPeriod() ? `<tr><td colspan="2"><span class="info-label">Training Period:</span> ${getTrainingPeriod()}</td></tr>` : ''}
+          </table>
+          
+          <table class="session-table">
+            <thead>
+              <tr>
+                <th style="width:25px">No</th>
+                <th>Company</th>
+                <th>Training Session</th>
+                <th style="width:60px">Date</th>
+                <th style="width:50px">Role</th>
+                <th style="width:70px" class="text-right">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(payAdvice.session_details || []).map((s, i) => `
+                <tr>
+                  <td class="text-center">${i + 1}</td>
+                  <td>${s.company_name}</td>
+                  <td>${s.session_name}</td>
+                  <td>${s.session_date || '-'}</td>
+                  <td style="text-transform:capitalize">${s.role}</td>
+                  <td class="text-right">${(s.amount || 0).toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+            <tfoot>
+              <tr style="background:#e5e7eb;font-weight:bold">
+                <td colspan="5" class="text-right">GROSS TOTAL</td>
+                <td class="text-right">RM ${(payAdvice.gross_amount || 0).toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
+              </tr>
+              ${payAdvice.deductions > 0 ? `
+                <tr>
+                  <td colspan="5" class="text-right">Less: Deductions</td>
+                  <td class="text-right">(RM ${(payAdvice.deductions || 0).toLocaleString('en-MY', { minimumFractionDigits: 2 })})</td>
+                </tr>
+              ` : ''}
+            </tfoot>
+          </table>
+          
+          <div class="summary">
+            <div class="label">NETT PAYMENT</div>
+            <div class="amount">RM ${(payAdvice.nett_amount || 0).toLocaleString('en-MY', { minimumFractionDigits: 2 })}</div>
+          </div>
+          
+          ${(payAdvice.bank_name || payAdvice.bank_account) ? `
+            <div class="bank-box">
+              <strong style="color:${primaryColor}">Payment:</strong> ${payAdvice.bank_name || '-'} | Acc: ${payAdvice.bank_account || '-'}
+            </div>
+          ` : ''}
+          
+          <table class="sig-table">
+            <tr>
+              <td><div class="sig-line"></div><div class="sig-label">Prepared By</div></td>
+              <td><div class="sig-line"></div><div class="sig-label">Received By</div></td>
+            </tr>
+          </table>
+          
+          <div class="footer">This document is computer-generated. For enquiries, please contact HR department.</div>
         </body>
       </html>
     `);
     
     printWindow.document.close();
     printWindow.focus();
-    setTimeout(() => { printWindow.print(); printWindow.close(); }, 250);
+    
+    // Wait for images to load before printing
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 500);
   };
 
   const formatCurrency = (val) => `RM ${(val || 0).toLocaleString('en-MY', { minimumFractionDigits: 2 })}`;
@@ -148,129 +199,117 @@ const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
           <h2 className="text-base font-bold">Pay Advice Preview</h2>
           <div className="flex gap-2">
             <Button size="sm" onClick={handlePrint} style={{ backgroundColor: secondaryColor }}>
-              <Download className="w-4 h-4 mr-1" /> Download
+              <Download className="w-4 h-4 mr-1" /> Print / Download
             </Button>
             <Button size="sm" variant="outline" onClick={onClose}><X className="w-4 h-4" /></Button>
           </div>
         </div>
 
-        <div ref={printRef} className="p-3 relative text-xs" style={{ minHeight: '500px' }}>
-          {/* Single centered watermark for preview */}
-          {showWatermark && fullLogoUrl && (
-            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', opacity: watermarkOpacity, zIndex: 0, pointerEvents: 'none' }}>
-              <img src={fullLogoUrl} alt="" style={{ width: '250px', height: 'auto' }} />
+        <div ref={printRef} className="p-3 text-xs">
+          {/* Header */}
+          <div className="flex items-start gap-3 pb-2 mb-2" style={{ borderBottom: `2px solid ${primaryColor}` }}>
+            {fullLogoUrl && (
+              <img src={fullLogoUrl} alt="Logo" style={{ width: '70px', height: 'auto' }} />
+            )}
+            <div className="flex-1">
+              <div style={{ fontSize: '11px', fontWeight: 'bold', color: primaryColor }}>
+                {companySettings?.company_name || 'MALAYSIAN DEFENSIVE DRIVING AND RIDING CENTRE SDN BHD'}
+              </div>
+              <div style={{ fontSize: '8px', color: '#444' }}>
+                {getCompanyInfo()}<br/>{getContactInfo()}
+              </div>
+            </div>
+          </div>
+
+          {/* Document Title */}
+          <div className="text-center py-1 mb-2" style={{ fontSize: '11px', fontWeight: 'bold', color: primaryColor, background: '#f0f4f8', borderLeft: `3px solid ${secondaryColor}` }}>
+            PAY ADVICE - {getDisplayPeriod()}
+          </div>
+
+          {/* Recipient Info Table */}
+          <table className="w-full mb-2" style={{ background: '#f9fafb', border: '1px solid #e5e7eb' }}>
+            <tbody>
+              <tr>
+                <td className="p-1" style={{ fontSize: '9px' }}><span className="font-bold text-gray-600">Name:</span> {payAdvice.full_name}</td>
+                <td className="p-1" style={{ fontSize: '9px' }}><span className="font-bold text-gray-600">Payment Period:</span> <strong>{getDisplayPeriod()}</strong></td>
+              </tr>
+              <tr>
+                <td className="p-1" style={{ fontSize: '9px' }}><span className="font-bold text-gray-600">NRIC:</span> {payAdvice.id_number || '-'}</td>
+                <td className="p-1" style={{ fontSize: '9px' }}><span className="font-bold text-gray-600">Email:</span> {payAdvice.email || '-'}</td>
+              </tr>
+              {getTrainingPeriod() && (
+                <tr>
+                  <td colSpan="2" className="p-1" style={{ fontSize: '9px' }}><span className="font-bold text-gray-600">Training Period:</span> {getTrainingPeriod()}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+
+          {/* Session Details Table */}
+          <table className="w-full mb-2" style={{ fontSize: '8px', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: primaryColor, color: 'white' }}>
+                <th className="border p-1 text-center" style={{ width: '25px' }}>No</th>
+                <th className="border p-1">Company</th>
+                <th className="border p-1">Training Session</th>
+                <th className="border p-1" style={{ width: '60px' }}>Date</th>
+                <th className="border p-1" style={{ width: '50px' }}>Role</th>
+                <th className="border p-1 text-right" style={{ width: '70px' }}>Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {payAdvice.session_details?.map((session, idx) => (
+                <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                  <td className="border p-1 text-center">{idx + 1}</td>
+                  <td className="border p-1">{session.company_name}</td>
+                  <td className="border p-1">{session.session_name}</td>
+                  <td className="border p-1">{session.session_date || '-'}</td>
+                  <td className="border p-1 capitalize">{session.role}</td>
+                  <td className="border p-1 text-right">{(session.amount || 0).toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="bg-gray-200 font-bold">
+                <td colSpan="5" className="border p-1 text-right">GROSS TOTAL</td>
+                <td className="border p-1 text-right">{formatCurrency(payAdvice.gross_amount)}</td>
+              </tr>
+            </tfoot>
+          </table>
+
+          {/* Nett Amount */}
+          <div className="text-center py-2 my-2" style={{ background: secondaryColor, color: 'white' }}>
+            <div style={{ fontSize: '10px' }}>NETT PAYMENT</div>
+            <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{formatCurrency(payAdvice.nett_amount)}</div>
+          </div>
+
+          {/* Bank Info */}
+          {(payAdvice.bank_name || payAdvice.bank_account) && (
+            <div className="p-2 mb-2" style={{ background: '#f0f4f8', borderLeft: `2px solid ${primaryColor}`, fontSize: '8px' }}>
+              <span className="font-bold" style={{ color: primaryColor }}>Payment: </span>
+              {payAdvice.bank_name || '-'} | Acc: {payAdvice.bank_account || '-'}
             </div>
           )}
-          <div className="container relative" style={{ zIndex: 1 }}>
-            {/* Compact Header */}
-            <div className="header flex items-start gap-3 pb-2 mb-2" style={{ borderBottom: `2px solid ${primaryColor}` }}>
-              {fullLogoUrl && (
-                <img src={fullLogoUrl} alt="Logo" className="logo-img" style={{ width: '70px', height: 'auto' }} />
-              )}
-              <div className="flex-1">
-                <div className="company-name" style={{ fontSize: '11px', fontWeight: 'bold', color: primaryColor }}>
-                  {companySettings?.company_name || 'MALAYSIAN DEFENSIVE DRIVING AND RIDING CENTRE SDN BHD'}
-                </div>
-                <div className="company-info" style={{ fontSize: '8px', color: '#444' }}>
-                  {getCompanyInfo()}<br/>{getContactInfo()}
-                </div>
-              </div>
-            </div>
 
-            {/* Document Title */}
-            <div className="doc-title text-center py-1 mb-2" style={{ fontSize: '11px', fontWeight: 'bold', color: primaryColor, background: '#f0f4f8', borderLeft: `3px solid ${secondaryColor}` }}>
-              PAY ADVICE - {getDisplayPeriod()}
-            </div>
+          {/* Signature Section */}
+          <table className="w-full mt-4">
+            <tbody>
+              <tr>
+                <td className="text-center px-5">
+                  <div style={{ borderBottom: '1px solid #000', height: '25px', marginBottom: '2px' }}></div>
+                  <div style={{ fontSize: '8px' }}>Prepared By</div>
+                </td>
+                <td className="text-center px-5">
+                  <div style={{ borderBottom: '1px solid #000', height: '25px', marginBottom: '2px' }}></div>
+                  <div style={{ fontSize: '8px' }}>Received By</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
 
-            {/* Compact Recipient Info - Table layout for print compatibility */}
-            <div className="info-box p-2 mb-2" style={{ background: '#f9fafb', border: '1px solid #e5e7eb' }}>
-              <table style={{ width: '100%', fontSize: '9px', borderCollapse: 'collapse' }}>
-                <tbody>
-                  <tr>
-                    <td style={{ padding: '2px 4px' }}><span className="font-bold text-gray-600">Name:</span> {payAdvice.full_name}</td>
-                    <td style={{ padding: '2px 4px' }}><span className="font-bold text-gray-600">Period:</span> <span className="font-semibold">{getDisplayPeriod()}</span></td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '2px 4px' }}><span className="font-bold text-gray-600">NRIC:</span> {payAdvice.id_number || '-'}</td>
-                    <td style={{ padding: '2px 4px' }}><span className="font-bold text-gray-600">Email:</span> {payAdvice.email || '-'}</td>
-                  </tr>
-                  {getTrainingPeriod() && (
-                    <tr>
-                      <td colSpan="2" style={{ padding: '2px 4px' }}><span className="font-bold text-gray-600">Training Period:</span> {getTrainingPeriod()}</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Compact Session Details Table */}
-            <table className="w-full mb-2" style={{ fontSize: '8px', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ background: primaryColor, color: 'white' }}>
-                  <th className="border p-1 text-center" style={{ width: '25px', background: primaryColor }}>No</th>
-                  <th className="border p-1" style={{ background: primaryColor }}>Company</th>
-                  <th className="border p-1" style={{ background: primaryColor }}>Training Session</th>
-                  <th className="border p-1" style={{ width: '60px', background: primaryColor }}>Date</th>
-                  <th className="border p-1" style={{ width: '50px', background: primaryColor }}>Role</th>
-                  <th className="border p-1 text-right" style={{ width: '70px', background: primaryColor }}>Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {payAdvice.session_details?.map((session, idx) => (
-                  <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    <td className="border p-1 text-center">{idx + 1}</td>
-                    <td className="border p-1">{session.company_name}</td>
-                    <td className="border p-1">{session.session_name}</td>
-                    <td className="border p-1">{session.session_date || '-'}</td>
-                    <td className="border p-1 capitalize">{session.role}</td>
-                    <td className="border p-1 text-right">{(session.amount || 0).toLocaleString('en-MY', { minimumFractionDigits: 2 })}</td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="bg-gray-100 font-bold">
-                  <td colSpan="5" className="border p-1 text-right">GROSS TOTAL</td>
-                  <td className="border p-1 text-right">{formatCurrency(payAdvice.gross_amount)}</td>
-                </tr>
-                {payAdvice.deductions > 0 && (
-                  <tr>
-                    <td colSpan="5" className="border p-1 text-right">Less: Deductions</td>
-                    <td className="border p-1 text-right">({formatCurrency(payAdvice.deductions)})</td>
-                  </tr>
-                )}
-              </tfoot>
-            </table>
-
-            {/* Compact Nett Amount */}
-            <div className="summary text-center py-2 my-2" style={{ background: secondaryColor, color: 'white' }}>
-              <div style={{ fontSize: '9px' }}>NETT PAYMENT</div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{formatCurrency(payAdvice.nett_amount)}</div>
-            </div>
-
-            {/* Compact Bank Info */}
-            {(payAdvice.bank_name || payAdvice.bank_account) && (
-              <div className="bank-box p-2 mb-2" style={{ background: '#f0f4f8', borderLeft: `2px solid ${primaryColor}`, fontSize: '8px' }}>
-                <span className="font-bold" style={{ color: primaryColor }}>Payment: </span>
-                {payAdvice.bank_name || '-'} | Acc: {payAdvice.bank_account || '-'}
-              </div>
-            )}
-
-            {/* Compact Signature Section */}
-            <div className="sig-section grid grid-cols-2 gap-8 mt-4">
-              <div className="sig-box text-center">
-                <div className="sig-line" style={{ borderBottom: '1px solid #000', height: '25px', marginBottom: '2px' }}></div>
-                <div style={{ fontSize: '8px' }}>Prepared By</div>
-              </div>
-              <div className="sig-box text-center">
-                <div className="sig-line" style={{ borderBottom: '1px solid #000', height: '25px', marginBottom: '2px' }}></div>
-                <div style={{ fontSize: '8px' }}>Received By</div>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="footer text-center mt-3" style={{ fontSize: '7px', color: '#666' }}>
-              This document is computer-generated. For enquiries, please contact HR department.
-            </div>
+          {/* Footer */}
+          <div className="text-center mt-3" style={{ fontSize: '7px', color: '#666' }}>
+            This document is computer-generated. For enquiries, please contact HR department.
           </div>
         </div>
       </div>
