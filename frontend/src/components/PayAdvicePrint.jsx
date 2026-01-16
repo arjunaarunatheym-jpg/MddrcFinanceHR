@@ -15,14 +15,43 @@ const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
   // Build full logo URL
   const fullLogoUrl = logoUrl ? `${process.env.REACT_APP_BACKEND_URL || ''}${logoUrl}` : '';
   
-  // Get the display period
+  // Get the display period - use PAYMENT month (training month + 1)
   const getDisplayPeriod = () => {
-    if (payAdvice?.period_name) return payAdvice.period_name.toUpperCase();
+    // If we have the payment month stored
     if (payAdvice?.month && payAdvice?.year) {
       const monthName = new Date(2000, payAdvice.month - 1).toLocaleString('default', { month: 'long' });
       return `${monthName.toUpperCase()} ${payAdvice.year}`;
     }
+    // Fallback: calculate payment month from training month
+    if (payAdvice?.training_month && payAdvice?.training_year) {
+      let paymentMonth = payAdvice.training_month + 1;
+      let paymentYear = payAdvice.training_year;
+      if (paymentMonth > 12) {
+        paymentMonth = 1;
+        paymentYear += 1;
+      }
+      const monthName = new Date(2000, paymentMonth - 1).toLocaleString('default', { month: 'long' });
+      return `${monthName.toUpperCase()} ${paymentYear}`;
+    }
+    // Last fallback: use period_name but adjust if it looks like training month
+    if (payAdvice?.period_name) {
+      return payAdvice.period_name.toUpperCase();
+    }
     return 'N/A';
+  };
+  
+  // Get the training period for reference
+  const getTrainingPeriod = () => {
+    if (payAdvice?.training_period_name) return payAdvice.training_period_name;
+    if (payAdvice?.training_month && payAdvice?.training_year) {
+      const monthName = new Date(2000, payAdvice.training_month - 1).toLocaleString('default', { month: 'long' });
+      return `${monthName} ${payAdvice.training_year}`;
+    }
+    // Fallback for old data - assume period_name is training period
+    if (payAdvice?.period_name && !payAdvice?.month) {
+      return payAdvice.period_name;
+    }
+    return null;
   };
 
   // Build company info
