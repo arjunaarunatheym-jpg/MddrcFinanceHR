@@ -28,7 +28,7 @@ from typing import Dict, List, Optional
 import uuid
 
 # Configuration from frontend/.env
-BASE_URL = "https://payroll-tracker-55.preview.emergentagent.com/api"
+BASE_URL = "https://vendor-billing-hub.preview.emergentagent.com/api"
 
 # Test credentials
 ADMIN_EMAIL = "arjuna@mddrc.com.my"
