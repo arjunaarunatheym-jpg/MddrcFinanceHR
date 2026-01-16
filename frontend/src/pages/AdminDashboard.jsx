@@ -1901,6 +1901,9 @@ const AdminDashboard = ({ user, onLogout }) => {
                       >
                         <div>
                           <h3 className="font-semibold text-gray-900">{company.name}</h3>
+                          {company.registration_no && (
+                            <p className="text-sm text-gray-600">Reg: {company.registration_no}</p>
+                          )}
                           <p className="text-sm text-gray-500">
                             Created: {new Date(company.created_at).toLocaleDateString()}
                           </p>
