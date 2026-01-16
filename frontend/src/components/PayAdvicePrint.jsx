@@ -101,9 +101,9 @@ const PayAdvicePrint = ({ payAdvice, companySettings, onClose }) => {
             .doc-title { text-align: center; font-size: 12px; font-weight: bold; color: ${primaryColor}; background: #f0f4f8; padding: 5px; margin-bottom: 8px; border-left: 3px solid ${secondaryColor}; }
             
             .info-box { background: #f9fafb; padding: 8px; margin-bottom: 8px; border: 1px solid #e5e7eb; }
-            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-            .info-row { display: flex; font-size: 9px; }
-            .info-label { font-weight: bold; width: 70px; color: #666; }
+            .info-grid { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 4px; }
+            .info-row { display: flex !important; font-size: 9px; }
+            .info-label { font-weight: bold; width: 70px; color: #666; display: inline-block; }
             
             table { width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 8px; }
             th, td { border: 1px solid #ddd; padding: 4px; text-align: left; }
