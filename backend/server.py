@@ -352,13 +352,59 @@ class Company(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
+    registration_no: Optional[str] = None
+    address_line1: Optional[str] = None
+    address_line2: Optional[str] = None
+    city: Optional[str] = None
+    postcode: Optional[str] = None
+    state: Optional[str] = None
+    country: Optional[str] = "Malaysia"
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    contact_person: Optional[str] = None
     created_at: datetime = Field(default_factory=get_malaysia_time)
 
 class CompanyCreate(BaseModel):
     name: str
+    registration_no: Optional[str] = None
+    address_line1: Optional[str] = None
+    address_line2: Optional[str] = None
+    city: Optional[str] = None
+    postcode: Optional[str] = None
+    state: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    contact_person: Optional[str] = None
 
 class CompanyUpdate(BaseModel):
+    name: Optional[str] = None
+    registration_no: Optional[str] = None
+    address_line1: Optional[str] = None
+    address_line2: Optional[str] = None
+    city: Optional[str] = None
+    postcode: Optional[str] = None
+    state: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    contact_person: Optional[str] = None
+
+# Billing Party / Vendor model - for alternative billing entities like HRDC
+class BillingParty(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
+    registration_no: Optional[str] = None
+    address_line1: Optional[str] = None
+    address_line2: Optional[str] = None
+    city: Optional[str] = None
+    postcode: Optional[str] = None
+    state: Optional[str] = None
+    country: Optional[str] = "Malaysia"
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    contact_person: Optional[str] = None
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=get_malaysia_time)
 
 class Program(BaseModel):
     model_config = ConfigDict(extra="ignore")
