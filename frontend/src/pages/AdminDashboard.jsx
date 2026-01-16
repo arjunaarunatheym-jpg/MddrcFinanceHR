@@ -4278,18 +4278,85 @@ const AdminDashboard = ({ user, onLogout }) => {
       {/* Edit Company Dialog */}
       {editingCompany && (
         <Dialog open={editCompanyDialogOpen} onOpenChange={setEditCompanyDialogOpen}>
-          <DialogContent>
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Edit Company</DialogTitle>
-              <DialogDescription>Update company name</DialogDescription>
+              <DialogDescription>Update company details</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
-              <div>
-                <Label>Company Name</Label>
-                <Input
-                  value={editingCompany.name}
-                  onChange={(e) => setEditingCompany({ ...editingCompany, name: e.target.value })}
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <Label>Company Name *</Label>
+                  <Input
+                    value={editingCompany.name || ''}
+                    onChange={(e) => setEditingCompany({ ...editingCompany, name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Registration No.</Label>
+                  <Input
+                    value={editingCompany.registration_no || ''}
+                    onChange={(e) => setEditingCompany({ ...editingCompany, registration_no: e.target.value })}
+                    placeholder="e.g., 1234567-A"
+                  />
+                </div>
+                <div>
+                  <Label>Contact Person</Label>
+                  <Input
+                    value={editingCompany.contact_person || ''}
+                    onChange={(e) => setEditingCompany({ ...editingCompany, contact_person: e.target.value })}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label>Address Line 1</Label>
+                  <Input
+                    value={editingCompany.address_line1 || ''}
+                    onChange={(e) => setEditingCompany({ ...editingCompany, address_line1: e.target.value })}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label>Address Line 2</Label>
+                  <Input
+                    value={editingCompany.address_line2 || ''}
+                    onChange={(e) => setEditingCompany({ ...editingCompany, address_line2: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>City</Label>
+                  <Input
+                    value={editingCompany.city || ''}
+                    onChange={(e) => setEditingCompany({ ...editingCompany, city: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Postcode</Label>
+                  <Input
+                    value={editingCompany.postcode || ''}
+                    onChange={(e) => setEditingCompany({ ...editingCompany, postcode: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>State</Label>
+                  <Input
+                    value={editingCompany.state || ''}
+                    onChange={(e) => setEditingCompany({ ...editingCompany, state: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Phone</Label>
+                  <Input
+                    value={editingCompany.phone || ''}
+                    onChange={(e) => setEditingCompany({ ...editingCompany, phone: e.target.value })}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label>Email</Label>
+                  <Input
+                    type="email"
+                    value={editingCompany.email || ''}
+                    onChange={(e) => setEditingCompany({ ...editingCompany, email: e.target.value })}
+                  />
+                </div>
               </div>
               <Button onClick={handleUpdateCompany} className="w-full">
                 Update Company
