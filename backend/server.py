@@ -1553,7 +1553,18 @@ async def create_company(company_data: CompanyCreate, current_user: User = Depen
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Only admins can create companies")
     
-    company_obj = Company(name=company_data.name)
+    company_obj = Company(
+        name=company_data.name,
+        registration_no=company_data.registration_no,
+        address_line1=company_data.address_line1,
+        address_line2=company_data.address_line2,
+        city=company_data.city,
+        postcode=company_data.postcode,
+        state=company_data.state,
+        phone=company_data.phone,
+        email=company_data.email,
+        contact_person=company_data.contact_person
+    )
     doc = company_obj.model_dump()
     doc['created_at'] = doc['created_at'].isoformat()
     
@@ -1577,13 +1588,89 @@ async def get_companies(
 
 @api_router.put("/companies/{company_id}", response_model=Company)
 async def update_company(company_id: str, company_data: CompanyUpdate, current_user: User = Depends(get_current_user)):
-    if current_user.role != "admin":
+    if current_user.role not in ["admin", "super_admin"]:
         raise HTTPException(status_code=403, detail="Only admins can update companies")
+    
+    update_dict = {k: v for k, v in company_data.model_dump().items() if v is not None}
+    if not update_dict:
+        raise HTTPException(status_code=400, detail="No fields to update")
     
     result = await db.companies.update_one(
         {"id": company_id},
-        {"$set": company_data.model_dump()}
+        {"$set": update_dict}
     )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    company_doc = await db.companies.find_one({"id": company_id}, {"_id": 0})
+    return company_doc
+
+# ============ BILLING PARTIES / VENDORS ============
+
+@api_router.post("/billing-parties")
+async def create_billing_party(data: dict, current_user: User = Depends(get_current_user)):
+    """Create a new billing party / vendor"""
+    if current_user.role not in ["admin", "super_admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    billing_party = BillingParty(
+        name=data.get("name"),
+        registration_no=data.get("registration_no"),
+        address_line1=data.get("address_line1"),
+        address_line2=data.get("address_line2"),
+        city=data.get("city"),
+        postcode=data.get("postcode"),
+        state=data.get("state"),
+        phone=data.get("phone"),
+        email=data.get("email"),
+        contact_person=data.get("contact_person")
+    )
+    doc = billing_party.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    
+    await db.billing_parties.insert_one(doc)
+    return {"message": "Billing party created", "billing_party": doc}
+
+@api_router.get("/billing-parties")
+async def get_billing_parties(current_user: User = Depends(get_current_user)):
+    """Get all billing parties"""
+    if current_user.role not in ["admin", "super_admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    parties = await db.billing_parties.find({"is_active": True}, {"_id": 0}).to_list(100)
+    return parties
+
+@api_router.put("/billing-parties/{party_id}")
+async def update_billing_party(party_id: str, data: dict, current_user: User = Depends(get_current_user)):
+    """Update a billing party"""
+    if current_user.role not in ["admin", "super_admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    update_dict = {k: v for k, v in data.items() if v is not None and k != "id"}
+    
+    result = await db.billing_parties.update_one(
+        {"id": party_id},
+        {"$set": update_dict}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Billing party not found")
+    
+    return {"message": "Updated successfully"}
+
+@api_router.delete("/billing-parties/{party_id}")
+async def delete_billing_party(party_id: str, current_user: User = Depends(get_current_user)):
+    """Soft delete a billing party"""
+    if current_user.role not in ["admin", "super_admin", "finance"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    await db.billing_parties.update_one(
+        {"id": party_id},
+        {"$set": {"is_active": False}}
+    )
+    
+    return {"message": "Deleted successfully"}
     
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Company not found")
