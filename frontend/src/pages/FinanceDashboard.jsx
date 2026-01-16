@@ -401,6 +401,91 @@ const FinanceDashboard = ({ user, onLogout }) => {
     }
   };
 
+  // Load billing parties
+  const loadBillingParties = async () => {
+    try {
+      const response = await axiosInstance.get('/finance/billing-parties');
+      setBillingParties(response.data);
+    } catch (error) {
+      console.error('Failed to load billing parties');
+    }
+  };
+
+  // Handle billing party form submit
+  const handleBillingPartySubmit = async () => {
+    if (!billingPartyForm.name.trim()) {
+      toast.error('Name is required');
+      return;
+    }
+    try {
+      if (editingBillingParty) {
+        await axiosInstance.put(`/finance/billing-parties/${editingBillingParty.id}`, billingPartyForm);
+        toast.success('Billing party updated');
+      } else {
+        await axiosInstance.post('/finance/billing-parties', billingPartyForm);
+        toast.success('Billing party created');
+      }
+      setShowBillingPartyModal(false);
+      setEditingBillingParty(null);
+      setBillingPartyForm({
+        name: '', registration_no: '', address_line1: '', address_line2: '',
+        city: '', postcode: '', state: '', country: 'Malaysia', phone: '', email: '', contact_person: ''
+      });
+      loadBillingParties();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to save billing party');
+    }
+  };
+
+  // Delete billing party
+  const handleDeleteBillingParty = async (partyId) => {
+    if (!window.confirm('Are you sure you want to delete this billing party?')) return;
+    try {
+      await axiosInstance.delete(`/finance/billing-parties/${partyId}`);
+      toast.success('Billing party deleted');
+      loadBillingParties();
+    } catch (error) {
+      toast.error('Failed to delete billing party');
+    }
+  };
+
+  // Edit billing party
+  const openEditBillingParty = (party) => {
+    setEditingBillingParty(party);
+    setBillingPartyForm({
+      name: party.name || '',
+      registration_no: party.registration_no || '',
+      address_line1: party.address_line1 || '',
+      address_line2: party.address_line2 || '',
+      city: party.city || '',
+      postcode: party.postcode || '',
+      state: party.state || '',
+      country: party.country || 'Malaysia',
+      phone: party.phone || '',
+      email: party.email || '',
+      contact_person: party.contact_person || ''
+    });
+    setShowBillingPartyModal(true);
+  };
+
+  // Apply billing party to invoice form
+  const applyBillingPartyToInvoice = (partyId) => {
+    if (!partyId || partyId === 'none') {
+      return; // Don't clear the form, just don't do anything
+    }
+    const party = billingParties.find(p => p.id === partyId);
+    if (party) {
+      const addressParts = [party.address_line1, party.address_line2, party.city, party.postcode, party.state, party.country]
+        .filter(Boolean).join(', ');
+      setEditForm({
+        ...editForm,
+        bill_to_name: party.name,
+        bill_to_reg_no: party.registration_no || '',
+        bill_to_address: addressParts
+      });
+    }
+  };
+
   // Save company settings
   const handleSaveSettings = async () => {
     setSettingsLoading(true);
