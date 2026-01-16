@@ -101,6 +101,18 @@ const AdminDashboard = ({ user, onLogout }) => {
   const [supervisorDialogOpen, setSupervisorDialogOpen] = useState(false);
 
   const [companyFormName, setCompanyFormName] = useState("");
+  const [companyFormData, setCompanyFormData] = useState({
+    name: '',
+    registration_no: '',
+    address_line1: '',
+    address_line2: '',
+    city: '',
+    postcode: '',
+    state: '',
+    phone: '',
+    email: '',
+    contact_person: ''
+  });
   const [companyDialogOpen, setCompanyDialogOpen] = useState(false);
 
   const [programForm, setProgramForm] = useState({ name: "", description: "", pass_percentage: 70 });
