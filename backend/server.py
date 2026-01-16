@@ -1630,6 +1630,7 @@ async def create_billing_party(data: dict, current_user: User = Depends(get_curr
     doc['created_at'] = doc['created_at'].isoformat()
     
     await db.billing_parties.insert_one(doc)
+    doc.pop('_id', None)  # Remove ObjectId before returning
     return {"message": "Billing party created", "billing_party": doc}
 
 @api_router.get("/finance/billing-parties")
